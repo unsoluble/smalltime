@@ -1,3 +1,5 @@
+// Icons by Freepik on flaticon.com
+
 Hooks.on('init', () => {
   game.settings.register('smallTime', 'currentTime', {
     name: 'Current Time',
@@ -9,13 +11,13 @@ Hooks.on('init', () => {
 });
 
 Hooks.on('ready', () => {
-  new SmallTimeApp(game.settings.get('smallTime','currentTime')).render(true);
+  new SmallTimeApp().render(true);
 });
 
 class SmallTimeApp extends FormApplication {
   constructor(currentTime) {
     super();
-    this.currentTime = currentTime;
+    this.currentTime = game.settings.get('smallTime','currentTime');
   }
 
   static get defaultOptions() {

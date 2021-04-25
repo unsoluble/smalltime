@@ -1,44 +1,69 @@
 #smalltime-app .window-header {
-  
+  display: none;
+}
+
+#smalltime-app .window-header > .window-title {
+   display: none;
+}
+
+#smalltime-app .window-header > .header-button {
+   display: none;
+}
+
+#smalltime-app .window-content {
+  background: #444;
+  border-radius: 5px;
+  padding: 0;
+}
+
+#smalltime-app .form-group {
+  margin: 0;
+  padding: 0;
+  position: relative;
+  top: -2px;
 }
 
 #smalltime-app .slidecontainer {
   width: 100%; /* Width of the outside container */
 }
 
-/* The slider itself */
-#smalltime-app .slider {
+#smalltime-app .slider::-webkit-slider-runnable-track {
   -webkit-appearance: none;
+  height: 26px;
   width: 100%;
-  height: 15px;
-  border-radius: 5px;  
-  background: #d3d3d3;
-  outline: none;
-  opacity: 0.7;
-  -webkit-transition: .2s;
-  transition: opacity .2s;
+  background: #000; 
+  border-color: transparent;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  color: transparent;
+  box-shadow: none;
 }
-
-/* Mouse-over effects */
-#smalltime-app .slider:hover {
-  opacity: 1; /* Fully shown on mouse-over */
-}
-
-/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+			
 #smalltime-app .slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 15px;
-  height: 15px;
-  border-radius: 50%; 
-  background: #4CAF50;
-  cursor: pointer;
+	-webkit-appearance: none;	
+  width: 23px;
+  height: 23px;
+  outline: 0;
+  border: 0;
+  cursor: ew-resize;
+  background: url('../images/sun.webp');
+  background-size: 24px;
+  position: relative;
+  top: 5px;
+  overflow: hidden;
+  box-shadow: none;
+  -webkit-filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.9));
+  filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.9));
 }
 
 #smalltime-app .slider::-moz-range-thumb {
-  width: 15px;
-  height: 15px;
-  border-radius: 50%;
-  background: #4CAF50;
-  cursor: pointer;
+
+}
+
+#smalltime-app .range-value {
+  color: #fff;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
 }
