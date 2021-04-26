@@ -65,7 +65,7 @@ class SmallTimeApp extends FormApplication {
       game.settings.set('smallTime', 'position', newPos);
     }
     
-    if (( this.currentTime > 300 ) && ( this.currentTime < 1020 )) {
+    if (( this.currentTime > 300 ) && ( this.currentTime < 1050 )) {
       $('#timeSlider').removeClass('moon');
       $('#timeSlider').addClass('sun');
     } else {
@@ -92,7 +92,7 @@ class SmallTimeApp extends FormApplication {
       	$('.slidecontainer').css("background-position", "0px " + bgOffset + "px" );
       }
       
-      if (( $(this).val() > 300 ) && ( $(this).val() < 1020 )) {
+      if (( $(this).val() > 300 ) && ( $(this).val() < 1050 )) {
         $('#timeSlider').removeClass('moon');
         $('#timeSlider').addClass('sun');
       } else {

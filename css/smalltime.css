@@ -29,9 +29,9 @@
 
 #smalltime-app .slidecontainer {
   width: 100%;
-  background: -moz-linear-gradient(top, #000000 0%, #351984 10%, #db5a23 20%, #d19621 30%, #25c5ed 40%, #25c5ed 60%, #d19621 70%, #db5a23 80%, #351984 90%, #000000 100%); /* FF3.6-15 */
-  background: -webkit-linear-gradient(top, #000000 0%,#351984 10%,#db5a23 20%,#d19621 30%,#25c5ed 40%,#25c5ed 60%,#d19621 70%,#db5a23 80%,#351984 90%,#000000 100%); /* Chrome10-25,Safari5.1-6 */
-  background: linear-gradient(to bottom, #000000 0%,#351984 10%,#db5a23 20%,#d19621 30%,#25c5ed 40%,#25c5ed 60%,#d19621 70%,#db5a23 80%,#351984 90%,#000000 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+  background: -moz-linear-gradient(top, #000000 3%, #351984 15%, #db5a23 25%, #d19621 30%, #25c5ed 40%, #25c5ed 60%, #d19621 70%, #db5a23 75%, #351984 85%, #000000 97%); /* FF3.6-15 */
+  background: -webkit-linear-gradient(top, #000000 3%,#351984 15%,#db5a23 25%,#d19621 30%,#25c5ed 40%,#25c5ed 60%,#d19621 70%,#db5a23 75%,#351984 85%,#000000 97%); /* Chrome10-25,Safari5.1-6 */
+  background: linear-gradient(to bottom, #000000 3%,#351984 15%,#db5a23 25%,#d19621 30%,#25c5ed 40%,#25c5ed 60%,#d19621 70%,#db5a23 75%,#351984 85%,#000000 97%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
   background-size: 200px 450px;
   background-position: 0px 0px;
 }
