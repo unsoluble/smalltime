@@ -13,7 +13,7 @@ Hooks.on('init', () => {
     scope: 'world',
     config: false,
     type: Object,
-    default: { top: 100, left: 100 },
+    default: { top: 446, left: 20 },
  });
 });
 
