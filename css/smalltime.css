@@ -29,13 +29,16 @@
 
 #smalltime-app .slidecontainer {
   width: 100%;
+  background: linear-gradient(#3f87a6 50px, #ebf8e1 50px, #f69d3c 50px);
+  background-size: 150px 150px;
+  background-position: 0px 0px;
 }
 
-#smalltime-app #timeSlider::-webkit-slider-runnable-track {
+#smalltime-app .slider::-webkit-slider-runnable-track {
   -webkit-appearance: none;
   height: 29px;
   width: 100%;
-  background: url('../images/gradient.webp');
+  background-color: transparent;
   border-left: 1px solid rgba(255, 255, 255, 0.2);
   border-top: 7px solid rgba(255, 255, 255, 0.2);
   border-right: 0;
@@ -47,7 +50,7 @@
   box-shadow: none;
 }
 			
-#smalltime-app .sunSlider::-webkit-slider-thumb {
+#smalltime-app .sun::-webkit-slider-thumb {
 	-webkit-appearance: none;	
   width: 22px;
   height: 22px;
@@ -64,7 +67,7 @@
   filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.9));
 }
 
-#smalltime-app .moonSlider::-webkit-slider-thumb {
+#smalltime-app .moon::-webkit-slider-thumb {
 	-webkit-appearance: none;	
   width: 22px;
   height: 22px;

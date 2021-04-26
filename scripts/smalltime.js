@@ -66,26 +66,26 @@ class SmallTimeApp extends FormApplication {
     }
     
     if (( this.currentTime > 300 ) && ( this.currentTime < 1020 )) {
-      $('#timeSlider').removeClass('moonSlider');
-      $('#timeSlider').addClass('sunSlider');
+      $('#timeSlider').removeClass('moon');
+      $('#timeSlider').addClass('sun');
     } else {
-      $('#timeSlider').removeClass('sunSlider');
-      $('#timeSlider').addClass('moonSlider');
+      $('#timeSlider').removeClass('sun');
+      $('#timeSlider').addClass('moon');
     }
-    
-    // var style = $("<style id='test' type='text/css'>").appendTo("body");
     
     $(document).on('input', '#timeSlider', function() {
       $('#timeDisplay').html( convertTime( $(this).val() ) );
       
-      // $('#test').text('#timeSlider::-webkit-slider-runnable-track { background: #fff; }');
-
+      let bgOffset = Math.round($(this).val() / 1410 * 100);
+      
+      $('.slidecontainer').css("background-position", "0px " + bgOffset + "px" );
+      
       if (( $(this).val() > 300 ) && ( $(this).val() < 1020 )) {
-        $('#timeSlider').removeClass('moonSlider');
-        $('#timeSlider').addClass('sunSlider');
+        $('#timeSlider').removeClass('moon');
+        $('#timeSlider').addClass('sun');
       } else {
-        $('#timeSlider').removeClass('sunSlider');
-        $('#timeSlider').addClass('moonSlider');
+        $('#timeSlider').removeClass('sun');
+        $('#timeSlider').addClass('moon');
       }
     });
   }
