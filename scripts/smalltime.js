@@ -73,12 +73,24 @@ class SmallTimeApp extends FormApplication {
       $('#timeSlider').addClass('moon');
     }
     
+    let initialOffset = Math.round(this.currentTime / 1410 * 450);
+      
+		if ( this.currentTime <= 700 ) {
+			$('.slidecontainer').css("background-position", "0px -" + initialOffset + "px" );
+		} else {
+			$('.slidecontainer').css("background-position", "0px " + initialOffset + "px" );
+		}
+	
     $(document).on('input', '#timeSlider', function() {
       $('#timeDisplay').html( convertTime( $(this).val() ) );
       
-      let bgOffset = Math.round($(this).val() / 1410 * 100);
+      let bgOffset = Math.round($(this).val() / 1410 * 450);
       
-      $('.slidecontainer').css("background-position", "0px " + bgOffset + "px" );
+      if ( $(this).val() <= 700 ) {
+      	$('.slidecontainer').css("background-position", "0px -" + bgOffset + "px" );
+      } else {
+      	$('.slidecontainer').css("background-position", "0px " + bgOffset + "px" );
+      }
       
       if (( $(this).val() > 300 ) && ( $(this).val() < 1020 )) {
         $('#timeSlider').removeClass('moon');
