@@ -8,6 +8,13 @@ Hooks.on('init', () => {
     type: Number,
     default: 0,
  });
+ game.settings.register('smallTime', 'position', {
+    name: 'Position',
+    scope: 'world',
+    config: false,
+    type: Object,
+    default: { top: 100, left: 100 },
+ });
 });
 
 Hooks.on('ready', () => {
@@ -21,20 +28,24 @@ class SmallTimeApp extends FormApplication {
   }
 
   static get defaultOptions() {
+    this.initialPosition = game.settings.get('smallTime', 'position');
+    
     return mergeObject(super.defaultOptions, {
       classes: ['form'],
       popOut: true,
       submitOnChange: true,
       closeOnSubmit: false,
-      template: `modules/smalltime/templates/floater.html`,
+      template: 'modules/smalltime/templates/floater.html',
       id: 'smalltime-app',
       title: 'SmallTime',
+      top: this.initialPosition.top,
+      left: this.initialPosition.left,
     });
   }
   
   getData() {
     return {
-      msg: this.currentTime
+      time: this.currentTime
     };
   }
 
@@ -68,7 +79,12 @@ class SmallTimeApp extends FormApplication {
     console.log(theHours + ":" + theMinutes);
     
     // Save the new time
-    game.settings.set('smallTime', 'currentTime', newTime);
+    await game.settings.set('smallTime', 'currentTime', newTime);
+    
+    // Save the new window position
+    let windowPos = $('#smalltime-app').position();
+    let newPos = { top: windowPos.top, left: windowPos.left };
+    await game.settings.set('smallTime', 'position', newPos);
   }
 }
 

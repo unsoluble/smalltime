@@ -1,5 +1,5 @@
 #smalltime-app .window-header {
-  display: none;
+  
 }
 
 #smalltime-app .window-header > .window-title {
@@ -61,9 +61,11 @@
 }
 
 #smalltime-app .range-value {
-  color: #fff;
+  color: #ddd;
   margin: 0;
   padding: 0;
   border: 0;
   outline: 0;
+  position: relative;
+  top: 2px;
 }
