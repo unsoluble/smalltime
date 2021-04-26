@@ -42,6 +42,7 @@ class SmallTimeApp extends FormApplication {
       left: this.initialPosition.left,
     });
   }
+  
   getData() {
     return {
       timeValue: this.currentTime,
@@ -53,11 +54,32 @@ class SmallTimeApp extends FormApplication {
     super.activateListeners(html);
     
     const dragHandle = html.find('#dragHandle')[0];
-    new Draggable(this, html, dragHandle, false);
+    const drag = new Draggable(this, html, dragHandle, false);
+    
+    drag._onDragMouseUp = function _newOnDragMouseUp(event) {
+      event.preventDefault();
+      window.removeEventListener(...this.handlers.dragMove);
+      window.removeEventListener(...this.handlers.dragUp);
+      let windowPos = $('#smalltime-app').position();
+      let newPos = { top: windowPos.top, left: windowPos.left };
+      game.settings.set('smallTime', 'position', newPos);
+    }
+    
+    if (( this.currentTime > 300 ) && ( this.currentTime < 1020 )) {
+      $('#timeSlider').removeClass('moonSlider');
+      $('#timeSlider').addClass('sunSlider');
+    } else {
+      $('#timeSlider').removeClass('sunSlider');
+      $('#timeSlider').addClass('moonSlider');
+    }
+    
+    // var style = $("<style id='test' type='text/css'>").appendTo("body");
     
     $(document).on('input', '#timeSlider', function() {
       $('#timeDisplay').html( convertTime( $(this).val() ) );
       
+      // $('#test').text('#timeSlider::-webkit-slider-runnable-track { background: #fff; }');
+
       if (( $(this).val() > 300 ) && ( $(this).val() < 1020 )) {
         $('#timeSlider').removeClass('moonSlider');
         $('#timeSlider').addClass('sunSlider');
@@ -76,11 +98,6 @@ class SmallTimeApp extends FormApplication {
     
     // Save the new time
     await game.settings.set('smallTime', 'currentTime', newTime);
-    
-    // Save the new window position
-    let windowPos = $('#smalltime-app').position();
-    let newPos = { top: windowPos.top, left: windowPos.left };
-    await game.settings.set('smallTime', 'position', newPos);
   }
 }
 
