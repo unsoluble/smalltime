@@ -1,8 +1,9 @@
 <form class="flexcol">
   <div class="form-group">
     <div class="slidecontainer">
-      <input type="range" min="0" max="1410" step="30" value="{{time}}" class="slider" id="timeSlider" name="timeSlider">
-      <span class="range-value">{{time}}</span>
+      <input id="timeSlider" class="sunSlider" type="range" min="0" max="1410" step="30" value="{{timeValue}}" name="timeSlider">
+      <div id="timeDisplay">{{timeString}}</div>
     </div>
   </div>
+  <div id="dragHandle">text</div>
 </form>

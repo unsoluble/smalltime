@@ -42,41 +42,37 @@ class SmallTimeApp extends FormApplication {
       left: this.initialPosition.left,
     });
   }
-  
   getData() {
     return {
-      time: this.currentTime
+      timeValue: this.currentTime,
+      timeString: convertTime(this.currentTime)
     };
   }
 
   activateListeners(html) {
     super.activateListeners(html);
+    
+    const dragHandle = html.find('#dragHandle')[0];
+    new Draggable(this, html, dragHandle, false);
+    
+    $(document).on('input', '#timeSlider', function() {
+      $('#timeDisplay').html( convertTime( $(this).val() ) );
+      
+      if (( $(this).val() > 300 ) && ( $(this).val() < 1020 )) {
+        $('#timeSlider').removeClass('moonSlider');
+        $('#timeSlider').addClass('sunSlider');
+      } else {
+        $('#timeSlider').removeClass('sunSlider');
+        $('#timeSlider').addClass('moonSlider');
+      }
+    });
   }
-
+  
   async _updateObject(event, formData) {
     // Get the slider value
     const newTime = formData.timeSlider;
     
-    // Convert the integer time value to an hours:minutes string
-    let theHours = Math.floor(newTime / 60);
-    let theMinutes = newTime - (theHours * 60);
-
-    if (theMinutes == 0) theMinutes = '00';
-    
-    if (theHours >= 12) {
-      if (theHours == 12) {
-        theMinutes = theMinutes + " PM";
-      }
-      else {
-        theHours = theHours - 12;
-        theMinutes = theMinutes + " PM";
-      }
-    } else {
-      theMinutes = theMinutes + " AM";
-    }
-    if (theHours == 0) theHours = 12;
-
-    console.log(theHours + ":" + theMinutes);
+    const newString = convertTime(newTime);
     
     // Save the new time
     await game.settings.set('smallTime', 'currentTime', newTime);
@@ -86,6 +82,29 @@ class SmallTimeApp extends FormApplication {
     let newPos = { top: windowPos.top, left: windowPos.left };
     await game.settings.set('smallTime', 'position', newPos);
   }
+}
+
+function convertTime(timeInteger) {
+  // Convert the integer time value to an hours:minutes string
+  let theHours = Math.floor(timeInteger / 60);
+  let theMinutes = timeInteger - (theHours * 60);
+
+  if (theMinutes == 0) theMinutes = '00';
+  
+  if (theHours >= 12) {
+    if (theHours == 12) {
+      theMinutes = theMinutes + " PM";
+    }
+    else {
+      theHours = theHours - 12;
+      theMinutes = theMinutes + " PM";
+    }
+  } else {
+    theMinutes = theMinutes + " AM";
+  }
+  if (theHours == 0) theHours = 12;
+
+  return(theHours + ":" + theMinutes);
 }
 
 window.SmallTimeApp = SmallTimeApp;

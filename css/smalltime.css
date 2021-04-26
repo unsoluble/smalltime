@@ -1,13 +1,17 @@
+#smalltime-app {
+  flex-wrap: nowrap;
+}
+
 #smalltime-app .window-header {
-  
+  display: none;
 }
 
 #smalltime-app .window-header > .window-title {
-   display: none;
+  display: none;
 }
 
 #smalltime-app .window-header > .header-button {
-   display: none;
+  display: none;
 }
 
 #smalltime-app .window-content {
@@ -24,43 +28,64 @@
 }
 
 #smalltime-app .slidecontainer {
-  width: 100%; /* Width of the outside container */
+  width: 100%;
 }
 
-#smalltime-app .slider::-webkit-slider-runnable-track {
+#smalltime-app #timeSlider::-webkit-slider-runnable-track {
   -webkit-appearance: none;
-  height: 26px;
+  height: 29px;
   width: 100%;
-  background: #000; 
-  border-color: transparent;
+  background: #f77b30; 
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  border-top: 7px solid rgba(255, 255, 255, 0.2);
+  border-right: 0;
+  border-bottom: 0;
   border-top-left-radius: 5px;
   border-top-right-radius: 5px;
-  color: transparent;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
   box-shadow: none;
 }
 			
-#smalltime-app .slider::-webkit-slider-thumb {
+#smalltime-app .sunSlider::-webkit-slider-thumb {
 	-webkit-appearance: none;	
-  width: 23px;
-  height: 23px;
+  width: 22px;
+  height: 22px;
   outline: 0;
   border: 0;
   cursor: ew-resize;
   background: url('../images/sun.webp');
-  background-size: 24px;
+  background-size: 21px;
   position: relative;
-  top: 5px;
+  top: 4px;
   overflow: hidden;
   box-shadow: none;
   -webkit-filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.9));
   filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.9));
 }
 
-#smalltime-app .slider::-moz-range-thumb {
+#smalltime-app .moonSlider::-webkit-slider-thumb {
+	-webkit-appearance: none;	
+  width: 22px;
+  height: 22px;
+  outline: 0;
+  border: 0;
+  cursor: ew-resize;
+  background: url('../images/moon.webp');
+  background-size: 21px;
+  position: relative;
+  top: 4px;
+  overflow: hidden;
+  box-shadow: none;
+  -webkit-filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.9));
+  filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.9));
+}
+
+#smalltime-app #timeSlider::-moz-range-thumb {
 
 }
 
-#smalltime-app .range-value {
+#smalltime-app #timeDisplay {
   color: #ddd;
   margin: 0;
   padding: 0;
@@ -68,4 +93,11 @@
   outline: 0;
   position: relative;
   top: 2px;
+  text-align: center;
+  width: auto;
+}
+
+#smalltime-app #dragHandle {
+  flex: none;
+  height: 20px;
 }
