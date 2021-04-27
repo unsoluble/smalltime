@@ -17,8 +17,33 @@ Hooks.on('init', () => {
  });
 });
 
+Hooks.on('renderPlayerList', () => {
+  const element = document.getElementById('players');
+  const playerAppPos = element.getBoundingClientRect();
+  const myOffset = playerAppPos.height + 88;
+  $('#my-pin-lock').text(`
+      #smalltime-app {
+        top: calc(100vh - ${myOffset}px) !important;
+        left: 15px !important;
+      }
+  `);
+});
+
 Hooks.on('ready', () => {
   new SmallTimeApp().render(true);
+  
+  const element = document.getElementById('players');
+  const playerAppPos = element.getBoundingClientRect();
+  const myOffset = playerAppPos.height + 88;
+  
+  $('body').append(`
+    <style id="my-pin-lock">
+      #smalltime-app {
+        top: calc(100vh - ${myOffset}px) !important;
+        left: 15px !important;
+      }
+    </style>
+  `);
 });
 
 class SmallTimeApp extends FormApplication {
@@ -30,6 +55,9 @@ class SmallTimeApp extends FormApplication {
   static get defaultOptions() {
     this.initialPosition = game.settings.get('smallTime', 'position');
     
+    const element = document.getElementById('players');
+    const playerAppPos = element.getBoundingClientRect();
+    
     return mergeObject(super.defaultOptions, {
       classes: ['form'],
       popOut: true,
@@ -38,8 +66,8 @@ class SmallTimeApp extends FormApplication {
       template: 'modules/smalltime/templates/floater.html',
       id: 'smalltime-app',
       title: 'SmallTime',
-      top: this.initialPosition.top,
-      left: this.initialPosition.left,
+      top: playerAppPos.top - 70, // this.initialPosition.top,
+      left: playerAppPos.left, // this.initialPosition.left,
     });
   }
   
@@ -72,6 +100,7 @@ class SmallTimeApp extends FormApplication {
       
       timeTransition( $(this).val() );
     });
+
   }
   
   async _updateObject(event, formData) {
