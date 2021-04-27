@@ -65,40 +65,12 @@ class SmallTimeApp extends FormApplication {
       game.settings.set('smallTime', 'position', newPos);
     }
     
-    if (( this.currentTime > 300 ) && ( this.currentTime < 1050 )) {
-      $('#timeSlider').removeClass('moon');
-      $('#timeSlider').addClass('sun');
-    } else {
-      $('#timeSlider').removeClass('sun');
-      $('#timeSlider').addClass('moon');
-    }
-    
-    let initialOffset = Math.round(this.currentTime / 1410 * 450);
-      
-		if ( this.currentTime <= 700 ) {
-			$('.slidecontainer').css("background-position", "0px -" + initialOffset + "px" );
-		} else {
-			$('.slidecontainer').css("background-position", "0px " + initialOffset + "px" );
-		}
+    timeTransition(this.currentTime);
 	
     $(document).on('input', '#timeSlider', function() {
       $('#timeDisplay').html( convertTime( $(this).val() ) );
       
-      let bgOffset = Math.round($(this).val() / 1410 * 450);
-      
-      if ( $(this).val() <= 700 ) {
-      	$('.slidecontainer').css("background-position", "0px -" + bgOffset + "px" );
-      } else {
-      	$('.slidecontainer').css("background-position", "0px " + bgOffset + "px" );
-      }
-      
-      if (( $(this).val() > 300 ) && ( $(this).val() < 1050 )) {
-        $('#timeSlider').removeClass('moon');
-        $('#timeSlider').addClass('sun');
-      } else {
-        $('#timeSlider').removeClass('sun');
-        $('#timeSlider').addClass('moon');
-      }
+      timeTransition( $(this).val() );
     });
   }
   
@@ -110,6 +82,24 @@ class SmallTimeApp extends FormApplication {
     
     // Save the new time
     await game.settings.set('smallTime', 'currentTime', newTime);
+  }
+}
+
+function timeTransition(timeNow) {
+  let bgOffset = Math.round(timeNow / 1410 * 450);
+      
+  if ( timeNow <= 700 ) {
+    $('.slidecontainer').css("background-position", "0px -" + bgOffset + "px" );
+  } else {
+    $('.slidecontainer').css("background-position", "0px " + bgOffset + "px" );
+  }
+  
+  if (( timeNow > 300 ) && ( timeNow < 1050 )) {
+    $('#timeSlider').removeClass('moon');
+    $('#timeSlider').addClass('sun');
+  } else {
+    $('#timeSlider').removeClass('sun');
+    $('#timeSlider').addClass('moon');
   }
 }
 
