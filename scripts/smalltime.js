@@ -68,6 +68,12 @@ Hooks.on('ready', () => {
   }
 });
 
+function handleSocketUpdate(data) {
+  timeTransition( data.content );
+  $('#timeDisplay').html( convertTime( data.content ) );
+  $('#timeSlider').val( data.content );
+}
+
 class SmallTimeApp extends FormApplication {
   constructor(currentTime) {
     super();
@@ -114,8 +120,6 @@ class SmallTimeApp extends FormApplication {
     const dragHandle = html.find('#dragHandle')[0];
     const drag = new Draggable(this, html, dragHandle, false);
     
-    let pressTimer = null;
-    let pinLock = game.settings.get('smallTime', 'pinned');
     let pinZone = false;
     
     drag._onDragMouseMove = function _newOnDragMouseMove(event) {
@@ -126,7 +130,7 @@ class SmallTimeApp extends FormApplication {
       
       // Limit dragging to 60 updates per second
       const now = Date.now();
-      if ( (now - this._moveTime) < (1000/60) ) return;
+      if ( (now - this._moveTime) <(1000/60) ) return;
       this._moveTime = now;
       
       unPinApp();
@@ -176,14 +180,23 @@ class SmallTimeApp extends FormApplication {
     
     timeTransition(this.currentTime);
     
+    game.socket.on(`module.smalltime`, (data) => {
+      if (data.operation === 'timeChange') handleSocketUpdate(data);
+    });
+    
     $(document).on('input', '#timeSlider', function() {
       $('#timeDisplay').html( convertTime( $(this).val() ) );
       
       timeTransition( $(this).val() );
+      
+      game.socket.emit('module.smalltime', {
+        operation: 'timeChange',
+        content: $(this).val()
+      });
     });
   }
 
-  async _updateObject(event, formData) {
+  async _updateObject(event,formData) {
     // Get the slider value
     const newTime = formData.timeSlider;
     

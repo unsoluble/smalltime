@@ -11,6 +11,7 @@
     ],
     "scripts": [ "scripts/smalltime.js" ],
     "styles": [ "css/smalltime.css" ],
+    "socket": true,
     "url": "https://github.com/unsoluble/smalltime",
     "manifest": "https://raw.githubusercontent.com/unsoluble/smalltime/master/module.json",
     "download": "https://github.com/unsoluble/smalltime/raw/master/module.zip",
