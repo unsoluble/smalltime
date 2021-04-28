@@ -46,8 +46,10 @@ Hooks.on("getSceneControlButtons", (buttons) => {
     onClick: () => {
       if (false) {
         new SmallTimeApp().render(true);
+        game.settings.set('smallTime', 'visible', true);
       } else {
         SmallTimeApp().close();
+        game.settings.set('smallTime', 'visible', false);
       }
     },
   });
