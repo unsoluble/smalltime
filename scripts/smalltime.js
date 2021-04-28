@@ -8,7 +8,7 @@ Hooks.on('init', () => {
     type: Number,
     default: 0
   });
-  
+
   game.settings.register('smallTime', 'position', {
     name: 'Position',
     scope: 'world',
@@ -16,7 +16,7 @@ Hooks.on('init', () => {
     type: Object,
     default: { top: 446, left: 20 }
   });
-  
+
   game.settings.register('smallTime', 'pinned', {
     name: 'Pinned',
     scope: 'world',
@@ -24,7 +24,7 @@ Hooks.on('init', () => {
     type: Boolean,
     default: true
   });
-  
+
   game.settings.register('smallTime', 'visible', {
     name: 'Visible',
     scope: 'world',
@@ -44,13 +44,7 @@ Hooks.on("getSceneControlButtons", (buttons) => {
     name: "smalltime",
     title: "SmallTime",
     onClick: () => {
-      if (false) {
-        new SmallTimeApp().render(true);
-        game.settings.set('smallTime', 'visible', true);
-      } else {
-        SmallTimeApp().close();
-        game.settings.set('smallTime', 'visible', false);
-      }
+      toggleAppVis("toggle");
     },
   });
 });
@@ -68,10 +62,8 @@ Hooks.on('renderPlayerList', () => {
 });
 
 Hooks.on('ready', () => {
-  if (game.settings.get('smallTime', 'visible')) {
-    new SmallTimeApp().render(true);
-  }
-  if (game.settings.get('smallTime', 'pinned')) {
+  toggleAppVis("initial");
+  if ( game.settings.get('smallTime', 'pinned') == true ) {
     pinApp();
   }
 });
@@ -81,7 +73,7 @@ class SmallTimeApp extends FormApplication {
     super();
     this.currentTime = game.settings.get('smallTime','currentTime');
   }
-
+  
   static get defaultOptions() {
     
     const pinned = game.settings.get('smallTime', 'pinned');
@@ -183,14 +175,14 @@ class SmallTimeApp extends FormApplication {
     }
     
     timeTransition(this.currentTime);
-  
+    
     $(document).on('input', '#timeSlider', function() {
       $('#timeDisplay').html( convertTime( $(this).val() ) );
       
       timeTransition( $(this).val() );
     });
   }
-    
+
   async _updateObject(event, formData) {
     // Get the slider value
     const newTime = formData.timeSlider;
@@ -223,6 +215,24 @@ function pinApp() {
 
 function unPinApp() {
   $('#pin-lock').remove();
+}
+
+function toggleAppVis(mode) {
+  if ( mode == "toggle" ) {
+    if ( game.settings.get('smallTime', 'visible') == true ) {
+      game.modules.get('smalltime').myApp.close();
+      game.settings.set('smallTime', 'visible', false);
+    } else {
+      const myApp = new SmallTimeApp().render(true);
+      game.modules.get('smalltime').myApp = myApp;
+      game.settings.set('smallTime', 'visible', true);
+    }
+  } else {
+    if ( game.settings.get('smallTime', 'visible') == true ) {
+      const myApp = new SmallTimeApp().render(true);
+      game.modules.get('smalltime').myApp = myApp;
+    }
+  }
 }
 
 function timeTransition(timeNow) {
