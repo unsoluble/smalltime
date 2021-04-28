@@ -11,7 +11,7 @@ Hooks.on('init', () => {
 
   game.settings.register('smallTime', 'position', {
     name: 'Position',
-    scope: 'world',
+    scope: 'client',
     config: false,
     type: Object,
     default: { top: 446, left: 20 }
@@ -19,7 +19,7 @@ Hooks.on('init', () => {
 
   game.settings.register('smallTime', 'pinned', {
     name: 'Pinned',
-    scope: 'world',
+    scope: 'client',
     config: false,
     type: Boolean,
     default: true
@@ -27,7 +27,7 @@ Hooks.on('init', () => {
 
   game.settings.register('smallTime', 'visible', {
     name: 'Visible',
-    scope: 'world',
+    scope: 'client',
     config: false,
     type: Boolean,
     default: true
@@ -121,6 +121,10 @@ class SmallTimeApp extends FormApplication {
     const drag = new Draggable(this, html, dragHandle, false);
     
     let pinZone = false;
+    
+    if ( !game.user.isGM ) {
+      $('#timeSlider').css("pointer-events", "none");
+    }
     
     drag._onDragMouseMove = function _newOnDragMouseMove(event) {
       event.preventDefault();
