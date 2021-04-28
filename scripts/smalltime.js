@@ -21,7 +21,7 @@ Hooks.on('renderPlayerList', () => {
   const element = document.getElementById('players');
   const playerAppPos = element.getBoundingClientRect();
   const myOffset = playerAppPos.height + 88;
-  $('#my-pin-lock').text(`
+  $('#pin-lock').text(`
       #smalltime-app {
         top: calc(100vh - ${myOffset}px) !important;
         left: 15px !important;
@@ -37,7 +37,7 @@ Hooks.on('ready', () => {
   const myOffset = playerAppPos.height + 88;
   
   $('body').append(`
-    <style id="my-pin-lock">
+    <style id="pin-lock">
       #smalltime-app {
         top: calc(100vh - ${myOffset}px) !important;
         left: 15px !important;
@@ -84,6 +84,34 @@ class SmallTimeApp extends FormApplication {
     const dragHandle = html.find('#dragHandle')[0];
     const drag = new Draggable(this, html, dragHandle, false);
     
+    let pinLock = true;
+    
+    drag._onDragMouseMove = function _newOnDragMouseMove(event) {
+      event.preventDefault();
+      
+      if (pinLock == true) {
+        $('#smalltime-app').css("animation", "jiggle 0.2s infinite");
+        if ( ( (event.clientX - this._initial.x) > 100 ) || ( (event.clientY - this._initial.y) > 100 ) ) {
+          $('#pin-lock').remove();
+          pinLock = false;
+          $('#smalltime-app').css("animation", "none");
+        }
+      }
+      
+      // Limit dragging to 60 updates per second
+      const now = Date.now();
+      if ( (now - this._moveTime) < (1000/60) ) return;
+      this._moveTime = now;
+  
+      // Update application position, but only if the app is unpinned
+      if (pinLock == false) {
+        this.app.setPosition({
+          left: this.position.left + (event.clientX - this._initial.x),
+          top: this.position.top + (event.clientY - this._initial.y)
+        });
+      }
+    }
+    
     drag._onDragMouseUp = function _newOnDragMouseUp(event) {
       event.preventDefault();
       window.removeEventListener(...this.handlers.dragMove);
@@ -91,6 +119,7 @@ class SmallTimeApp extends FormApplication {
       let windowPos = $('#smalltime-app').position();
       let newPos = { top: windowPos.top, left: windowPos.left };
       game.settings.set('smallTime', 'position', newPos);
+      $('#smalltime-app').css("animation", "none");
     }
     
     timeTransition(this.currentTime);

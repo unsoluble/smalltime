@@ -1,3 +1,15 @@
+@keyframes jiggle {
+  0% {
+    transform: rotate(-0.5deg);
+    animation-timing-function: ease-in;
+  }
+
+  50% {
+    transform: rotate(1deg);
+    animation-timing-function: ease-out;
+  }
+}
+
 #smalltime-app {
   flex-wrap: nowrap;
 }
