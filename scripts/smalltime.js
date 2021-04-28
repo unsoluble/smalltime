@@ -124,56 +124,32 @@ class SmallTimeApp extends FormApplication {
     let pinLock = game.settings.get('smallTime', 'pinned');
     let pinZone = false;
     
-    drag._onDragMouseDown = function _newOnDragMouseDown(event) {
-      event.preventDefault();
-      
-      // Record initial position
-      this.position = duplicate(this.app.position);
-      this._initial = {x: event.clientX, y: event.clientY};
-      
-      pinLock = game.settings.get('smallTime', 'pinned');
-      
-      if (pinLock) {
-        pressTimer = setTimeout(function() {
-          $('#smalltime-app').css("animation", "jiggle 0.2s infinite");
-          unPinApp();
-          pinLock = false;
-        },500);
-      }
-      window.addEventListener(...this.handlers.dragMove);
-      window.addEventListener(...this.handlers.dragUp);
-    }
-    
     drag._onDragMouseMove = function _newOnDragMouseMove(event) {
       event.preventDefault();
       
       const playerApp = document.getElementById('players');
       const playerAppPos = playerApp.getBoundingClientRect();
       
-      clearTimeout(pressTimer);
-      
       // Limit dragging to 60 updates per second
       const now = Date.now();
       if ( (now - this._moveTime) < (1000/60) ) return;
       this._moveTime = now;
       
-      // Update application position, but only if the app is unpinned
-      if (pinLock == false) {
-        this.app.setPosition({
-          left: this.position.left + (event.clientX - this._initial.x),
-          top: this.position.top + (event.clientY - this._initial.y)
-        });
-        
-        let playerAppUpperBound = playerAppPos.top - 50;
-        let playerAppLowerBound = playerAppPos.top + 50;
-        
-        if ( ( event.clientX < 215 ) && ( ( event.clientY > playerAppUpperBound ) && ( event.clientY < playerAppLowerBound ) ) ) {
-          $('#smalltime-app').css("animation", "jiggle 0.2s infinite");
-          pinZone = true;
-        } else {
-          $('#smalltime-app').css("animation", "");
-          pinZone = false;
-        }
+      unPinApp();
+      this.app.setPosition({
+        left: this.position.left + (event.clientX - this._initial.x),
+        top: this.position.top + (event.clientY - this._initial.y)
+      });
+      
+      let playerAppUpperBound = playerAppPos.top - 50;
+      let playerAppLowerBound = playerAppPos.top + 50;
+      
+      if ( ( event.clientX < 215 ) && ( ( event.clientY > playerAppUpperBound ) && ( event.clientY < playerAppLowerBound ) ) ) {
+        $('#smalltime-app').css("animation", "jiggle 0.2s infinite");
+        pinZone = true;
+      } else {
+        $('#smalltime-app').css("animation", "");
+        pinZone = false;
       }
     }
     
@@ -182,8 +158,6 @@ class SmallTimeApp extends FormApplication {
       
       window.removeEventListener(...this.handlers.dragMove);
       window.removeEventListener(...this.handlers.dragUp);
-      
-      clearTimeout(pressTimer);
       
       const playerApp = document.getElementById('players');
       const playerAppPos = playerApp.getBoundingClientRect();
@@ -213,8 +187,6 @@ class SmallTimeApp extends FormApplication {
       
       timeTransition( $(this).val() );
     });
-    
-    
   }
     
   async _updateObject(event, formData) {
