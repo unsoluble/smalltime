@@ -1,5 +1,7 @@
 #smalltime-app {
   flex-wrap: nowrap;
+  background: #444;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.7);
 }
 
 #smalltime-app .window-header {
@@ -18,13 +20,70 @@
   background: #444;
   border-radius: 5px;
   padding: 0;
+  background: none;
 }
 
 #smalltime-app .form-group {
   margin: 0;
   padding: 0;
-  position: relative;
-  top: -2px;
+  background: none;
+}
+
+#smalltime-app #displayContainer {
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  width: 100%;
+  background: #444;
+  height: 24px;
+  text-align: center;
+  -webkit-box-shadow: inset 0 6px 8px -6px rgba(0, 0, 0, 0.6), inset 0 -5px 8px -5px rgba(0, 0, 0, 0.5);
+  -moz-box-shadow:    inset 0 6px 8px -6px rgba(0, 0, 0, 0.6), inset 0 -5px 8px -5px rgba(0, 0, 0, 0.5);
+  box-shadow:         inset 0 6px 8px -6px rgba(0, 0, 0, 0.6), inset 0 -5px 8px -5px rgba(0, 0, 0, 0.5);
+}
+
+#smalltime-app .arrow, .arrow-left, .arrow-right {
+  //display: inline;
+  width: auto;
+  cursor: pointer;
+  color: #efefe0;
+  font-size: 1.2em;
+  padding-top: 1px;
+  padding-left: 6px;
+  padding-right: 6px;
+  padding-bottom: 2px;
+  margin-top: 3px;
+  margin-left: 5px;
+  margin-right: 5px;
+  margin-bottom: 3px;
+  background: linear-gradient(180deg, #505050 0%, #434343 50%, #3e3e3e 51%, #434343 100%);
+  box-shadow: inset 0px 1px 1px rgba(255,255,255,0.1), 0px 1px 3px rgba(0,0,0,0.2);
+  border: 1px solid #434343;
+  border-width: 1px 1px 1px 1px;
+  border-radius: 3px;
+  text-shadow: 0px -1px 1px rgba(0,0,0,0.7)
+}
+
+#smalltime-app .arrow-left {
+  padding-right: 8px;
+}
+
+#smalltime-app .arrow-right {
+  padding-left: 8px;
+}
+
+#smalltime-app #timeDisplay {
+  font-size: 1em;
+  color: #efefe0;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+  padding-top: 4px;
+  text-align: center;
+  width: 100px;
+  background: none;
+  border: 0;
 }
 
 #smalltime-app .slidecontainer {
@@ -34,15 +93,17 @@
   background: linear-gradient(to bottom, #000000 3%,#351984 15%,#db5a23 25%,#d19621 30%,#25c5ed 40%,#25c5ed 60%,#d19621 70%,#db5a23 75%,#351984 85%,#000000 97%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
   background-size: 200px 450px;
   background-position: 0px 0px;
+  position: relative;
+  top: -1px;
 }
 
 #smalltime-app .slider::-webkit-slider-runnable-track {
   -webkit-appearance: none;
-  height: 29px;
+  height: 31px;
   width: 100%;
   background-color: transparent;
-  border-left: 0; //1px solid rgba(255, 255, 255, 0.2);
-  border-top: 0; //7px solid rgba(255, 255, 255, 0.2);
+  border-left: 0;
+  border-top: 0;
   border-right: 0;
   border-bottom: 0;
   border-top-left-radius: 5px;
@@ -78,7 +139,7 @@
   background: url('../images/moon.webp');
   background-size: 20px;
   position: relative;
-  top: 13px;
+  top: 12px;
   box-shadow: none;
   -webkit-filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.9));
   filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.9));
@@ -88,30 +149,13 @@
 
 }
 
-#smalltime-app #timeDisplay {
-  color: #efefe0;
-  margin: 0;
-  padding-top: 2px;
-  border: 0;
-  outline: 0;
-  position: relative;
-  top: 2px;
-  text-align: center;
-  height: 20px;;
-  width: auto;
-  background-color: #444;
-  border: 0;
-  -webkit-box-shadow: inset 0 6px 8px -6px rgba(0, 0, 0, 0.5);
-  -moz-box-shadow:    inset 0 6px 8px -6px rgba(0, 0, 0, 0.5);
-  box-shadow:         inset 0 6px 8px -6px rgba(0, 0, 0, 0.5),
-                      inset 0 -5px 8px -4px rgba(0, 0, 0, 0.5);
-}
-
 #smalltime-app #dragHandle {
   flex: none;
-  height: 14px;
+  height: 13px;
+  //position: relative;
+  //top: -1px;
   background: url(/ui/denim075.png) repeat;
-  border-top: 1px solid rgba(100, 100, 100, 0.4);
+  //border-top: 1px solid rgba(100, 100, 100, 0.3);
 }
 
 @keyframes jiggle {
