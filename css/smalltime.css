@@ -40,9 +40,7 @@
   background: #444;
   height: 24px;
   text-align: center;
-  -webkit-box-shadow: inset 0 6px 8px -6px rgba(0, 0, 0, 0.6), inset 0 -5px 8px -5px rgba(0, 0, 0, 0.5);
-  -moz-box-shadow:    inset 0 6px 8px -6px rgba(0, 0, 0, 0.6), inset 0 -5px 8px -5px rgba(0, 0, 0, 0.5);
-  box-shadow:         inset 0 6px 8px -6px rgba(0, 0, 0, 0.6), inset 0 -5px 8px -5px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 6px 8px -6px rgba(0, 0, 0, 0.6), inset 0 -5px 8px -5px rgba(0, 0, 0, 0.5);
 }
 
 #smalltime-app .arrow, .arrow-left, .arrow-right {
@@ -60,7 +58,7 @@
   margin-right: 5px;
   margin-bottom: 3px;
   background: linear-gradient(180deg, #505050 0%, #434343 50%, #3e3e3e 51%, #434343 100%);
-  box-shadow: inset 0px 1px 1px rgba(255,255,255,0.1), 0px 1px 3px rgba(0,0,0,0.2);
+  box-shadow: inset 0px 1px 1px rgba(255,255,255,0.1), 0px 1px 3px rgba(0,0,0,0.3);
   border: 1px solid #434343;
   border-width: 1px 1px 1px 1px;
   border-radius: 3px;
@@ -73,6 +71,16 @@
 
 #smalltime-app .arrow-right {
   padding-left: 8px;
+}
+
+#smalltime-app .arrow:hover {
+  border: 1px solid rgba(100, 100, 100, 0.2);
+}
+
+#smalltime-app .arrow:active {
+  position: relative;
+  top: 1px;
+  box-shadow: inset 0px 1px 1px rgba(255,255,255,0.1), 0px 0px 2px rgba(0,0,0,0.2);
 }
 
 #smalltime-app #timeDisplay {
@@ -88,8 +96,6 @@
 
 #smalltime-app .slidecontainer {
   width: 100%;
-  background: -moz-linear-gradient(top, #000000 3%, #351984 15%, #db5a23 25%, #d19621 30%, #25c5ed 40%, #25c5ed 60%, #d19621 70%, #db5a23 75%, #351984 85%, #000000 97%); /* FF3.6-15 */
-  background: -webkit-linear-gradient(top, #000000 3%,#351984 15%,#db5a23 25%,#d19621 30%,#25c5ed 40%,#25c5ed 60%,#d19621 70%,#db5a23 75%,#351984 85%,#000000 97%); /* Chrome10-25,Safari5.1-6 */
   background: linear-gradient(to bottom, #000000 3%,#351984 15%,#db5a23 25%,#d19621 30%,#25c5ed 40%,#25c5ed 60%,#d19621 70%,#db5a23 75%,#351984 85%,#000000 97%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
   background-size: 200px 450px;
   background-position: 0px 0px;

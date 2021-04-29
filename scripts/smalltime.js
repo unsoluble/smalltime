@@ -124,6 +124,7 @@ class SmallTimeApp extends FormApplication {
     
     if ( !game.user.isGM ) {
       $('#timeSlider').css("pointer-events", "none");
+      $('.arrow').css("visibility", "hidden");
     }
     
     drag._onDragMouseMove = function _newOnDragMouseMove(event) {
@@ -198,6 +199,14 @@ class SmallTimeApp extends FormApplication {
         content: $(this).val()
       });
     });
+    
+    $(document).on('click', '#decrease', function() {
+      timeRatchet("decrease");
+    });
+    
+    $(document).on('click', '#increase', function() {
+      timeRatchet("increase");
+    });
   }
 
   async _updateObject(event,formData) {
@@ -209,6 +218,39 @@ class SmallTimeApp extends FormApplication {
     // Save the new time
     await game.settings.set('smallTime', 'currentTime', newTime);
   }
+}
+
+function timeRatchet(direction) {
+  let currentTime = game.settings.get('smallTime','currentTime');
+  let newTime = currentTime;
+  let delta = 30;
+  
+  if ( direction == "decrease" ) {
+    delta = -30;
+    if ( currentTime == 0 ) {
+      currentTime = 1440; 
+    }
+  }
+  
+  if ( direction == "increase" ) {
+    if ( currentTime == 1410 ) {
+      currentTime = -30; 
+    }
+  }
+  
+  newTime = currentTime + delta;
+  game.settings.set('smallTime', 'currentTime', newTime);
+  
+  $('#timeDisplay').html( convertTime( newTime ) );
+  
+  timeTransition( newTime );
+  
+  game.socket.emit('module.smalltime', {
+    operation: 'timeChange',
+    content: newTime
+  });
+  
+  $('#timeSlider').val( newTime );
 }
 
 function pinApp() {
