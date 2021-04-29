@@ -1,6 +1,6 @@
 #smalltime-app {
   flex-wrap: nowrap;
-  background: #444;
+  background: none;
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.7);
   opacity: 0.8;
   animation: fadeOut 3s ease-out;
@@ -45,10 +45,10 @@
 }
 
 #smalltime-app .window-content {
-  background: #444;
   border-radius: 5px;
   padding: 0;
-  background: none;
+  background: url(/ui/denim075.png) repeat;
+  background-color: #444;
 }
 
 #smalltime-app .form-group {
@@ -84,10 +84,10 @@
   padding-left: 6px;
   padding-right: 6px;
   padding-bottom: 2px;
-  margin-top: 3px;
+  margin-top: 2px;
   margin-left: 5px;
   margin-right: 5px;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
   background: linear-gradient(
     180deg,
     #505050 0%,
@@ -147,7 +147,7 @@
     #db5a23 75%,
     #351984 85%,
     #000000 97%
-  ); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+  );
   background-size: 200px 450px;
   background-position: 0px 0px;
   position: relative;
@@ -251,7 +251,9 @@
 #smalltime-app #dragHandle {
   flex: none;
   height: 13px;
-  background: url(/ui/denim075.png) repeat;
+  position: relative;
+  top: -2px;
+  // background: url(/ui/denim075.png) repeat;
 }
 
 @keyframes jiggle {
