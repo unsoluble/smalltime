@@ -112,7 +112,7 @@
   border-bottom-right-radius: 0;
   box-shadow: none;
 }
-      
+
 #smalltime-app .sun::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 22px;
@@ -145,17 +145,56 @@
   filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.9));
 }
 
-#smalltime-app #timeSlider::-moz-range-thumb {
+#smalltime-app .slider::-moz-range-track {
+  -webkit-appearance: none;
+  height: 31px;
+  width: 100%;
+  background-color: transparent;
+  border-left: 0;
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
+  border-top-left-radius: 5px;
+  border-top-right-radius: 5px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  box-shadow: none;
+}
 
+#smalltime-app .sun::-moz-range-thumb {
+  width: 22px;
+  height: 23px;
+  outline: 0;
+  border: 0;
+  cursor: ew-resize;
+  background: url('../images/sun.webp');
+  background-size: 21px;
+  background-position: 0px 4px;
+  position: relative;
+  top: 12px;
+  box-shadow: none;
+  filter: drop-shadow(0px 0px 8px rgba(255, 203, 93, 0.9));
+}
+
+#smalltime-app .moon::-moz-range-thumb {
+  width: 21px;
+  height: 23px;
+  outline: 0;
+  border: 0;
+  cursor: ew-resize;
+  background: url('../images/moon.webp');
+  background-size: 21px;
+  background-position: 0px 4px;
+  position: relative;
+  top: 12px;
+  box-shadow: none;
+  filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.9));
 }
 
 #smalltime-app #dragHandle {
   flex: none;
   height: 13px;
-  //position: relative;
-  //top: -1px;
   background: url(/ui/denim075.png) repeat;
-  //border-top: 1px solid rgba(100, 100, 100, 0.3);
 }
 
 @keyframes jiggle {
