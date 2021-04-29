@@ -281,6 +281,8 @@ function unPinApp() {
 function toggleAppVis(mode) {
   if (mode == 'toggle') {
     if (game.settings.get('smallTime', 'visible') == true) {
+      $('#smalltime-app').css('animation', 'none');
+      $('#smalltime-app').animate({ opacity: 0 });
       game.modules.get('smalltime').myApp.close();
       game.settings.set('smallTime', 'visible', false);
     } else {
