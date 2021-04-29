@@ -67,12 +67,6 @@ Hooks.on('ready', () => {
   }
 });
 
-function handleSocketUpdate(data) {
-  timeTransition(data.content);
-  $('#timeDisplay').html(convertTime(data.content));
-  $('#timeSlider').val(data.content);
-}
-
 class SmallTimeApp extends FormApplication {
   constructor(currentTime) {
     super();
@@ -188,7 +182,7 @@ class SmallTimeApp extends FormApplication {
     timeTransition(this.currentTime);
 
     game.socket.on(`module.smalltime`, (data) => {
-      if (data.operation === 'timeChange') handleSocketUpdate(data);
+      if (data.operation === 'timeChange') handleTimeChange(data);
     });
 
     $(document).on('input', '#timeSlider', function () {
@@ -220,6 +214,12 @@ class SmallTimeApp extends FormApplication {
     // Save the new time
     await game.settings.set('smallTime', 'currentTime', newTime);
   }
+}
+
+function handleTimeChange(data) {
+  timeTransition(data.content);
+  $('#timeDisplay').html(convertTime(data.content));
+  $('#timeSlider').val(data.content);
 }
 
 function timeRatchet(direction) {

@@ -2,6 +2,34 @@
   flex-wrap: nowrap;
   background: #444;
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.7);
+  opacity: 0.8;
+  animation: fadeOut 3s ease-out;
+}
+
+#smalltime-app:hover {
+  opacity: 1;
+  animation: fadeIn 0.1s ease-in;
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  60% {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.8;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0.8;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 #smalltime-app .window-header {
