@@ -5,7 +5,7 @@
     "version": "1.0.3",
     "author": "unsoluble",
     "scripts": [ "scripts/smalltime.js" ],
-    "styles": [ "css/smalltime.css" ],
+    "styles": [ "styles/smalltime.css" ],
     "socket": true,
     "url": "https://github.com/unsoluble/smalltime",
     "manifest": "https://raw.githubusercontent.com/unsoluble/smalltime/main/module.json",
