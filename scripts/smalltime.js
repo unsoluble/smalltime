@@ -1,7 +1,7 @@
 // Icons by Freepik on flaticon.com
 
 Hooks.on('init', () => {
-  game.settings.register('smallTime', 'currentTime', {
+  game.settings.register('smalltime', 'currentTime', {
     name: 'Current Time',
     scope: 'world',
     config: false,
@@ -9,7 +9,7 @@ Hooks.on('init', () => {
     default: 0,
   });
 
-  game.settings.register('smallTime', 'position', {
+  game.settings.register('smalltime', 'position', {
     name: 'Position',
     scope: 'client',
     config: false,
@@ -17,7 +17,7 @@ Hooks.on('init', () => {
     default: { top: 446, left: 20 },
   });
 
-  game.settings.register('smallTime', 'pinned', {
+  game.settings.register('smalltime', 'pinned', {
     name: 'Pinned',
     scope: 'client',
     config: false,
@@ -25,18 +25,50 @@ Hooks.on('init', () => {
     default: true,
   });
 
-  game.settings.register('smallTime', 'visible', {
+  game.settings.register('smalltime', 'visible', {
     name: 'Visible',
     scope: 'client',
     config: false,
     type: Boolean,
     default: true,
   });
+  
+  game.settings.register('smalltime', 'small-step', {
+    name: 'Small Step Amount',
+    hint: 'Number of minutes to add/remove from the time with the < and > buttons.',
+    scope: 'world',
+    config: true,
+    type: Number,
+    choices: {
+      1: "1",
+      5: "5",
+      10: "10",
+      15: "15",
+      20: "20",
+      30: "30"
+    },
+    default: 30
+  });
+  
+  game.settings.register('smalltime', 'large-step', {
+    name: 'Large Step Amount',
+    hint: 'Number of minutes to add/remove from the time with the << and >> buttons.',
+    scope: 'world',
+    config: true,
+    type: Number,
+    choices: {
+      20: "20",
+      30: "30",
+      60: "60",
+      99: "Dawn > Midday > Dusk"
+    },
+    default: 60
+  });
 });
 
 Hooks.on('getSceneControlButtons', (buttons) => {
   if (!canvas) return;
-  let group = buttons.find((b) => b.name == 'notes');
+  let group = buttons.find((b) => b.name === 'notes');
   group.tools.push({
     button: true,
     icon: 'fas fa-adjust',
@@ -64,24 +96,24 @@ Hooks.on('renderPlayerList', () => {
 
 Hooks.on('ready', () => {
   toggleAppVis('initial');
-  if (game.settings.get('smallTime', 'pinned') == true) {
+  if (game.settings.get('smalltime', 'pinned') === true) {
     pinApp();
   }
 });
 
 class SmallTimeApp extends FormApplication {
-  constructor(currentTime) {
+  constructor() {
     super();
-    this.currentTime = game.settings.get('smallTime', 'currentTime');
+    this.currentTime = game.settings.get('smalltime', 'currentTime');
   }
 
   static get defaultOptions() {
-    const pinned = game.settings.get('smallTime', 'pinned');
+    const pinned = game.settings.get('smalltime', 'pinned');
 
     const playerApp = document.getElementById('players');
     const playerAppPos = playerApp.getBoundingClientRect();
 
-    this.initialPosition = game.settings.get('smallTime', 'position');
+    this.initialPosition = game.settings.get('smalltime', 'position');
 
     // The actual pin location is set elsewhere, but we need to insert something
     // manually here to feed it values for the initial render.
@@ -179,7 +211,7 @@ class SmallTimeApp extends FormApplication {
 
       if (pinZone) {
         pinApp();
-        game.settings.set('smallTime', 'pinned', true);
+        game.settings.set('smalltime', 'pinned', true);
         this.app.setPosition({
           left: 15,
           top: window.innerHeight - myOffset,
@@ -187,8 +219,8 @@ class SmallTimeApp extends FormApplication {
       } else {
         let windowPos = $('#smalltime-app').position();
         let newPos = { top: windowPos.top, left: windowPos.left };
-        game.settings.set('smallTime', 'position', newPos);
-        game.settings.set('smallTime', 'pinned', false);
+        game.settings.set('smalltime', 'position', newPos);
+        game.settings.set('smalltime', 'pinned', false);
       }
 
       // Kill any animation on mouseUp.
@@ -201,7 +233,7 @@ class SmallTimeApp extends FormApplication {
 
     // Socket to send any GM changes dynamically to clients.
     game.socket.on(`module.smalltime`, (data) => {
-      if (data.operation === 'timeChange') handleTimeChange(data);
+      if (data.operation ==== 'timeChange') handleTimeChange(data);
     });
 
     $(document).on('input', '#timeSlider', function () {
@@ -229,10 +261,8 @@ class SmallTimeApp extends FormApplication {
     // Get the slider value.
     const newTime = formData.timeSlider;
 
-    const newString = convertTime(newTime);
-
     // Save the new time.
-    await game.settings.set('smallTime', 'currentTime', newTime);
+    await game.settings.set('smalltime', 'currentTime', newTime);
   }
 }
 
@@ -245,29 +275,29 @@ function handleTimeChange(data) {
 
 // Functionality for increment/decrement buttons.
 function timeRatchet(direction) {
-  let currentTime = game.settings.get('smallTime', 'currentTime');
+  let currentTime = game.settings.get('smalltime', 'currentTime');
   let newTime = currentTime;
 
   // Buttons currently do 30 minute steps.
   let delta = 30;
 
-  if (direction == 'decrease') {
+  if (direction === 'decrease') {
     delta = -30;
 
     // Handle being at the end of the range; cycle around to other end.
-    if (currentTime == 0) {
+    if (currentTime === 0) {
       currentTime = 1440;
     }
   }
 
-  if (direction == 'increase') {
-    if (currentTime == 1410) {
+  if (direction === 'increase') {
+    if (currentTime === 1410) {
       currentTime = -30;
     }
   }
 
   newTime = currentTime + delta;
-  game.settings.set('smallTime', 'currentTime', newTime);
+  game.settings.set('smalltime', 'currentTime', newTime);
 
   $('#timeDisplay').html(convertTime(newTime));
 
@@ -301,7 +331,7 @@ function pinApp() {
       </style>
     `);
 
-    game.settings.set('smallTime', 'pinned', true);
+    game.settings.set('smalltime', 'pinned', true);
   }
 }
 
@@ -310,21 +340,20 @@ function unPinApp() {
 }
 
 function toggleAppVis(mode) {
-  if (mode == 'toggle') {
-    if (game.settings.get('smallTime', 'visible') == true) {
+  if (mode === 'toggle') {
+    if (game.settings.get('smalltime', 'visible') === true) {
       // Stop any currently-running animations, and then animate the app
       // away before close(), to avoid the stock close() animation.
       $('#smalltime-app').css('animation', 'none');
       $('#smalltime-app').animate({ opacity: 0 });
       game.modules.get('smalltime').myApp.close();
-      game.settings.set('smallTime', 'visible', false);
+      game.settings.set('smalltime', 'visible', false);
     } else {
       const myApp = new SmallTimeApp().render(true);
       game.modules.get('smalltime').myApp = myApp;
-      game.settings.set('smallTime', 'visible', true);
+      game.settings.set('smalltime', 'visible', true);
     }
-  } else {
-    if (game.settings.get('smallTime', 'visible') == true) {
+  } else if (game.settings.get('smalltime', 'visible') === true) {
       const myApp = new SmallTimeApp().render(true);
       game.modules.get('smalltime').myApp = myApp;
     }
@@ -349,15 +378,16 @@ function timeTransition(timeNow) {
     $('#timeSlider').addClass('moon');
   }
 }
+
 // Convert the integer time value to an hours:minutes string.
 function convertTime(timeInteger) {
   let theHours = Math.floor(timeInteger / 60);
   let theMinutes = timeInteger - theHours * 60;
 
-  if (theMinutes == 0) theMinutes = '00';
+  if (theMinutes === 0) theMinutes = '00';
 
   if (theHours >= 12) {
-    if (theHours == 12) {
+    if (theHours === 12) {
       theMinutes = theMinutes + ' PM';
     } else {
       theHours = theHours - 12;
@@ -366,7 +396,7 @@ function convertTime(timeInteger) {
   } else {
     theMinutes = theMinutes + ' AM';
   }
-  if (theHours == 0) theHours = 12;
+  if (theHours === 0) theHours = 12;
 
   return theHours + ':' + theMinutes;
 }
