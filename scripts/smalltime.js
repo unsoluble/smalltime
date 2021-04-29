@@ -49,6 +49,8 @@ Hooks.on('getSceneControlButtons', (buttons) => {
 });
 
 Hooks.on('renderPlayerList', () => {
+  // Hooking in here to adjust the position of the window when the size of the PlayerList changes
+
   const element = document.getElementById('players');
   const playerAppPos = element.getBoundingClientRect();
   const myOffset = playerAppPos.height + 88;
@@ -81,6 +83,8 @@ class SmallTimeApp extends FormApplication {
 
     this.initialPosition = game.settings.get('smallTime', 'position');
 
+    // The actual pin location is set elsewhere, but we need to insert something
+    // manually here to feed it values for the initial render.
     if (pinned) {
       this.initialPosition.top = playerAppPos.top - 70;
       this.initialPosition.left = playerAppPos.left;
@@ -100,6 +104,8 @@ class SmallTimeApp extends FormApplication {
   }
 
   getData() {
+    // Sending values to the HTML template
+
     return {
       timeValue: this.currentTime,
       timeString: convertTime(this.currentTime),
@@ -112,20 +118,26 @@ class SmallTimeApp extends FormApplication {
     const dragHandle = html.find('#dragHandle')[0];
     const drag = new Draggable(this, html, dragHandle, false);
 
+    // Pin zone is the "wiggle area" in which the app will be locked
+    // to a pinned position if dropped. pinZone stores whether or not
+    // we're currently in that area.
     let pinZone = false;
 
+    // Disable controls for non-GMs
     if (!game.user.isGM) {
       $('#timeSlider').css('pointer-events', 'none');
       $('.arrow').css('visibility', 'hidden');
     }
 
+    // Have to override this because of the non-standard drag handle, and
+    // also to manage the pin lock zone and animation effects.
     drag._onDragMouseMove = function _newOnDragMouseMove(event) {
       event.preventDefault();
 
       const playerApp = document.getElementById('players');
       const playerAppPos = playerApp.getBoundingClientRect();
 
-      // Limit dragging to 60 updates per second
+      // Limit dragging to 60 updates per second.
       const now = Date.now();
       if (now - this._moveTime < 1000 / 60) return;
       this._moveTime = now;
@@ -136,6 +148,7 @@ class SmallTimeApp extends FormApplication {
         top: this.position.top + (event.clientY - this._initial.y),
       });
 
+      // Defining a region above the PlayerList that will trigger the jiggle.
       let playerAppUpperBound = playerAppPos.top - 50;
       let playerAppLowerBound = playerAppPos.top + 50;
 
@@ -158,6 +171,8 @@ class SmallTimeApp extends FormApplication {
       window.removeEventListener(...this.handlers.dragMove);
       window.removeEventListener(...this.handlers.dragUp);
 
+      // We've already set up this block in two other places already, can
+      // probably be optimized better.
       const playerApp = document.getElementById('players');
       const playerAppPos = playerApp.getBoundingClientRect();
       const myOffset = playerAppPos.height + 88;
@@ -176,11 +191,15 @@ class SmallTimeApp extends FormApplication {
         game.settings.set('smallTime', 'pinned', false);
       }
 
+      // Kill any animation on mouseUp.
       $('#smalltime-app').css('animation', '');
     };
 
+    // An initial set of the sun/moon/bg/time display in case it hasn't been
+    // updated since a settings change for some reason.
     timeTransition(this.currentTime);
 
+    // Socket to send any GM changes dynamically to clients.
     game.socket.on(`module.smalltime`, (data) => {
       if (data.operation === 'timeChange') handleTimeChange(data);
     });
@@ -196,6 +215,7 @@ class SmallTimeApp extends FormApplication {
       });
     });
 
+    // Handle the increment/decrement buttons.
     $(document).on('click', '#decrease', function () {
       timeRatchet('decrease');
     });
@@ -206,29 +226,35 @@ class SmallTimeApp extends FormApplication {
   }
 
   async _updateObject(event, formData) {
-    // Get the slider value
+    // Get the slider value.
     const newTime = formData.timeSlider;
 
     const newString = convertTime(newTime);
 
-    // Save the new time
+    // Save the new time.
     await game.settings.set('smallTime', 'currentTime', newTime);
   }
 }
 
+// Helper function for the socket updates.
 function handleTimeChange(data) {
   timeTransition(data.content);
   $('#timeDisplay').html(convertTime(data.content));
   $('#timeSlider').val(data.content);
 }
 
+// Functionality for increment/decrement buttons.
 function timeRatchet(direction) {
   let currentTime = game.settings.get('smallTime', 'currentTime');
   let newTime = currentTime;
+
+  // Buttons currently do 30 minute steps.
   let delta = 30;
 
   if (direction == 'decrease') {
     delta = -30;
+
+    // Handle being at the end of the range; cycle around to other end.
     if (currentTime == 0) {
       currentTime = 1440;
     }
@@ -247,20 +273,25 @@ function timeRatchet(direction) {
 
   timeTransition(newTime);
 
+  // Socket for player sync.
   game.socket.emit('module.smalltime', {
     operation: 'timeChange',
     content: newTime,
   });
 
+  // Also move the slider to match.
   $('#timeSlider').val(newTime);
 }
 
 function pinApp() {
+  // Only do this if a pin lock isn't already in place.
   if (!$('#pin-lock').length) {
     const playerApp = document.getElementById('players');
     const playerAppPos = playerApp.getBoundingClientRect();
     const myOffset = playerAppPos.height + 88;
 
+    // Dropping this into the DOM with an !important was the only way
+    // I could get it to enable the locking behaviour.
     $('body').append(`
       <style id="pin-lock">
         #smalltime-app {
@@ -281,6 +312,8 @@ function unPinApp() {
 function toggleAppVis(mode) {
   if (mode == 'toggle') {
     if (game.settings.get('smallTime', 'visible') == true) {
+      // Stop any currently-running animations, and then animate the app
+      // away before close(), to avoid the stock close() animation.
       $('#smalltime-app').css('animation', 'none');
       $('#smalltime-app').animate({ opacity: 0 });
       game.modules.get('smalltime').myApp.close();
@@ -298,6 +331,7 @@ function toggleAppVis(mode) {
   }
 }
 
+// Handles the range slider's sun/moon icons, and the BG color changes.
 function timeTransition(timeNow) {
   let bgOffset = Math.round((timeNow / 1410) * 450);
 
@@ -315,9 +349,8 @@ function timeTransition(timeNow) {
     $('#timeSlider').addClass('moon');
   }
 }
-
+// Convert the integer time value to an hours:minutes string.
 function convertTime(timeInteger) {
-  // Convert the integer time value to an hours:minutes string
   let theHours = Math.floor(timeInteger / 60);
   let theMinutes = timeInteger - theHours * 60;
 
