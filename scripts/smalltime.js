@@ -1,5 +1,3 @@
-// Icons by Freepik on flaticon.com
-
 Hooks.on('init', () => {
   game.settings.register('smalltime', 'currentTime', {
     name: 'Current Time',
@@ -233,7 +231,7 @@ class SmallTimeApp extends FormApplication {
 
     // Socket to send any GM changes dynamically to clients.
     game.socket.on(`module.smalltime`, (data) => {
-      if (data.operation ==== 'timeChange') handleTimeChange(data);
+      if (data.operation === 'timeChange') handleTimeChange(data);
     });
 
     $(document).on('input', '#timeSlider', function () {
@@ -314,6 +312,7 @@ function timeRatchet(direction) {
 }
 
 function pinApp() {
+  // Pin the app above the Players list.
   // Only do this if a pin lock isn't already in place.
   if (!$('#pin-lock').length) {
     const playerApp = document.getElementById('players');
@@ -330,16 +329,17 @@ function pinApp() {
         }
       </style>
     `);
-
     game.settings.set('smalltime', 'pinned', true);
   }
 }
 
 function unPinApp() {
+  // Remove the style tag that's pinning the window.
   $('#pin-lock').remove();
 }
 
 function toggleAppVis(mode) {
+  // Toggle visibility of the main window.
   if (mode === 'toggle') {
     if (game.settings.get('smalltime', 'visible') === true) {
       // Stop any currently-running animations, and then animate the app
@@ -356,18 +356,18 @@ function toggleAppVis(mode) {
   } else if (game.settings.get('smalltime', 'visible') === true) {
       const myApp = new SmallTimeApp().render(true);
       game.modules.get('smalltime').myApp = myApp;
-    }
   }
 }
 
-// Handles the range slider's sun/moon icons, and the BG color changes.
+
 function timeTransition(timeNow) {
+  // Handles the range slider's sun/moon icons, and the BG color changes.
   let bgOffset = Math.round((timeNow / 1410) * 450);
 
   if (timeNow <= 700) {
-    $('.slidecontainer').css('background-position', '0px -' + bgOffset + 'px');
+    $('.slidecontainer').css('background-position', `0px -${bgOffset}px`);
   } else {
-    $('.slidecontainer').css('background-position', '0px ' + bgOffset + 'px');
+    $('.slidecontainer').css('background-position', `0px ${bgOffset}px`);
   }
 
   if (timeNow > 300 && timeNow < 1050) {
@@ -379,8 +379,9 @@ function timeTransition(timeNow) {
   }
 }
 
-// Convert the integer time value to an hours:minutes string.
+
 function convertTime(timeInteger) {
+  // Convert the integer time value to an hours:minutes string.
   let theHours = Math.floor(timeInteger / 60);
   let theMinutes = timeInteger - theHours * 60;
 
@@ -388,17 +389,17 @@ function convertTime(timeInteger) {
 
   if (theHours >= 12) {
     if (theHours === 12) {
-      theMinutes = theMinutes + ' PM';
+      theMinutes = `${theMinutes} PM`;
     } else {
       theHours = theHours - 12;
-      theMinutes = theMinutes + ' PM';
+      theMinutes = `${theMinutes} PM`;
     }
   } else {
-    theMinutes = theMinutes + ' AM';
+    theMinutes = `${theMinutes} AM`;
   }
   if (theHours === 0) theHours = 12;
 
-  return theHours + ':' + theMinutes;
+  return `${theHours}:${theMinutes}`;
 }
 
-window.SmallTimeApp = SmallTimeApp;
+// Icons by Freepik on flaticon.com
