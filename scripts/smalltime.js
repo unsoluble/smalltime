@@ -351,10 +351,8 @@ class SmallTimeApp extends FormApplication {
       if (game.settings.get('smalltime', 'visible') === true) {
         // Stop any currently-running animations, and then animate the app
         // away before close(), to avoid the stock close() animation.
-        html.find('#smalltime-app').stop();
-        html
-          .find('#smalltime-app')
-          .css({ animation: 'close 0.2s', opacity: '0' });
+        $('#smalltime-app').stop();
+        $('#smalltime-app').css({ animation: 'close 0.2s', opacity: '0' });
         setTimeout(function () {
           game.modules.get('smalltime').myApp.close(true);
         }, 300);
