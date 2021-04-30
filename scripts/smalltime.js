@@ -355,7 +355,7 @@ class SmallTimeApp extends FormApplication {
         $('#smalltime-app').css({ animation: 'close 0.2s', opacity: '0' });
         setTimeout(function () {
           game.modules.get('smalltime').myApp.close(true);
-        }, 300);
+        }, 200);
         game.settings.set('smalltime', 'visible', false);
       } else {
         const myApp = new SmallTimeApp().render(true);
