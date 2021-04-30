@@ -75,7 +75,7 @@ Hooks.on('getSceneControlButtons', (buttons) => {
     name: 'smalltime',
     title: 'SmallTime',
     onClick: () => {
-      toggleAppVis('toggle');
+      SmallTimeApp.toggleAppVis('toggle');
     },
   });
 });
@@ -95,9 +95,9 @@ Hooks.on('renderPlayerList', () => {
 });
 
 Hooks.on('ready', () => {
-  toggleAppVis('initial');
+  SmallTimeApp.toggleAppVis('initial');
   if (game.settings.get('smalltime', 'pinned') === true) {
-    pinApp();
+    SmallTimeApp.pinApp();
   }
 
   // Socket to send any GM changes dynamically to clients.
@@ -145,7 +145,7 @@ class SmallTimeApp extends FormApplication {
     // Sending values to the HTML template
     return {
       timeValue: this.currentTime,
-      timeString: convertTime(this.currentTime),
+      timeString: this.convertTime(this.currentTime),
     };
   }
 
@@ -182,7 +182,7 @@ class SmallTimeApp extends FormApplication {
       if (now - this._moveTime < 1000 / 60) return;
       this._moveTime = now;
 
-      unPinApp();
+      SmallTimeApp.unPinApp();
 
       this.app.setPosition({
         left: this.position.left + (event.clientX - this._initial.x),
@@ -217,7 +217,7 @@ class SmallTimeApp extends FormApplication {
       const myOffset = playerAppPos.height + 88;
 
       if (pinZone) {
-        pinApp();
+        SmallTimeApp.pinApp();
         game.settings.set('smalltime', 'pinned', true);
         this.app.setPosition({
           left: 15,
@@ -236,12 +236,12 @@ class SmallTimeApp extends FormApplication {
 
     // An initial set of the sun/moon/bg/time display in case it hasn't been
     // updated since a settings change for some reason.
-    timeTransition(this.currentTime);
+    this.timeTransition(this.currentTime);
 
     $(document).on('input', '#timeSlider', function () {
-      $('#timeDisplay').html(convertTime($(this).val()));
+      $('#timeDisplay').html(this.convertTime($(this).val()));
 
-      timeTransition($(this).val());
+      this.timeTransition($(this).val());
 
       game.socket.emit('module.smalltime', {
         operation: 'timeChange',
@@ -251,11 +251,11 @@ class SmallTimeApp extends FormApplication {
 
     // Handle the increment/decrement buttons.
     $(document).on('click', '#decrease', function () {
-      timeRatchet('decrease');
+      this.timeRatchet('decrease');
     });
 
     $(document).on('click', '#increase', function () {
-      timeRatchet('increase');
+      this.timeRatchet('increase');
     });
   }
 
@@ -266,144 +266,144 @@ class SmallTimeApp extends FormApplication {
     // Save the new time.
     await game.settings.set('smalltime', 'currentTime', newTime);
   }
-}
 
-// Helper function for the socket updates.
-function handleTimeChange(data) {
-  timeTransition(data.content);
-  $('#timeDisplay').html(convertTime(data.content));
-  $('#timeSlider').val(data.content);
-}
+  // Helper function for the socket updates.
+  handleTimeChange(data) {
+    this.timeTransition(data.content);
+    $('#timeDisplay').html(this.convertTime(data.content));
+    $('#timeSlider').val(data.content);
+  }
 
-// Functionality for increment/decrement buttons.
-function timeRatchet(direction) {
-  let currentTime = game.settings.get('smalltime', 'currentTime');
-  let newTime = currentTime;
+  // Functionality for increment/decrement buttons.
+  timeRatchet(direction) {
+    let currentTime = game.settings.get('smalltime', 'currentTime');
+    let newTime = currentTime;
 
-  // Buttons currently do 30 minute steps.
-  let delta = 30;
+    // Buttons currently do 30 minute steps.
+    let delta = 30;
 
-  if (direction === 'decrease') {
-    delta = -30;
+    if (direction === 'decrease') {
+      delta = -30;
 
-    // Handle being at the end of the range; cycle around to other end.
-    if (currentTime === 0) {
-      currentTime = 1440;
+      // Handle being at the end of the range; cycle around to other end.
+      if (currentTime === 0) {
+        currentTime = 1440;
+      }
+    }
+
+    if (direction === 'increase') {
+      if (currentTime === 1410) {
+        currentTime = -30;
+      }
+    }
+
+    newTime = currentTime + delta;
+    game.settings.set('smalltime', 'currentTime', newTime);
+
+    $('#timeDisplay').html(this.convertTime(newTime));
+
+    this.timeTransition(newTime);
+
+    // Socket for player sync.
+    game.socket.emit('module.smalltime', {
+      operation: 'timeChange',
+      content: newTime,
+    });
+
+    // Also move the slider to match.
+    $('#timeSlider').val(newTime);
+  }
+
+  static pinApp() {
+    // Pin the app above the Players list.
+    // Only do this if a pin lock isn't already in place.
+    if (!$('#pin-lock').length) {
+      const playerApp = document.getElementById('players');
+      const playerAppPos = playerApp.getBoundingClientRect();
+      const myOffset = playerAppPos.height + 88;
+
+      // Dropping this into the DOM with an !important was the only way
+      // I could get it to enable the locking behaviour.
+      $('body').append(`
+        <style id="pin-lock">
+          #smalltime-app {
+            top: calc(100vh - ${myOffset}px) !important;
+            left: 15px !important;
+          }
+        </style>
+      `);
+      game.settings.set('smalltime', 'pinned', true);
     }
   }
 
-  if (direction === 'increase') {
-    if (currentTime === 1410) {
-      currentTime = -30;
-    }
+  static unPinApp() {
+    // Remove the style tag that's pinning the window.
+    $('#pin-lock').remove();
   }
 
-  newTime = currentTime + delta;
-  game.settings.set('smalltime', 'currentTime', newTime);
-
-  $('#timeDisplay').html(convertTime(newTime));
-
-  timeTransition(newTime);
-
-  // Socket for player sync.
-  game.socket.emit('module.smalltime', {
-    operation: 'timeChange',
-    content: newTime,
-  });
-
-  // Also move the slider to match.
-  $('#timeSlider').val(newTime);
-}
-
-function pinApp() {
-  // Pin the app above the Players list.
-  // Only do this if a pin lock isn't already in place.
-  if (!$('#pin-lock').length) {
-    const playerApp = document.getElementById('players');
-    const playerAppPos = playerApp.getBoundingClientRect();
-    const myOffset = playerAppPos.height + 88;
-
-    // Dropping this into the DOM with an !important was the only way
-    // I could get it to enable the locking behaviour.
-    $('body').append(`
-      <style id="pin-lock">
-        #smalltime-app {
-          top: calc(100vh - ${myOffset}px) !important;
-          left: 15px !important;
-        }
-      </style>
-    `);
-    game.settings.set('smalltime', 'pinned', true);
-  }
-}
-
-function unPinApp() {
-  // Remove the style tag that's pinning the window.
-  $('#pin-lock').remove();
-}
-
-function toggleAppVis(mode) {
-  // Toggle visibility of the main window.
-  if (mode === 'toggle') {
-    if (game.settings.get('smalltime', 'visible') === true) {
-      // Stop any currently-running animations, and then animate the app
-      // away before close(), to avoid the stock close() animation.
-      $('#smalltime-app').stop();
-      $('#smalltime-app').css({ animation: 'close 0.2s', opacity: '0' });
-      setTimeout(function () {
-        game.modules.get('smalltime').myApp.close();
-      }, 300);
-      game.settings.set('smalltime', 'visible', false);
-    } else {
+  static toggleAppVis(mode) {
+    // Toggle visibility of the main window.
+    if (mode === 'toggle') {
+      if (game.settings.get('smalltime', 'visible') === true) {
+        // Stop any currently-running animations, and then animate the app
+        // away before close(), to avoid the stock close() animation.
+        $('#smalltime-app').stop();
+        $('#smalltime-app').css({ animation: 'close 0.2s', opacity: '0' });
+        setTimeout(function () {
+          game.modules.get('smalltime').myApp.close();
+        }, 300);
+        game.settings.set('smalltime', 'visible', false);
+      } else {
+        const myApp = new SmallTimeApp().render(true);
+        game.modules.get('smalltime').myApp = myApp;
+        game.settings.set('smalltime', 'visible', true);
+      }
+    } else if (game.settings.get('smalltime', 'visible') === true) {
       const myApp = new SmallTimeApp().render(true);
       game.modules.get('smalltime').myApp = myApp;
-      game.settings.set('smalltime', 'visible', true);
     }
-  } else if (game.settings.get('smalltime', 'visible') === true) {
-    const myApp = new SmallTimeApp().render(true);
-    game.modules.get('smalltime').myApp = myApp;
-  }
-}
-
-function timeTransition(timeNow) {
-  // Handles the range slider's sun/moon icons, and the BG color changes.
-  let bgOffset = Math.round((timeNow / 1410) * 450);
-
-  if (timeNow <= 700) {
-    $('#slideContainer').css('background-position', `0px -${bgOffset}px`);
-  } else {
-    $('#slideContainer').css('background-position', `0px ${bgOffset}px`);
   }
 
-  if (timeNow > 300 && timeNow < 1050) {
-    $('#timeSlider').removeClass('moon');
-    $('#timeSlider').addClass('sun');
-  } else {
-    $('#timeSlider').removeClass('sun');
-    $('#timeSlider').addClass('moon');
-  }
-}
+  timeTransition(timeNow) {
+    // Handles the range slider's sun/moon icons, and the BG color changes.
+    let bgOffset = Math.round((timeNow / 1410) * 450);
 
-function convertTime(timeInteger) {
-  // Convert the integer time value to an hours:minutes string.
-  let theHours = Math.floor(timeInteger / 60);
-  let theMinutes = timeInteger - theHours * 60;
-
-  if (theMinutes === 0) theMinutes = '00';
-
-  if (theHours >= 12) {
-    if (theHours === 12) {
-      theMinutes = `${theMinutes} PM`;
+    if (timeNow <= 700) {
+      $('#slideContainer').css('background-position', `0px -${bgOffset}px`);
     } else {
-      theHours = theHours - 12;
-      theMinutes = `${theMinutes} PM`;
+      $('#slideContainer').css('background-position', `0px ${bgOffset}px`);
     }
-  } else {
-    theMinutes = `${theMinutes} AM`;
-  }
-  if (theHours === 0) theHours = 12;
 
-  return `${theHours}:${theMinutes}`;
+    if (timeNow > 300 && timeNow < 1050) {
+      $('#timeSlider').removeClass('moon');
+      $('#timeSlider').addClass('sun');
+    } else {
+      $('#timeSlider').removeClass('sun');
+      $('#timeSlider').addClass('moon');
+    }
+  }
+
+  convertTime(timeInteger) {
+    // Convert the integer time value to an hours:minutes string.
+    let theHours = Math.floor(timeInteger / 60);
+    let theMinutes = timeInteger - theHours * 60;
+
+    if (theMinutes === 0) theMinutes = '00';
+
+    if (theHours >= 12) {
+      if (theHours === 12) {
+        theMinutes = `${theMinutes} PM`;
+      } else {
+        theHours = theHours - 12;
+        theMinutes = `${theMinutes} PM`;
+      }
+    } else {
+      theMinutes = `${theMinutes} AM`;
+    }
+    if (theHours === 0) theHours = 12;
+
+    return `${theHours}:${theMinutes}`;
+  }
 }
 
 // Icons by Freepik on flaticon.com
