@@ -30,37 +30,39 @@ Hooks.on('init', () => {
     type: Boolean,
     default: true,
   });
-  
+
   game.settings.register('smalltime', 'small-step', {
     name: 'Small Step Amount',
-    hint: 'Number of minutes to add/remove from the time with the < and > buttons.',
+    hint:
+      'Number of minutes to add/remove from the time with the < and > buttons.',
     scope: 'world',
     config: true,
     type: Number,
     choices: {
-      1: "1",
-      5: "5",
-      10: "10",
-      15: "15",
-      20: "20",
-      30: "30"
+      1: '1',
+      5: '5',
+      10: '10',
+      15: '15',
+      20: '20',
+      30: '30',
     },
-    default: 30
+    default: 30,
   });
-  
+
   game.settings.register('smalltime', 'large-step', {
     name: 'Large Step Amount',
-    hint: 'Number of minutes to add/remove from the time with the << and >> buttons.',
+    hint:
+      'Number of minutes to add/remove from the time with the << and >> buttons.',
     scope: 'world',
     config: true,
     type: Number,
     choices: {
-      20: "20",
-      30: "30",
-      60: "60",
-      99: "Dawn > Midday > Dusk"
+      20: '20',
+      30: '30',
+      60: '60',
+      99: 'Dawn > Midday > Dusk',
     },
-    default: 60
+    default: 60,
   });
 });
 
@@ -79,8 +81,8 @@ Hooks.on('getSceneControlButtons', (buttons) => {
 });
 
 Hooks.on('renderPlayerList', () => {
-  // Hooking in here to adjust the position of the window when the size of the PlayerList changes
-
+  // Hooking in here to adjust the position of the window
+  // when the size of the PlayerList changes.
   const element = document.getElementById('players');
   const playerAppPos = element.getBoundingClientRect();
   const myOffset = playerAppPos.height + 88;
@@ -97,6 +99,12 @@ Hooks.on('ready', () => {
   if (game.settings.get('smalltime', 'pinned') === true) {
     pinApp();
   }
+
+  // Socket to send any GM changes dynamically to clients.
+  game.socket.on(`module.smalltime`, (data) => {
+    if (data.operation === 'timeChange')
+      game.modules.get('smalltime').myApp.handleTimeChange(data);
+  });
 });
 
 class SmallTimeApp extends FormApplication {
@@ -125,7 +133,7 @@ class SmallTimeApp extends FormApplication {
       popOut: true,
       submitOnChange: true,
       closeOnSubmit: false,
-      template: 'modules/smalltime/templates/floater.html',
+      template: 'modules/smalltime/templates/smalltime.html',
       id: 'smalltime-app',
       title: 'SmallTime',
       top: this.initialPosition.top,
@@ -135,7 +143,6 @@ class SmallTimeApp extends FormApplication {
 
   getData() {
     // Sending values to the HTML template
-
     return {
       timeValue: this.currentTime,
       timeString: convertTime(this.currentTime),
@@ -155,8 +162,11 @@ class SmallTimeApp extends FormApplication {
 
     // Disable controls for non-GMs
     if (!game.user.isGM) {
-      $('#timeSlider').css('pointer-events', 'none');
-      $('.arrow').css('visibility', 'hidden');
+      $('#timeSlider').addClass('disable-for-players');
+      $('#decrease-large').addClass('hide-for-players');
+      $('#decrease-small').addClass('hide-for-players');
+      $('#increase-large').addClass('hide-for-players');
+      $('#increase-small').addClass('hide-for-players');
     }
 
     // Have to override this because of the non-standard drag handle, and
@@ -173,6 +183,7 @@ class SmallTimeApp extends FormApplication {
       this._moveTime = now;
 
       unPinApp();
+
       this.app.setPosition({
         left: this.position.left + (event.clientX - this._initial.x),
         top: this.position.top + (event.clientY - this._initial.y),
@@ -201,8 +212,6 @@ class SmallTimeApp extends FormApplication {
       window.removeEventListener(...this.handlers.dragMove);
       window.removeEventListener(...this.handlers.dragUp);
 
-      // We've already set up this block in two other places already, can
-      // probably be optimized better.
       const playerApp = document.getElementById('players');
       const playerAppPos = playerApp.getBoundingClientRect();
       const myOffset = playerAppPos.height + 88;
@@ -221,18 +230,13 @@ class SmallTimeApp extends FormApplication {
         game.settings.set('smalltime', 'pinned', false);
       }
 
-      // Kill any animation on mouseUp.
+      // Kill the jiggle animation on mouseUp.
       $('#smalltime-app').css('animation', '');
     };
 
     // An initial set of the sun/moon/bg/time display in case it hasn't been
     // updated since a settings change for some reason.
     timeTransition(this.currentTime);
-
-    // Socket to send any GM changes dynamically to clients.
-    game.socket.on(`module.smalltime`, (data) => {
-      if (data.operation === 'timeChange') handleTimeChange(data);
-    });
 
     $(document).on('input', '#timeSlider', function () {
       $('#timeDisplay').html(convertTime($(this).val()));
@@ -344,9 +348,11 @@ function toggleAppVis(mode) {
     if (game.settings.get('smalltime', 'visible') === true) {
       // Stop any currently-running animations, and then animate the app
       // away before close(), to avoid the stock close() animation.
-      $('#smalltime-app').css('animation', 'none');
-      $('#smalltime-app').animate({ opacity: 0 });
-      game.modules.get('smalltime').myApp.close();
+      $('#smalltime-app').stop();
+      $('#smalltime-app').css({ animation: 'close 0.2s', opacity: '0' });
+      setTimeout(function () {
+        game.modules.get('smalltime').myApp.close();
+      }, 300);
       game.settings.set('smalltime', 'visible', false);
     } else {
       const myApp = new SmallTimeApp().render(true);
@@ -354,20 +360,19 @@ function toggleAppVis(mode) {
       game.settings.set('smalltime', 'visible', true);
     }
   } else if (game.settings.get('smalltime', 'visible') === true) {
-      const myApp = new SmallTimeApp().render(true);
-      game.modules.get('smalltime').myApp = myApp;
+    const myApp = new SmallTimeApp().render(true);
+    game.modules.get('smalltime').myApp = myApp;
   }
 }
-
 
 function timeTransition(timeNow) {
   // Handles the range slider's sun/moon icons, and the BG color changes.
   let bgOffset = Math.round((timeNow / 1410) * 450);
 
   if (timeNow <= 700) {
-    $('.slidecontainer').css('background-position', `0px -${bgOffset}px`);
+    $('#slideContainer').css('background-position', `0px -${bgOffset}px`);
   } else {
-    $('.slidecontainer').css('background-position', `0px ${bgOffset}px`);
+    $('#slideContainer').css('background-position', `0px ${bgOffset}px`);
   }
 
   if (timeNow > 300 && timeNow < 1050) {
@@ -378,7 +383,6 @@ function timeTransition(timeNow) {
     $('#timeSlider').addClass('moon');
   }
 }
-
 
 function convertTime(timeInteger) {
   // Convert the integer time value to an hours:minutes string.

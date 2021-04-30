@@ -1,0 +1,15 @@
+<form class="flexcol">
+  <div id="slideContainer">
+    <input id="timeSlider" class="slider sun"
+      type="range" min="0" max="1410" step="30" value="{{timeValue}}"
+      name="timeSlider"/>
+  </div>
+  <div id="displayContainer">
+    <div id="decrease-large" class="arrow arrow-left fas fa-angle-double-left"></div>
+    <div id="decrease-small" class="arrow arrow-left fas fa-angle-left"></div>
+    <div id="timeDisplay">{{timeString}}</div>
+    <div id="increase-small" class="arrow arrow-right fas fa-angle-right"></div>
+    <div id="increase-large" class="arrow arrow-right fas fa-angle-double-right"></div>
+  </div>
+  <div id="dragHandle"></div>
+</form>
