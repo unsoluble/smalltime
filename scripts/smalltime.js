@@ -60,7 +60,7 @@ Hooks.on('init', () => {
       20: '20',
       30: '30',
       60: '60',
-      99: 'Dawn > Midday > Dusk',
+      240: '240',
     },
     default: 60,
   });
@@ -111,11 +111,6 @@ class SmallTimeApp extends FormApplication {
   constructor() {
     super();
     this.currentTime = game.settings.get('smalltime', 'currentTime');
-    /*
-    this.update = debounce(() => {
-      this.emitUpdate();
-    }, 200);
-    */
   }
 
   static get defaultOptions() {
@@ -255,12 +250,24 @@ class SmallTimeApp extends FormApplication {
     });
 
     // Handle the increment/decrement buttons.
+    let smallStep = game.settings.get('smalltime', 'small-step');
+    let largeStep = game.settings.get('smalltime', 'large-step');
+    let delta = 0;
+
     html.find('#decrease-small').on('click', () => {
-      this.timeRatchet('decrease');
+      this.timeRatchet(-Math.abs(smallStep));
+    });
+
+    html.find('#decrease-large').on('click', () => {
+      this.timeRatchet(-Math.abs(largeStep));
     });
 
     html.find('#increase-small').on('click', () => {
-      this.timeRatchet('increase');
+      this.timeRatchet(smallStep);
+    });
+
+    html.find('#increase-large').on('click', () => {
+      this.timeRatchet(largeStep);
     });
   }
 
@@ -276,15 +283,6 @@ class SmallTimeApp extends FormApplication {
     if (force) super.close();
   }
 
-  /*
-  emitUpdate() {
-    game.socket.emit('module.smalltime', {
-      operation: 'timeChange',
-      content: $(this).val(),
-    });
-  }
-  */
-
   // Helper function for the socket updates.
   handleTimeChange(data) {
     SmallTimeApp.timeTransition(data.content);
@@ -293,31 +291,17 @@ class SmallTimeApp extends FormApplication {
   }
 
   // Functionality for increment/decrement buttons.
-  timeRatchet(direction) {
+  timeRatchet(delta) {
     let currentTime = game.settings.get('smalltime', 'currentTime');
-    let newTime = currentTime;
+    let newTime = currentTime + delta;
 
-    let smallStep = game.settings.get('smalltime', 'small-step');
-    let largeStep = game.settings.get('smalltime', 'large-step');
-
-    // Buttons currently do 30 minute steps.
-    let delta = 30;
-
-    if (direction === 'decrease') {
-      delta = -30;
-      // Handle being at the end of the range; cycle around to other end.
-      if (currentTime === 0) {
-        currentTime = 1440;
-      }
+    if (newTime < 0) {
+      newTime = 1440 + newTime;
+    }
+    if (newTime > 1440) {
+      newTime = newTime - 1440;
     }
 
-    if (direction === 'increase') {
-      if (currentTime === 1410) {
-        currentTime = -30;
-      }
-    }
-
-    newTime = currentTime + delta;
     game.settings.set('smalltime', 'currentTime', newTime);
 
     $('#timeDisplay').html(SmallTimeApp.convertTime(newTime));
@@ -410,11 +394,15 @@ class SmallTimeApp extends FormApplication {
     let theHours = Math.floor(timeInteger / 60);
     let theMinutes = timeInteger - theHours * 60;
 
+    if (theMinutes < 10) theMinutes = `0${theMinutes}`;
     if (theMinutes === 0) theMinutes = '00';
 
     if (theHours >= 12) {
       if (theHours === 12) {
         theMinutes = `${theMinutes} PM`;
+      } else if (theHours === 24) {
+        theHours = 12;
+        theMinutes = `${theMinutes} AM`;
       } else {
         theHours = theHours - 12;
         theMinutes = `${theMinutes} PM`;
