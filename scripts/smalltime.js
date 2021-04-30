@@ -111,6 +111,11 @@ class SmallTimeApp extends FormApplication {
   constructor() {
     super();
     this.currentTime = game.settings.get('smalltime', 'currentTime');
+    /*
+    this.update = debounce(() => {
+      this.emitUpdate();
+    }, 200);
+    */
   }
 
   static get defaultOptions() {
@@ -250,22 +255,35 @@ class SmallTimeApp extends FormApplication {
     });
 
     // Handle the increment/decrement buttons.
-    $(document).on('click', '#decrease-small', function () {
-      SmallTimeApp.timeRatchet('decrease');
+    html.find('#decrease-small').on('click', () => {
+      this.timeRatchet('decrease');
     });
 
-    $(document).on('click', '#increase-small', function () {
-      SmallTimeApp.timeRatchet('increase');
+    html.find('#increase-small').on('click', () => {
+      this.timeRatchet('increase');
     });
   }
 
   async _updateObject(event, formData) {
     // Get the slider value.
     const newTime = formData.timeSlider;
-
     // Save the new time.
     await game.settings.set('smalltime', 'currentTime', newTime);
   }
+
+  // Overriding close() to prevent Escape from closing the app.
+  close(force = false) {
+    if (force) super.close();
+  }
+
+  /*
+  emitUpdate() {
+    game.socket.emit('module.smalltime', {
+      operation: 'timeChange',
+      content: $(this).val(),
+    });
+  }
+  */
 
   // Helper function for the socket updates.
   handleTimeChange(data) {
@@ -275,16 +293,18 @@ class SmallTimeApp extends FormApplication {
   }
 
   // Functionality for increment/decrement buttons.
-  static timeRatchet(direction) {
+  timeRatchet(direction) {
     let currentTime = game.settings.get('smalltime', 'currentTime');
     let newTime = currentTime;
+
+    let smallStep = game.settings.get('smalltime', 'small-step');
+    let largeStep = game.settings.get('smalltime', 'large-step');
 
     // Buttons currently do 30 minute steps.
     let delta = 30;
 
     if (direction === 'decrease') {
       delta = -30;
-
       // Handle being at the end of the range; cycle around to other end.
       if (currentTime === 0) {
         currentTime = 1440;
@@ -300,7 +320,7 @@ class SmallTimeApp extends FormApplication {
     newTime = currentTime + delta;
     game.settings.set('smalltime', 'currentTime', newTime);
 
-    $('#timeDisplay').html(this.convertTime(newTime));
+    $('#timeDisplay').html(SmallTimeApp.convertTime(newTime));
 
     SmallTimeApp.timeTransition(newTime);
 
@@ -347,10 +367,12 @@ class SmallTimeApp extends FormApplication {
       if (game.settings.get('smalltime', 'visible') === true) {
         // Stop any currently-running animations, and then animate the app
         // away before close(), to avoid the stock close() animation.
-        $('#smalltime-app').stop();
-        $('#smalltime-app').css({ animation: 'close 0.2s', opacity: '0' });
+        html.find('#smalltime-app').stop();
+        html
+          .find('#smalltime-app')
+          .css({ animation: 'close 0.2s', opacity: '0' });
         setTimeout(function () {
-          game.modules.get('smalltime').myApp.close();
+          game.modules.get('smalltime').myApp.close(true);
         }, 300);
         game.settings.set('smalltime', 'visible', false);
       } else {
