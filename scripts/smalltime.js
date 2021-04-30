@@ -145,7 +145,7 @@ class SmallTimeApp extends FormApplication {
     // Sending values to the HTML template
     return {
       timeValue: this.currentTime,
-      timeString: this.convertTime(this.currentTime),
+      timeString: SmallTimeApp.convertTime(this.currentTime),
     };
   }
 
@@ -236,12 +236,12 @@ class SmallTimeApp extends FormApplication {
 
     // An initial set of the sun/moon/bg/time display in case it hasn't been
     // updated since a settings change for some reason.
-    this.timeTransition(this.currentTime);
+    SmallTimeApp.timeTransition(this.currentTime);
 
     $(document).on('input', '#timeSlider', function () {
-      $('#timeDisplay').html(this.convertTime($(this).val()));
+      $('#timeDisplay').html(SmallTimeApp.convertTime($(this).val()));
 
-      this.timeTransition($(this).val());
+      SmallTimeApp.timeTransition($(this).val());
 
       game.socket.emit('module.smalltime', {
         operation: 'timeChange',
@@ -250,12 +250,12 @@ class SmallTimeApp extends FormApplication {
     });
 
     // Handle the increment/decrement buttons.
-    $(document).on('click', '#decrease', function () {
-      this.timeRatchet('decrease');
+    $(document).on('click', '#decrease-small', function () {
+      SmallTimeApp.timeRatchet('decrease');
     });
 
-    $(document).on('click', '#increase', function () {
-      this.timeRatchet('increase');
+    $(document).on('click', '#increase-small', function () {
+      SmallTimeApp.timeRatchet('increase');
     });
   }
 
@@ -269,13 +269,13 @@ class SmallTimeApp extends FormApplication {
 
   // Helper function for the socket updates.
   handleTimeChange(data) {
-    this.timeTransition(data.content);
-    $('#timeDisplay').html(this.convertTime(data.content));
+    SmallTimeApp.timeTransition(data.content);
+    $('#timeDisplay').html(SmallTimeApp.convertTime(data.content));
     $('#timeSlider').val(data.content);
   }
 
   // Functionality for increment/decrement buttons.
-  timeRatchet(direction) {
+  static timeRatchet(direction) {
     let currentTime = game.settings.get('smalltime', 'currentTime');
     let newTime = currentTime;
 
@@ -302,7 +302,7 @@ class SmallTimeApp extends FormApplication {
 
     $('#timeDisplay').html(this.convertTime(newTime));
 
-    this.timeTransition(newTime);
+    SmallTimeApp.timeTransition(newTime);
 
     // Socket for player sync.
     game.socket.emit('module.smalltime', {
@@ -364,7 +364,7 @@ class SmallTimeApp extends FormApplication {
     }
   }
 
-  timeTransition(timeNow) {
+  static timeTransition(timeNow) {
     // Handles the range slider's sun/moon icons, and the BG color changes.
     let bgOffset = Math.round((timeNow / 1410) * 450);
 
@@ -383,7 +383,7 @@ class SmallTimeApp extends FormApplication {
     }
   }
 
-  convertTime(timeInteger) {
+  static convertTime(timeInteger) {
     // Convert the integer time value to an hours:minutes string.
     let theHours = Math.floor(timeInteger / 60);
     let theMinutes = timeInteger - theHours * 60;
