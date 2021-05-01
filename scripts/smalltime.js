@@ -1,4 +1,3 @@
-// test
 Hooks.on('init', () => {
   game.settings.register('smalltime', 'current-time', {
     name: 'Current Time',
@@ -100,6 +99,7 @@ Hooks.on('init', () => {
 });
 
 Hooks.on('getSceneControlButtons', (buttons) => {
+  // Add a toggle button inside the Journal Notes tool layer.
   if (!canvas) return;
   let group = buttons.find((b) => b.name === 'notes');
   group.tools.push({
