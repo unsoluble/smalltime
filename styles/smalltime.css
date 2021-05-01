@@ -1,9 +1,13 @@
+:root {
+  --opacity: 0.8;
+}
+
 #smalltime-app {
   flex-wrap: nowrap;
   background: none;
   height: 58px;
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.7);
-  opacity: 0.8;
+  opacity: var(--opacity);
   animation: fadeOut 3s ease-out;
   transition: opacity 1s;
   transition-delay: 2s;
@@ -229,25 +233,7 @@
     opacity: 1;
   }
   to {
-    opacity: 0.8;
-  }
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0.8;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes close {
-  0% {
-    opacity: 0.8;
-  }
-  100% {
-    opacity: 0;
+    opacity: var(--opacity);
   }
 }
 

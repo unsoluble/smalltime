@@ -1,5 +1,5 @@
 Hooks.on('init', () => {
-  game.settings.register('smalltime', 'currentTime', {
+  game.settings.register('smalltime', 'current-time', {
     name: 'Current Time',
     scope: 'world',
     config: false,
@@ -31,10 +31,26 @@ Hooks.on('init', () => {
     default: true,
   });
 
+  game.settings.register('smalltime', 'time-format', {
+    name: 'Time Format',
+    scope: 'world',
+    config: true,
+    type: Number,
+    default: 12,
+    choices: {
+      12: '12hr',
+      24: '24hr',
+    },
+    default: 12,
+    onChange: (value) => {
+      location.reload();
+    },
+  });
+
   game.settings.register('smalltime', 'small-step', {
     name: 'Small Step Amount',
     hint:
-      'Number of minutes to add/remove from the time with the < and > buttons.',
+      'Number of minutes to add/remove from the time with the < and > buttons. Hold Shift to double.',
     scope: 'world',
     config: true,
     type: Number,
@@ -47,12 +63,15 @@ Hooks.on('init', () => {
       30: '30',
     },
     default: 30,
+    onChange: (value) => {
+      location.reload();
+    },
   });
 
   game.settings.register('smalltime', 'large-step', {
     name: 'Large Step Amount',
     hint:
-      'Number of minutes to add/remove from the time with the << and >> buttons.',
+      'Number of minutes to add/remove from the time with the << and >> buttons. Hold Shift to double.',
     scope: 'world',
     config: true,
     type: Number,
@@ -60,9 +79,30 @@ Hooks.on('init', () => {
       20: '20',
       30: '30',
       60: '60',
-      240: '240',
+      240: '120',
     },
     default: 60,
+    onChange: (value) => {
+      location.reload();
+    },
+  });
+
+  game.settings.register('smalltime', 'opacity', {
+    name: 'Resting Opacity',
+    hint:
+      "Opacity of the SmallTime window when you're not interacting with it.",
+    scope: 'client',
+    config: true,
+    type: Number,
+    range: {
+      min: 0,
+      max: 1,
+      step: 0.1,
+    },
+    default: 0.8,
+    onChange: (value) => {
+      location.reload();
+    },
   });
 });
 
@@ -100,6 +140,10 @@ Hooks.on('ready', () => {
     SmallTimeApp.pinApp();
   }
 
+  const root = document.documentElement;
+  const userOpacity = game.settings.get('smalltime', 'opacity');
+  root.style.setProperty('--opacity', userOpacity);
+
   // Socket to send any GM changes dynamically to clients.
   game.socket.on(`module.smalltime`, (data) => {
     if (data.operation === 'timeChange')
@@ -110,7 +154,7 @@ Hooks.on('ready', () => {
 class SmallTimeApp extends FormApplication {
   constructor() {
     super();
-    this.currentTime = game.settings.get('smalltime', 'currentTime');
+    this.currentTime = game.settings.get('smalltime', 'current-time');
   }
 
   static get defaultOptions() {
@@ -255,19 +299,35 @@ class SmallTimeApp extends FormApplication {
     let delta = 0;
 
     html.find('#decrease-small').on('click', () => {
-      this.timeRatchet(-Math.abs(smallStep));
+      if (event.shiftKey) {
+        this.timeRatchet(-Math.abs(smallStep * 2));
+      } else {
+        this.timeRatchet(-Math.abs(smallStep));
+      }
     });
 
     html.find('#decrease-large').on('click', () => {
-      this.timeRatchet(-Math.abs(largeStep));
+      if (event.shiftKey) {
+        this.timeRatchet(-Math.abs(largeStep * 2));
+      } else {
+        this.timeRatchet(-Math.abs(largeStep));
+      }
     });
 
     html.find('#increase-small').on('click', () => {
-      this.timeRatchet(smallStep);
+      if (event.shiftKey) {
+        this.timeRatchet(smallStep * 2);
+      } else {
+        this.timeRatchet(smallStep);
+      }
     });
 
     html.find('#increase-large').on('click', () => {
-      this.timeRatchet(largeStep);
+      if (event.shiftKey) {
+        this.timeRatchet(largeStep * 2);
+      } else {
+        this.timeRatchet(largeStep);
+      }
     });
   }
 
@@ -275,12 +335,7 @@ class SmallTimeApp extends FormApplication {
     // Get the slider value.
     const newTime = formData.timeSlider;
     // Save the new time.
-    await game.settings.set('smalltime', 'currentTime', newTime);
-  }
-
-  // Overriding close() to prevent Escape from closing the app.
-  close(force = false) {
-    if (force) super.close();
+    await game.settings.set('smalltime', 'current-time', newTime);
   }
 
   // Helper function for the socket updates.
@@ -292,17 +347,18 @@ class SmallTimeApp extends FormApplication {
 
   // Functionality for increment/decrement buttons.
   timeRatchet(delta) {
-    let currentTime = game.settings.get('smalltime', 'currentTime');
+    let currentTime = game.settings.get('smalltime', 'current-time');
     let newTime = currentTime + delta;
 
     if (newTime < 0) {
+      // 1440 is the value for 24:00 at the end of the slider.
       newTime = 1440 + newTime;
     }
     if (newTime > 1440) {
       newTime = newTime - 1440;
     }
 
-    game.settings.set('smalltime', 'currentTime', newTime);
+    game.settings.set('smalltime', 'current-time', newTime);
 
     $('#timeDisplay').html(SmallTimeApp.convertTime(newTime));
 
@@ -354,7 +410,7 @@ class SmallTimeApp extends FormApplication {
         $('#smalltime-app').stop();
         $('#smalltime-app').css({ animation: 'close 0.2s', opacity: '0' });
         setTimeout(function () {
-          game.modules.get('smalltime').myApp.close(true);
+          game.modules.get('smalltime').myApp.close();
         }, 200);
         game.settings.set('smalltime', 'visible', false);
       } else {
@@ -370,7 +426,8 @@ class SmallTimeApp extends FormApplication {
 
   static timeTransition(timeNow) {
     // Handles the range slider's sun/moon icons, and the BG color changes.
-    let bgOffset = Math.round((timeNow / 1410) * 450);
+    // The 450 here is just a multiplier that works out nicely for the CSS move.
+    let bgOffset = Math.round((timeNow / 1440) * 450);
 
     if (timeNow <= 700) {
       $('#slideContainer').css('background-position', `0px -${bgOffset}px`);
@@ -395,20 +452,22 @@ class SmallTimeApp extends FormApplication {
     if (theMinutes < 10) theMinutes = `0${theMinutes}`;
     if (theMinutes === 0) theMinutes = '00';
 
-    if (theHours >= 12) {
-      if (theHours === 12) {
-        theMinutes = `${theMinutes} PM`;
-      } else if (theHours === 24) {
-        theHours = 12;
-        theMinutes = `${theMinutes} AM`;
+    if (game.settings.get('smalltime', 'time-format') === 12) {
+      if (theHours >= 12) {
+        if (theHours === 12) {
+          theMinutes = `${theMinutes} PM`;
+        } else if (theHours === 24) {
+          theHours = 12;
+          theMinutes = `${theMinutes} AM`;
+        } else {
+          theHours = theHours - 12;
+          theMinutes = `${theMinutes} PM`;
+        }
       } else {
-        theHours = theHours - 12;
-        theMinutes = `${theMinutes} PM`;
+        theMinutes = `${theMinutes} AM`;
       }
-    } else {
-      theMinutes = `${theMinutes} AM`;
+      if (theHours === 0) theHours = 12;
     }
-    if (theHours === 0) theHours = 12;
 
     return `${theHours}:${theMinutes}`;
   }
