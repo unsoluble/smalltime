@@ -92,6 +92,10 @@ Hooks.on('init', () => {
       step: 0.1,
     },
     default: 0.8,
+    onChange: (value) => {
+      const root = document.documentElement;
+      root.style.setProperty('--opacity', value);
+    },
   });
 });
 
