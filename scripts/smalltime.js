@@ -199,7 +199,7 @@ class SmallTimeApp extends FormApplication {
     const dragHandle = html.find('#dragHandle')[0];
     const drag = new Draggable(this, html, dragHandle, false);
 
-    // Pin zone is the "wiggle area" in which the app will be locked
+    // Pin zone is the "jiggle area" in which the app will be locked
     // to a pinned position if dropped. pinZone stores whether or not
     // we're currently in that area.
     let pinZone = false;
@@ -296,7 +296,6 @@ class SmallTimeApp extends FormApplication {
     // Handle the increment/decrement buttons.
     let smallStep = game.settings.get('smalltime', 'small-step');
     let largeStep = game.settings.get('smalltime', 'large-step');
-    let delta = 0;
 
     html.find('#decrease-small').on('click', () => {
       if (event.shiftKey) {
