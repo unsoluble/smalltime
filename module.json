@@ -1,15 +1,15 @@
 {
-    "name": "smalltime",
-    "title": "SmallTime",
-    "description": "Time, but Small.",
-    "version": "1.0.3",
-    "author": "unsoluble",
-    "scripts": [ "scripts/smalltime.js" ],
-    "styles": [ "styles/smalltime.css" ],
-    "socket": true,
-    "url": "https://github.com/unsoluble/smalltime",
-    "manifest": "https://raw.githubusercontent.com/unsoluble/smalltime/main/module.json",
-    "download": "https://github.com/unsoluble/smalltime/archive/refs/tags/v1.0.3.zip",
-    "minimumCoreVersion": "0.7.5",
-    "compatibleCoreVersion": "0.7.9"
+  "name": "smalltime",
+  "title": "SmallTime",
+  "description": "A small tool for tracking the current time of day.",
+  "version": "1.0.3",
+  "author": "unsoluble",
+  "scripts": ["scripts/smalltime.js"],
+  "styles": ["styles/smalltime.css"],
+  "socket": true,
+  "url": "https://github.com/unsoluble/smalltime",
+  "manifest": "https://raw.githubusercontent.com/unsoluble/smalltime/main/module.json",
+  "download": "https://github.com/unsoluble/smalltime/archive/refs/tags/v1.0.3.zip",
+  "minimumCoreVersion": "0.7.5",
+  "compatibleCoreVersion": "0.8.2"
 }
