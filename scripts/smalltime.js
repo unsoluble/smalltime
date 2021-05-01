@@ -43,9 +43,6 @@ Hooks.on('init', () => {
       24: '24hr',
     },
     default: 12,
-    onChange: (value) => {
-      location.reload();
-    },
   });
 
   game.settings.register('smalltime', 'small-step', {
@@ -64,9 +61,6 @@ Hooks.on('init', () => {
       30: '30',
     },
     default: 30,
-    onChange: (value) => {
-      location.reload();
-    },
   });
 
   game.settings.register('smalltime', 'large-step', {
@@ -83,9 +77,6 @@ Hooks.on('init', () => {
       240: '120',
     },
     default: 60,
-    onChange: (value) => {
-      location.reload();
-    },
   });
 
   game.settings.register('smalltime', 'opacity', {
@@ -101,9 +92,6 @@ Hooks.on('init', () => {
       step: 0.1,
     },
     default: 0.8,
-    onChange: (value) => {
-      location.reload();
-    },
   });
 });
 
@@ -299,6 +287,7 @@ class SmallTimeApp extends FormApplication {
     let largeStep = game.settings.get('smalltime', 'large-step');
 
     html.find('#decrease-small').on('click', () => {
+      smallStep = game.settings.get('smalltime', 'small-step');
       if (event.shiftKey) {
         this.timeRatchet(-Math.abs(smallStep * 2));
       } else {
@@ -307,6 +296,7 @@ class SmallTimeApp extends FormApplication {
     });
 
     html.find('#decrease-large').on('click', () => {
+      largeStep = game.settings.get('smalltime', 'large-step');
       if (event.shiftKey) {
         this.timeRatchet(-Math.abs(largeStep * 2));
       } else {
@@ -315,6 +305,7 @@ class SmallTimeApp extends FormApplication {
     });
 
     html.find('#increase-small').on('click', () => {
+      smallStep = game.settings.get('smalltime', 'small-step');
       if (event.shiftKey) {
         this.timeRatchet(smallStep * 2);
       } else {
@@ -323,6 +314,7 @@ class SmallTimeApp extends FormApplication {
     });
 
     html.find('#increase-large').on('click', () => {
+      largeStep = game.settings.get('smalltime', 'large-step');
       if (event.shiftKey) {
         this.timeRatchet(largeStep * 2);
       } else {
