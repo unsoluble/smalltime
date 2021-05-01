@@ -1,3 +1,4 @@
+// test
 Hooks.on('init', () => {
   game.settings.register('smalltime', 'current-time', {
     name: 'Current Time',
