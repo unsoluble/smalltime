@@ -59,7 +59,7 @@ Hooks.on('init', () => {
       20: '20',
       30: '30',
     },
-    default: 30,
+    default: 10,
   });
 
   game.settings.register('smalltime', 'large-step', {
@@ -141,6 +141,26 @@ Hooks.on('ready', () => {
   game.socket.on(`module.smalltime`, (data) => {
     if (data.operation === 'timeChange')
       game.modules.get('smalltime').myApp.handleTimeChange(data);
+  });
+});
+
+Hooks.on('renderSettingsConfig', () => {
+  // Live render the opacity changes as a preview.
+  $('input[name="smalltime.opacity"]').on('input', () => {
+    $('#smalltime-app').css({
+      opacity: $('input[name="smalltime.opacity"]').val(),
+      'transition-delay': 'none',
+      transition: 'none',
+    });
+  });
+});
+
+Hooks.on('closeSettingsConfig', () => {
+  // Undo the opacity preview settings.
+  $('#smalltime-app').css({
+    opacity: '',
+    'transition-delay': '',
+    transition: '',
   });
 });
 
@@ -343,6 +363,8 @@ class SmallTimeApp extends FormApplication {
 
   // Functionality for increment/decrement buttons.
   timeRatchet(delta) {
+    if (!game.user.isGM) return;
+
     let currentTime = game.settings.get('smalltime', 'current-time');
     let newTime = currentTime + delta;
 
