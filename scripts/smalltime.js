@@ -109,7 +109,8 @@ Hooks.on('init', () => {
     name: game.i18n.format('SMLTME.AboutTime'),
     hint: game.i18n.format('SMLTME.AboutTime_Hint'),
     scope: 'world',
-    config: true,
+    // Only show this toggle if About Time is enabled.
+    config: game.modules.get('about-time')?.active,
     type: Boolean,
     default: false,
     onChange: () => {
