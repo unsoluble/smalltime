@@ -11,5 +11,5 @@
   "SMLTME.Darkness": "Affect Darkness Level",
   "SMLTME.Darkness_Hint": "Dynamically adjust the scene's Darkness level based on the time of day.",
   "SMLTME.AboutTime": "Sync With About Time",
-  "SMLTME.AboutTime_Hint": "Disables SmallTime's controls, keeping it in sync with the About Time game clock."
+  "SMLTME.AboutTime_Hint": "Disable SmallTime's controls, keeping it in sync with the About Time game clock."
 }
