@@ -93,6 +93,15 @@ Hooks.on('init', () => {
       root.style.setProperty('--opacity', value);
     },
   });
+
+  game.settings.register('smalltime', 'darkness', {
+    name: game.i18n.format('SMLTME.Darkness'),
+    hint: game.i18n.format('SMLTME.Darkness_Hint'),
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: false,
+  });
 });
 
 Hooks.on('getSceneControlButtons', (buttons) => {
@@ -440,22 +449,51 @@ class SmallTimeApp extends FormApplication {
   }
 
   static timeTransition(timeNow) {
+    // These values are arbitrary choices; could be settings eventually.
+    const sunrise = 180;
+    const daytime = 420;
+    const sunset = 1050;
+    const nighttime = 1320;
+    const midnight = 1440;
+
     // Handles the range slider's sun/moon icons, and the BG color changes.
     // The 450 here is just a multiplier that works out nicely for the CSS move.
-    let bgOffset = Math.round((timeNow / 1440) * 450);
+    let bgOffset = Math.round((timeNow / midnight) * 450);
 
-    if (timeNow <= 700) {
+    // Reverse the offset direction for the BG color shift for each
+    // half of the day.
+    if (timeNow <= midnight / 2) {
       $('#slideContainer').css('background-position', `0px -${bgOffset}px`);
     } else {
       $('#slideContainer').css('background-position', `0px ${bgOffset}px`);
     }
 
-    if (timeNow > 300 && timeNow < 1050) {
+    // Swap out the moon for the sun during daytime.
+    if (timeNow > daytime && timeNow < sunset) {
       $('#timeSlider').removeClass('moon');
       $('#timeSlider').addClass('sun');
     } else {
       $('#timeSlider').removeClass('sun');
       $('#timeSlider').addClass('moon');
+    }
+
+    // If requested, adjust the scene's Darkness level.
+    // TODO: Store this change to the scene entity.
+    if (game.settings.get('smalltime', 'darkness')) {
+      let darknessValue = canvas.lighting.darknessLevel;
+
+      if (timeNow > daytime && timeNow < sunset) {
+        darknessValue = 0;
+      } else if (timeNow < sunrise) {
+        darknessValue = 1;
+      } else if (timeNow > nighttime) {
+        darknessValue = 1;
+      } else if (timeNow >= sunrise && timeNow <= daytime) {
+        darknessValue = 1 - (timeNow - sunrise) / (daytime - sunrise);
+      } else if (timeNow >= sunset && timeNow <= nighttime) {
+        darknessValue = (timeNow - sunset) / (nighttime - sunset);
+      }
+      canvas.lighting.refresh(darknessValue);
     }
   }
 

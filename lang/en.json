@@ -7,5 +7,7 @@
   "SMLTME.Large_Step": "Large Step Amount",
   "SMLTME.Large_Step_Hint": "Number of minutes to add/remove from the time with the << and >> buttons. Hold Shift to double.",
   "SMLTME.Resting_Opacity": "Resting Opactiy",
-  "SMLTME.Resting_Opacity_Hint": "Opacity of the SmallTime window when you're not interacting with it."
+  "SMLTME.Resting_Opacity_Hint": "Opacity of the SmallTime window when you're not interacting with it.",
+  "SMLTME.Darkness": "Affect Darkness Level",
+  "SMLTME.Darkness_Hint": "Dynamically adjust the scene's Darkness level based on the time of day."
 }
