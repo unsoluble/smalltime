@@ -32,22 +32,21 @@ Hooks.on('init', () => {
   });
 
   game.settings.register('smalltime', 'time-format', {
-    name: 'Time Format',
+    name: game.i18n.format('SMLTME.Time_Format'),
     scope: 'world',
     config: true,
     type: Number,
     default: 12,
     choices: {
-      12: '12hr',
-      24: '24hr',
+      12: game.i18n.format('SMLTME.12hr'),
+      24: game.i18n.format('SMLTME.24hr'),
     },
     default: 12,
   });
 
   game.settings.register('smalltime', 'small-step', {
-    name: 'Small Step Amount',
-    hint:
-      'Number of minutes to add/remove from the time with the < and > buttons. Hold Shift to double.',
+    name: game.i18n.format('SMLTME.Small_Step'),
+    hint: game.i18n.format('SMLTME.Small_Step_Hint'),
     scope: 'world',
     config: true,
     type: Number,
@@ -63,9 +62,8 @@ Hooks.on('init', () => {
   });
 
   game.settings.register('smalltime', 'large-step', {
-    name: 'Large Step Amount',
-    hint:
-      'Number of minutes to add/remove from the time with the << and >> buttons. Hold Shift to double.',
+    name: game.i18n.format('SMLTME.Large_Step'),
+    hint: game.i18n.format('SMLTME.Large_Step_Hint'),
     scope: 'world',
     config: true,
     type: Number,
@@ -79,9 +77,8 @@ Hooks.on('init', () => {
   });
 
   game.settings.register('smalltime', 'opacity', {
-    name: 'Resting Opacity',
-    hint:
-      "Opacity of the SmallTime window when you're not interacting with it.",
+    name: game.i18n.format('SMLTME.Resting_Opacity'),
+    hint: game.i18n.format('SMLTME.Resting_Opacity_Hint'),
     scope: 'client',
     config: true,
     type: Number,
