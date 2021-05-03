@@ -9,5 +9,7 @@
   "SMLTME.Resting_Opacity": "Resting Opactiy",
   "SMLTME.Resting_Opacity_Hint": "Opacity of the SmallTime window when you're not interacting with it.",
   "SMLTME.Darkness": "Affect Darkness Level",
-  "SMLTME.Darkness_Hint": "Dynamically adjust the scene's Darkness level based on the time of day."
+  "SMLTME.Darkness_Hint": "Dynamically adjust the scene's Darkness level based on the time of day.",
+  "SMLTME.AboutTime": "Sync With About Time",
+  "SMLTME.AboutTime_Hint": "Disables SmallTime's controls, keeping it in sync with the About Time game clock."
 }

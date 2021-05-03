@@ -1,4 +1,6 @@
 Hooks.on('init', () => {
+  // CONFIG.debug.hooks = true;
+
   game.settings.register('smalltime', 'current-time', {
     name: 'Current Time',
     scope: 'world',
@@ -102,6 +104,18 @@ Hooks.on('init', () => {
     type: Boolean,
     default: false,
   });
+
+  game.settings.register('smalltime', 'about-time', {
+    name: game.i18n.format('SMLTME.AboutTime'),
+    hint: game.i18n.format('SMLTME.AboutTime_Hint'),
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: false,
+    onChange: () => {
+      location.reload();
+    },
+  });
 });
 
 Hooks.on('getSceneControlButtons', (buttons) => {
@@ -168,6 +182,18 @@ Hooks.on('closeSettingsConfig', () => {
     'transition-delay': '',
     transition: '',
   });
+});
+
+Hooks.on('updateWorldTime', () => {
+  if (game.settings.get('smalltime', 'about-time')) {
+    SmallTimeApp.syncFromAboutTime();
+  }
+});
+
+Hooks.on('about-time.pseudoclockMaster', () => {
+  if (game.settings.get('smalltime', 'about-time')) {
+    SmallTimeApp.syncFromAboutTime();
+  }
 });
 
 class SmallTimeApp extends FormApplication {
@@ -523,6 +549,17 @@ class SmallTimeApp extends FormApplication {
     }
 
     return `${theHours}:${theMinutes}`;
+  }
+
+  static syncFromAboutTime() {
+    const ATobject = game.Gametime.DTNow();
+    const newTime = ATobject.hours * 60 + ATobject.minutes;
+    const timePackage = {
+      operation: 'timeChange',
+      content: newTime,
+    };
+    game.modules.get('smalltime').myApp.handleTimeChange(timePackage);
+    game.settings.set('smalltime', 'current-time', newTime);
   }
 }
 
