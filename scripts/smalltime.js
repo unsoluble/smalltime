@@ -14,7 +14,7 @@ Hooks.on('init', () => {
     scope: 'client',
     config: false,
     type: Object,
-    default: { top: 446, left: 20 },
+    default: { top: 446, left: 15 },
   });
 
   game.settings.register('smalltime', 'pinned', {
@@ -118,7 +118,76 @@ Hooks.on('init', () => {
       location.reload();
     },
   });
-  */
+  ----- About Time integration ----- */
+});
+
+Hooks.on('ready', () => {
+  SmallTimeApp.toggleAppVis('initial');
+  if (game.settings.get('smalltime', 'pinned') === true) {
+    SmallTimeApp.pinApp();
+  }
+  const root = document.documentElement;
+  const userOpacity = game.settings.get('smalltime', 'opacity');
+  root.style.setProperty('--opacity', userOpacity);
+
+  // Socket to send any GM changes dynamically to clients.
+  game.socket.on(`module.smalltime`, (data) => {
+    if (data.operation === 'timeChange')
+      game.modules.get('smalltime').myApp.handleTimeChange(data);
+  });
+});
+
+Hooks.on('canvasReady', () => {
+  const thisScene = game.scenes.entities.find((s) => s._view);
+  const darknessDefault = game.settings.get('smalltime', 'darkness-default');
+
+  if (!hasProperty(thisScene, 'data.flags.smalltime.darkness-link')) {
+    thisScene.setFlag('smalltime', 'darkness-link', darknessDefault);
+  }
+  if (thisScene.getFlag('smalltime', 'darkness-link')) {
+    SmallTimeApp.timeTransition(game.settings.get('smalltime', 'current-time'));
+  }
+});
+
+Hooks.on('renderSceneConfig', async (obj) => {
+  const darknessDefault = game.settings.get('smalltime', 'darkness-default');
+  if (!hasProperty(obj.object, 'data.flags.smalltime.darkness-link')) {
+    obj.object.setFlag('smalltime', 'darkness-link', darknessDefault);
+  }
+  const checkStatus = obj.object.getFlag('smalltime', 'darkness-link') ? 'checked' : '';
+
+  console.log(darknessDefault, checkStatus);
+
+  const controlLabel = game.i18n.format('SMLTME.Darkness_Control');
+  const controlHint = game.i18n.format('SMLTME.Darkness_Control_Hint');
+  const injection = `
+    <div class="form-group">
+      <label>${controlLabel}</label>
+      <input id="smalltime-darkness" type="checkbox" name="flags.smalltime.darkness-link" ${checkStatus}>
+      <p class="notes">${controlHint}</p>
+    </div>
+    `;
+  $('p:contains("dim conditions")').parent().after(injection);
+});
+
+Hooks.on('renderSettingsConfig', () => {
+  // Live render the opacity changes as a preview.
+  $('input[name="smalltime.opacity"]').on('input', () => {
+    $('#smalltime-app').css({
+      opacity: $('input[name="smalltime.opacity"]').val(),
+      'transition-delay': 'none',
+      transition: 'none',
+    });
+  });
+});
+
+Hooks.on('closeSettingsConfig', () => {
+  // Undo the opacity preview settings.
+  $('#smalltime-app').css({
+    opacity: '',
+    'transition-delay': '',
+    transition: '',
+  });
 });
 
 Hooks.on('getSceneControlButtons', (buttons) => {
@@ -150,75 +219,6 @@ Hooks.on('renderPlayerList', () => {
   `);
 });
 
-Hooks.on('ready', () => {
-  SmallTimeApp.toggleAppVis('initial');
-  if (game.settings.get('smalltime', 'pinned') === true) {
-    SmallTimeApp.pinApp();
-  }
-  const root = document.documentElement;
-  const userOpacity = game.settings.get('smalltime', 'opacity');
-  root.style.setProperty('--opacity', userOpacity);
-
-  // Socket to send any GM changes dynamically to clients.
-  game.socket.on(`module.smalltime`, (data) => {
-    if (data.operation === 'timeChange')
-      game.modules.get('smalltime').myApp.handleTimeChange(data);
-  });
-});
-
-Hooks.on('canvasReady', () => {
-  const thisScene = game.scenes.entities.find((s) => s._view);
-  const darknessDefault = game.settings.get('smalltime', 'darkness-default');
-
-  if (!hasProperty(thisScene, 'data.flags.smalltime.darkness-link')) {
-    thisScene.setFlag('smalltime', 'darkness-link', darknessDefault);
-  }
-  if (thisScene.getFlag('smalltime', 'darkness-link')) {
-    SmallTimeApp.timeTransition(game.settings.get('smalltime', 'current-time'));
-  }
-});
-
-Hooks.on('renderSettingsConfig', () => {
-  // Live render the opacity changes as a preview.
-  $('input[name="smalltime.opacity"]').on('input', () => {
-    $('#smalltime-app').css({
-      opacity: $('input[name="smalltime.opacity"]').val(),
-      'transition-delay': 'none',
-      transition: 'none',
-    });
-  });
-});
-
-Hooks.on('closeSettingsConfig', () => {
-  // Undo the opacity preview settings.
-  $('#smalltime-app').css({
-    opacity: '',
-    'transition-delay': '',
-    transition: '',
-  });
-});
-
-Hooks.on('renderSceneConfig', async (obj) => {
-  const darknessDefault = game.settings.get('smalltime', 'darkness-default');
-  if (!hasProperty(obj.object, 'data.flags.smalltime.darkness-link')) {
-    obj.object.setFlag('smalltime', 'darkness-link', darknessDefault);
-  }
-  const checkStatus = obj.object.getFlag('smalltime', 'darkness-link') ? 'checked' : '';
-
-  console.log(darknessDefault, checkStatus);
-
-  const controlLabel = game.i18n.format('SMLTME.Darkness_Control');
-  const controlHint = game.i18n.format('SMLTME.Darkness_Control_Hint');
-  const injection = `
-    <div class="form-group">
-      <label>${controlLabel}</label>
-      <input id="smalltime-darkness" type="checkbox" name="flags.smalltime.darkness-link" ${checkStatus}>
-      <p class="notes">${controlHint}</p>
-    </div>
-    `;
-  $('p:contains("dim conditions")').parent().after(injection);
-});
-
 /* ----- About Time integration -----
 Hooks.on('updateWorldTime', () => {
   if (game.settings.get('smalltime', 'about-time')) {
@@ -231,7 +231,7 @@ Hooks.on('about-time.pseudoclockMaster', () => {
     SmallTimeApp.syncFromAboutTime();
   }
 });
-*/
+----- About Time integration ----- */
 
 class SmallTimeApp extends FormApplication {
   constructor() {
@@ -265,6 +265,13 @@ class SmallTimeApp extends FormApplication {
       top: this.initialPosition.top,
       left: this.initialPosition.left,
     });
+  }
+  
+  async _updateObject(event, formData) {
+    // Get the slider value.
+    const newTime = formData.timeSlider;
+    // Save the new time.
+    await game.settings.set('smalltime', 'current-time', newTime);
   }
 
   getData() {
@@ -416,13 +423,6 @@ class SmallTimeApp extends FormApplication {
     });
   }
 
-  async _updateObject(event, formData) {
-    // Get the slider value.
-    const newTime = formData.timeSlider;
-    // Save the new time.
-    await game.settings.set('smalltime', 'current-time', newTime);
-  }
-
   // Helper function for the socket updates.
   handleTimeChange(data) {
     SmallTimeApp.timeTransition(data.content);
@@ -461,56 +461,7 @@ class SmallTimeApp extends FormApplication {
     $('#timeSlider').val(newTime);
   }
 
-  static pinApp() {
-    // Pin the app above the Players list.
-    // Only do this if a pin lock isn't already in place.
-    if (!$('#pin-lock').length) {
-      const playerApp = document.getElementById('players');
-      const playerAppPos = playerApp.getBoundingClientRect();
-      const myOffset = playerAppPos.height + 88;
-
-      // Dropping this into the DOM with an !important was the only way
-      // I could get it to enable the locking behaviour.
-      $('body').append(`
-        <style id="pin-lock">
-          #smalltime-app {
-            top: calc(100vh - ${myOffset}px) !important;
-            left: 15px !important;
-          }
-        </style>
-      `);
-      game.settings.set('smalltime', 'pinned', true);
-    }
-  }
-
-  static unPinApp() {
-    // Remove the style tag that's pinning the window.
-    $('#pin-lock').remove();
-  }
-
-  static toggleAppVis(mode) {
-    // Toggle visibility of the main window.
-    if (mode === 'toggle') {
-      if (game.settings.get('smalltime', 'visible') === true) {
-        // Stop any currently-running animations, and then animate the app
-        // away before close(), to avoid the stock close() animation.
-        $('#smalltime-app').stop();
-        $('#smalltime-app').css({ animation: 'close 0.2s', opacity: '0' });
-        setTimeout(function () {
-          game.modules.get('smalltime').myApp.close();
-        }, 200);
-        game.settings.set('smalltime', 'visible', false);
-      } else {
-        const myApp = new SmallTimeApp().render(true);
-        game.modules.get('smalltime').myApp = myApp;
-        game.settings.set('smalltime', 'visible', true);
-      }
-    } else if (game.settings.get('smalltime', 'visible') === true) {
-      const myApp = new SmallTimeApp().render(true);
-      game.modules.get('smalltime').myApp = myApp;
-    }
-  }
-
+  // Render changes to the sun/moon slider, and handle Darkness link.
   static async timeTransition(timeNow) {
     // These values are arbitrary choices; could be settings eventually.
     const sunrise = 180;
@@ -565,8 +516,8 @@ class SmallTimeApp extends FormApplication {
     }
   }
 
+  // Convert the integer time value to an hours:minutes string.
   static convertTime(timeInteger) {
-    // Convert the integer time value to an hours:minutes string.
     let theHours = Math.floor(timeInteger / 60);
     let theMinutes = timeInteger - theHours * 60;
 
@@ -592,6 +543,57 @@ class SmallTimeApp extends FormApplication {
 
     return `${theHours}:${theMinutes}`;
   }
+  
+  // Pin the app above the Players list.
+  static pinApp() {
+    // Only do this if a pin lock isn't already in place.
+    if (!$('#pin-lock').length) {
+      const playerApp = document.getElementById('players');
+      const playerAppPos = playerApp.getBoundingClientRect();
+      const myOffset = playerAppPos.height + 88;
+
+      // Dropping this into the DOM with an !important was the only way
+      // I could get it to enable the locking behaviour.
+      $('body').append(`
+        <style id="pin-lock">
+          #smalltime-app {
+            top: calc(100vh - ${myOffset}px) !important;
+            left: 15px !important;
+          }
+        </style>
+      `);
+      game.settings.set('smalltime', 'pinned', true);
+    }
+  }
+
+  // Un-pin the app.
+  static unPinApp() {
+    // Remove the style tag that's pinning the window.
+    $('#pin-lock').remove();
+  }
+
+  // Toggle visibility of the main window.
+  static toggleAppVis(mode) {
+    if (mode === 'toggle') {
+      if (game.settings.get('smalltime', 'visible') === true) {
+        // Stop any currently-running animations, and then animate the app
+        // away before close(), to avoid the stock close() animation.
+        $('#smalltime-app').stop();
+        $('#smalltime-app').css({ animation: 'close 0.2s', opacity: '0' });
+        setTimeout(function () {
+          game.modules.get('smalltime').myApp.close();
+        }, 200);
+        game.settings.set('smalltime', 'visible', false);
+      } else {
+        const myApp = new SmallTimeApp().render(true);
+        game.modules.get('smalltime').myApp = myApp;
+        game.settings.set('smalltime', 'visible', true);
+      }
+    } else if (game.settings.get('smalltime', 'visible') === true) {
+      const myApp = new SmallTimeApp().render(true);
+      game.modules.get('smalltime').myApp = myApp;
+    }
+  }
 
   /* ----- About Time integration -----
   static syncFromAboutTime() {
@@ -604,7 +606,7 @@ class SmallTimeApp extends FormApplication {
     game.modules.get('smalltime').myApp.handleTimeChange(timePackage);
     game.settings.set('smalltime', 'current-time', newTime);
   }
-  */
+  ----- About Time integration ----- */
 }
 
 // Icons by Freepik on flaticon.com
