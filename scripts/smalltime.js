@@ -253,7 +253,7 @@ class SmallTimeApp extends FormApplication {
   }
 
   getData() {
-    // Sending values to the HTML template
+    // Send values to the HTML template.
     return {
       timeValue: this.currentTime,
       timeString: SmallTimeApp.convertTime(this.currentTime),
@@ -271,7 +271,7 @@ class SmallTimeApp extends FormApplication {
     // we're currently in that area.
     let pinZone = false;
 
-    // Disable controls for non-GMs
+    // Disable controls for non-GMs.
     if (!game.user.isGM) {
       $('#timeSlider').addClass('disable-for-players');
       $('#decrease-large').addClass('hide-for-players');
@@ -327,6 +327,7 @@ class SmallTimeApp extends FormApplication {
       const playerAppPos = playerApp.getBoundingClientRect();
       const myOffset = playerAppPos.height + 88;
 
+      // If the mouseup happens inside the Pin zone, pin the app.
       if (pinZone) {
         SmallTimeApp.pinApp();
         game.settings.set('smalltime', 'pinned', true);
