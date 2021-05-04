@@ -104,21 +104,6 @@ Hooks.on('init', () => {
     type: Boolean,
     default: false,
   });
-
-  /* ----- About Time integration -----
-  game.settings.register('smalltime', 'about-time', {
-    name: game.i18n.format('SMLTME.AboutTime'),
-    hint: game.i18n.format('SMLTME.AboutTime_Hint'),
-    scope: 'world',
-    // Only show this toggle if About Time is enabled.
-    config: game.modules.get('about-time')?.active,
-    type: Boolean,
-    default: false,
-    onChange: () => {
-      location.reload();
-    },
-  });
-  ----- About Time integration ----- */
 });
 
 Hooks.on('ready', () => {
@@ -218,20 +203,6 @@ Hooks.on('renderPlayerList', () => {
       }
   `);
 });
-
-/* ----- About Time integration -----
-Hooks.on('updateWorldTime', () => {
-  if (game.settings.get('smalltime', 'about-time')) {
-    SmallTimeApp.syncFromAboutTime();
-  }
-});
-
-Hooks.on('about-time.pseudoclockMaster', () => {
-  if (game.settings.get('smalltime', 'about-time')) {
-    SmallTimeApp.syncFromAboutTime();
-  }
-});
------ About Time integration ----- */
 
 class SmallTimeApp extends FormApplication {
   constructor() {
@@ -594,19 +565,6 @@ class SmallTimeApp extends FormApplication {
       game.modules.get('smalltime').myApp = myApp;
     }
   }
-
-  /* ----- About Time integration -----
-  static syncFromAboutTime() {
-    const ATobject = game.Gametime.DTNow();
-    const newTime = ATobject.hours * 60 + ATobject.minutes;
-    const timePackage = {
-      operation: 'timeChange',
-      content: newTime,
-    };
-    game.modules.get('smalltime').myApp.handleTimeChange(timePackage);
-    game.settings.set('smalltime', 'current-time', newTime);
-  }
-  ----- About Time integration ----- */
 }
 
 // Icons by Freepik on flaticon.com
