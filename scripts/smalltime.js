@@ -167,11 +167,14 @@ Hooks.on('ready', () => {
 });
 
 Hooks.on('canvasReady', () => {
-  const thisScene = game.scenes.entities.find((s) => s.active);
+  const thisScene = game.scenes.entities.find((s) => s._view);
   const darknessDefault = game.settings.get('smalltime', 'darkness-default');
 
   if (!hasProperty(thisScene, 'data.flags.smalltime.darkness-link')) {
     thisScene.setFlag('smalltime', 'darkness-link', darknessDefault);
+  }
+  if (thisScene.getFlag('smalltime', 'darkness-link')) {
+    SmallTimeApp.timeTransition(game.settings.get('smalltime', 'current-time'));
   }
 });
 
@@ -554,8 +557,11 @@ class SmallTimeApp extends FormApplication {
       } else if (timeNow >= sunset && timeNow <= nighttime) {
         darknessValue = (timeNow - sunset) / (nighttime - sunset);
       }
+      // Truncate long decimals.
+      darknessValue = Math.round(darknessValue * 10) / 10;
+
       canvas.lighting.refresh(darknessValue);
-      await currentScene.darkness = darknessValue;
+      await currentScene.update({ darkness: darknessValue });
     }
   }
 
