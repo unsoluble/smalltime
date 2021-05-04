@@ -123,12 +123,16 @@ Hooks.on('ready', () => {
 });
 
 Hooks.on('canvasReady', () => {
+  // Get currently viewed scene.
   const thisScene = game.scenes.entities.find((s) => s._view);
   const darknessDefault = game.settings.get('smalltime', 'darkness-default');
 
+  // Set the Darkness link state to the default choice.
   if (!hasProperty(thisScene, 'data.flags.smalltime.darkness-link')) {
     thisScene.setFlag('smalltime', 'darkness-link', darknessDefault);
   }
+  
+  // Refresh the current scene's Darkness level if it should be linked.
   if (thisScene.getFlag('smalltime', 'darkness-link')) {
     SmallTimeApp.timeTransition(game.settings.get('smalltime', 'current-time'));
   }
@@ -136,13 +140,16 @@ Hooks.on('canvasReady', () => {
 
 Hooks.on('renderSceneConfig', async (obj) => {
   const darknessDefault = game.settings.get('smalltime', 'darkness-default');
+  
+  // If the Darkness link flag hasn't been set yet, set it to the default choice.
   if (!hasProperty(obj.object, 'data.flags.smalltime.darkness-link')) {
     obj.object.setFlag('smalltime', 'darkness-link', darknessDefault);
   }
+  
+  // Set the option's checkbox as appropriate.
   const checkStatus = obj.object.getFlag('smalltime', 'darkness-link') ? 'checked' : '';
-
-  console.log(darknessDefault, checkStatus);
-
+  
+  // Inject our new option into the config screen.
   const controlLabel = game.i18n.format('SMLTME.Darkness_Control');
   const controlHint = game.i18n.format('SMLTME.Darkness_Control_Hint');
   const injection = `
