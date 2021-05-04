@@ -8,8 +8,8 @@
   "SMLTME.Large_Step_Hint": "Number of minutes to add/remove from the time with the << and >> buttons. Hold Shift to double.",
   "SMLTME.Resting_Opacity": "Resting Opactiy",
   "SMLTME.Resting_Opacity_Hint": "Opacity of the SmallTime window when you're not interacting with it.",
-  "SMLTME.Darkness": "Affect Darkness Level",
-  "SMLTME.Darkness_Hint": "Dynamically adjust the scene's Darkness level based on the time of day.",
-  "SMLTME.AboutTime": "Sync With About Time",
-  "SMLTME.AboutTime_Hint": "Disable SmallTime's controls, keeping it in sync with the About Time game clock."
+  "SMLTME.Darkness_Default": "Affect Darkness by Default",
+  "SMLTME.Darkness_Default_Hint": "Default setting for the SmallTime Darkness Control setting in Scene Config.",
+  "SMLTME.Darkness_Control": "SmallTime Darkness Control",
+  "SMLTME.Darkness_Control_Hint": "Link this scene's Darkness Level to the current time in SmallTime."
 }

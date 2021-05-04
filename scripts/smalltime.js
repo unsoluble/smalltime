@@ -96,15 +96,16 @@ Hooks.on('init', () => {
     },
   });
 
-  game.settings.register('smalltime', 'darkness', {
-    name: game.i18n.format('SMLTME.Darkness'),
-    hint: game.i18n.format('SMLTME.Darkness_Hint'),
+  game.settings.register('smalltime', 'darkness-default', {
+    name: game.i18n.format('SMLTME.Darkness_Default'),
+    hint: game.i18n.format('SMLTME.Darkness_Default_Hint'),
     scope: 'world',
     config: true,
     type: Boolean,
     default: false,
   });
 
+  /* ----- About Time integration -----
   game.settings.register('smalltime', 'about-time', {
     name: game.i18n.format('SMLTME.AboutTime'),
     hint: game.i18n.format('SMLTME.AboutTime_Hint'),
@@ -117,6 +118,7 @@ Hooks.on('init', () => {
       location.reload();
     },
   });
+  */
 });
 
 Hooks.on('getSceneControlButtons', (buttons) => {
@@ -153,7 +155,6 @@ Hooks.on('ready', () => {
   if (game.settings.get('smalltime', 'pinned') === true) {
     SmallTimeApp.pinApp();
   }
-
   const root = document.documentElement;
   const userOpacity = game.settings.get('smalltime', 'opacity');
   root.style.setProperty('--opacity', userOpacity);
@@ -163,6 +164,15 @@ Hooks.on('ready', () => {
     if (data.operation === 'timeChange')
       game.modules.get('smalltime').myApp.handleTimeChange(data);
   });
+});
+
+Hooks.on('canvasReady', () => {
+  const thisScene = game.scenes.entities.find((s) => s.active);
+  const darknessDefault = game.settings.get('smalltime', 'darkness-default');
+
+  if (!hasProperty(thisScene, 'data.flags.smalltime.darkness-link')) {
+    thisScene.setFlag('smalltime', 'darkness-link', darknessDefault);
+  }
 });
 
 Hooks.on('renderSettingsConfig', () => {
@@ -185,6 +195,28 @@ Hooks.on('closeSettingsConfig', () => {
   });
 });
 
+Hooks.on('renderSceneConfig', async (obj) => {
+  const darknessDefault = game.settings.get('smalltime', 'darkness-default');
+  if (!hasProperty(obj.object, 'data.flags.smalltime.darkness-link')) {
+    obj.object.setFlag('smalltime', 'darkness-link', darknessDefault);
+  }
+  const checkStatus = obj.object.getFlag('smalltime', 'darkness-link') ? 'checked' : '';
+
+  console.log(darknessDefault, checkStatus);
+
+  const controlLabel = game.i18n.format('SMLTME.Darkness_Control');
+  const controlHint = game.i18n.format('SMLTME.Darkness_Control_Hint');
+  const injection = `
+    <div class="form-group">
+      <label>${controlLabel}</label>
+      <input id="smalltime-darkness" type="checkbox" name="flags.smalltime.darkness-link" ${checkStatus}>
+      <p class="notes">${controlHint}</p>
+    </div>
+    `;
+  $('p:contains("dim conditions")').parent().after(injection);
+});
+
+/* ----- About Time integration -----
 Hooks.on('updateWorldTime', () => {
   if (game.settings.get('smalltime', 'about-time')) {
     SmallTimeApp.syncFromAboutTime();
@@ -196,6 +228,7 @@ Hooks.on('about-time.pseudoclockMaster', () => {
     SmallTimeApp.syncFromAboutTime();
   }
 });
+*/
 
 class SmallTimeApp extends FormApplication {
   constructor() {
@@ -475,7 +508,7 @@ class SmallTimeApp extends FormApplication {
     }
   }
 
-  static timeTransition(timeNow) {
+  static async timeTransition(timeNow) {
     // These values are arbitrary choices; could be settings eventually.
     const sunrise = 180;
     const daytime = 420;
@@ -505,8 +538,9 @@ class SmallTimeApp extends FormApplication {
     }
 
     // If requested, adjust the scene's Darkness level.
-    // TODO: Store this change to the scene entity.
-    if (game.settings.get('smalltime', 'darkness')) {
+    const currentScene = game.scenes.entities.find((s) => s._view);
+
+    if (currentScene.getFlag('smalltime', 'darkness-link')) {
       let darknessValue = canvas.lighting.darknessLevel;
 
       if (timeNow > daytime && timeNow < sunset) {
@@ -521,6 +555,7 @@ class SmallTimeApp extends FormApplication {
         darknessValue = (timeNow - sunset) / (nighttime - sunset);
       }
       canvas.lighting.refresh(darknessValue);
+      await currentScene.darkness = darknessValue;
     }
   }
 
@@ -552,6 +587,7 @@ class SmallTimeApp extends FormApplication {
     return `${theHours}:${theMinutes}`;
   }
 
+  /* ----- About Time integration -----
   static syncFromAboutTime() {
     const ATobject = game.Gametime.DTNow();
     const newTime = ATobject.hours * 60 + ATobject.minutes;
@@ -562,6 +598,7 @@ class SmallTimeApp extends FormApplication {
     game.modules.get('smalltime').myApp.handleTimeChange(timePackage);
     game.settings.set('smalltime', 'current-time', newTime);
   }
+  */
 }
 
 // Icons by Freepik on flaticon.com
