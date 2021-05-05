@@ -165,15 +165,8 @@
   padding-bottom: 2px;
   margin-top: 3px;
   margin-bottom: 3px;
-  background: linear-gradient(
-    180deg,
-    #505050 0%,
-    #434343 50%,
-    #3e3e3e 51%,
-    #434343 100%
-  );
-  box-shadow: inset 0px 1px 1px rgba(255, 255, 255, 0.1),
-    0px 1px 3px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(180deg, #505050 0%, #434343 50%, #3e3e3e 51%, #434343 100%);
+  box-shadow: inset 0px 1px 1px rgba(255, 255, 255, 0.1), 0px 1px 3px rgba(0, 0, 0, 0.3);
   border: 1px solid #434343;
   border-width: 1px 1px 1px 1px;
   border-radius: 3px;
@@ -197,8 +190,7 @@
 #smalltime-app .arrow:active {
   position: relative;
   top: 1px;
-  box-shadow: inset 0px 1px 1px rgba(255, 255, 255, 0.1),
-    0px 0px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: inset 0px 1px 1px rgba(255, 255, 255, 0.1), 0px 0px 2px rgba(0, 0, 0, 0.2);
 }
 
 #smalltime-app #timeDisplay {
@@ -215,6 +207,23 @@
   background: url(/ui/denim-dark-090.png) repeat;
   background-blend-mode: screen;
   background-color: rgba(0, 0, 0, 1);
+}
+
+#smalltime-config-icon {
+  flex: 0 1 auto;
+  float: left;
+  margin-left: auto;
+  margin-right: 7px;
+  position: relative;
+  top: 11px;
+  border: none;
+  width: 30px;
+  height: 30px;
+}
+
+#smalltime-config-note {
+  position: relative;
+  left: 37px;
 }
 
 #smalltime-app .disable-for-players {

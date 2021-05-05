@@ -167,9 +167,10 @@ Hooks.on('renderSceneConfig', async (obj) => {
   const controlHint = game.i18n.format('SMLTME.Darkness_Control_Hint');
   const injection = `
     <div class="form-group">
+    <img id="smalltime-config-icon" src="modules/smalltime/images/smalltime-icon.webp">
       <label>${controlLabel}</label>
       <input id="smalltime-darkness" type="checkbox" name="flags.smalltime.darkness-link" ${checkStatus}>
-      <p class="notes">${controlHint}</p>
+      <p id="smalltime-config-note" class="notes">${controlHint}</p>
     </div>
     `;
   $('p:contains("dim conditions")').parent().after(injection);
