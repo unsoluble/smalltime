@@ -536,7 +536,7 @@ class SmallTimeApp extends FormApplication {
     // If requested, adjust the scene's Darkness level.
     const currentScene = game.scenes.entities.find((s) => s._view);
 
-    if (currentScene.getFlag('smalltime', 'darkness-link') && !game.user.isGM) {
+    if (currentScene.getFlag('smalltime', 'darkness-link') && game.user.isGM) {
       let darknessValue = canvas.lighting.darknessLevel;
 
       if (timeNow > daytime && timeNow < sunset) {
