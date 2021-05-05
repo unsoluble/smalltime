@@ -110,7 +110,7 @@ Hooks.on('init', () => {
     hint: game.i18n.format('SMLTME.AboutTime_Hint'),
     scope: 'world',
     // Only show this toggle if About Time is enabled.
-    config: false, // game.modules.get('about-time')?.active,
+    config: game.modules.get('about-time')?.active,
     type: Boolean,
     default: false,
     onChange: () => {
@@ -167,7 +167,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
   const controlHint = game.i18n.format('SMLTME.Darkness_Control_Hint');
   const injection = `
     <div class="form-group">
-    <img id="smalltime-config-icon" src="modules/smalltime/images/smalltime-icon.webp">
+      <img id="smalltime-config-icon" src="modules/smalltime/images/smalltime-icon.webp">
       <label>${controlLabel}</label>
       <input id="smalltime-darkness" type="checkbox" name="flags.smalltime.darkness-link" ${checkStatus}>
       <p id="smalltime-config-note" class="notes">${controlHint}</p>
@@ -387,6 +387,17 @@ class SmallTimeApp extends FormApplication {
       });
     });
 
+    // Send slider time changes to About Time on mouseUp, not live.
+    // Multiply by 60, because AT is expecting seconds.
+    $(document).on('change', '#timeSlider', function () {
+      if (
+        game.modules.get('about-time')?.active &&
+        game.settings.get('smalltime', 'about-time')
+      ) {
+        game.Gametime.setClock($(this).val() * 60);
+      }
+    });
+
     // Handle the increment/decrement buttons.
     let smallStep = game.settings.get('smalltime', 'small-step');
     let largeStep = game.settings.get('smalltime', 'large-step');
@@ -439,6 +450,15 @@ class SmallTimeApp extends FormApplication {
   timeRatchet(delta) {
     if (!game.user.isGM) return;
 
+    let AboutTimeSync = false;
+
+    if (
+      game.modules.get('about-time')?.active &&
+      game.settings.get('smalltime', 'about-time')
+    ) {
+      AboutTimeSync = true;
+    }
+
     let currentTime = game.settings.get('smalltime', 'current-time');
     let newTime = currentTime + delta;
 
@@ -455,6 +475,20 @@ class SmallTimeApp extends FormApplication {
     $('#timeDisplay').html(SmallTimeApp.convertTime(newTime));
 
     SmallTimeApp.timeTransition(newTime);
+
+    // Send the new time to About Time.
+    if (AboutTimeSync) {
+      let hours = delta / 60;
+      let rhours = Math.floor(hours);
+      let minutes = (hours - rhours) * 60;
+      let rminutes = Math.round(minutes);
+      game.Gametime.advanceTime({
+        days: 0,
+        hours: rhours,
+        minutes: rminutes,
+        seconds: 0,
+      });
+    }
 
     // Socket for player sync.
     game.socket.emit('module.smalltime', {
