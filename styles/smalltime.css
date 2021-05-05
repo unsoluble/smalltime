@@ -1,11 +1,12 @@
 :root {
   --opacity: 0.8;
+  --height: 58px;
 }
 
 #smalltime-app {
   flex-wrap: nowrap;
   background: none;
-  height: 58px;
+  height: var(--height);
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.7);
   opacity: var(--opacity);
   animation: fadeOut 3s ease-out;
@@ -138,6 +139,8 @@
 }
 
 #smalltime-app #displayContainer {
+  position: absolute;
+  top: 24px;
   display: flex;
   justify-content: space-between;
   margin: 0;
@@ -193,7 +196,7 @@
   box-shadow: inset 0px 1px 1px rgba(255, 255, 255, 0.1), 0px 0px 2px rgba(0, 0, 0, 0.2);
 }
 
-#smalltime-app #timeDisplay {
+#smalltime-app #timeDisplay, #dateDisplay {
   font-size: 1em;
   color: #efefe0;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
@@ -201,6 +204,41 @@
   text-align: center;
   background: none;
   width: 100%;
+}
+
+#smalltime-app #dateDisplay {
+  visibility: hidden;
+  position: absolute;
+  top: 48px;
+  font-size: 0.9em;
+  margin: 0;
+  padding: 3px 0px 2px 0px;
+  border: 0;
+  background: #444;
+  height: auto;
+  box-shadow: inset 0 6px 8px -6px rgba(0, 0, 0, 0.6),
+    inset 0 -5px 8px -5px rgba(0, 0, 0, 0.5);
+  transition: transform .1s ease-out;
+  transform: scaleY(0);
+  transform-origin: top;
+}
+
+#smalltime-app #dateDisplay.active {
+  //display: block;
+  visibility: visible;
+  transform: scaleY(1);
+  transition: transform .1s ease-out;
+}
+
+.section {
+  overflow:hidden;
+  transition:transform 0.3s ease-out; // note that we're transitioning transform, not height!
+  height:auto;
+  transform:scaleY(1); // implicit, but good to specify explicitly
+  transform-origin:top; // keep the top of the element in the same place. this is optional.
+}
+.section.collapsed {
+  transform:scaleY(0); // *squish*
 }
 
 #smalltime-app #dragHandle {

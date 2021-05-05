@@ -8,6 +8,14 @@ Hooks.on('init', () => {
     type: Number,
     default: 0,
   });
+  
+  game.settings.register('smalltime', 'current-date', {
+    name: 'Current Date',
+    scope: 'world',
+    config: false,
+    type: String,
+    default: '',
+  });
 
   game.settings.register('smalltime', 'position', {
     name: 'Position',
@@ -31,6 +39,14 @@ Hooks.on('init', () => {
     config: false,
     type: Boolean,
     default: true,
+  });
+  
+  game.settings.register('smalltime', 'date-showing', {
+    name: 'Date Showing',
+    scope: 'client',
+    config: false,
+    type: Boolean,
+    default: false,
   });
 
   game.settings.register('smalltime', 'time-format', {
@@ -124,9 +140,14 @@ Hooks.on('ready', () => {
   if (game.settings.get('smalltime', 'pinned') === true) {
     SmallTimeApp.pinApp();
   }
+  
   const root = document.documentElement;
   const userOpacity = game.settings.get('smalltime', 'opacity');
   root.style.setProperty('--opacity', userOpacity);
+  
+  if (game.settings.get('smalltime', 'date-showing')) {
+    game.settings.set('smalltime', 'date-showing', false);
+  }
 
   // Socket to send any GM changes dynamically to clients.
   game.socket.on(`module.smalltime`, (data) => {
@@ -218,7 +239,14 @@ Hooks.on('renderPlayerList', () => {
   // when the size of the PlayerList changes.
   const element = document.getElementById('players');
   const playerAppPos = element.getBoundingClientRect();
-  const myOffset = playerAppPos.height + 88;
+  
+  // The 88 here is the ideal distance between the top of the
+  // Players list and the top of SmallTime. The +21 accounts
+  // for the date dropdown if enabled.
+  let myOffset = playerAppPos.height + 88;
+  if (game.settings.get('smalltime', 'date-showing')) {
+    myOffset += 21;
+  }
   $('#pin-lock').text(`
       #smalltime-app {
         top: calc(100vh - ${myOffset}px) !important;
@@ -285,6 +313,7 @@ class SmallTimeApp extends FormApplication {
     return {
       timeValue: this.currentTime,
       timeString: SmallTimeApp.convertTime(this.currentTime),
+      dateString: game.settings.get('smalltime', 'current-date'),
     };
   }
 
@@ -357,7 +386,7 @@ class SmallTimeApp extends FormApplication {
 
       // If the mouseup happens inside the Pin zone, pin the app.
       if (pinZone) {
-        SmallTimeApp.pinApp();
+        SmallTimeApp.pinApp(game.settings.get('smalltime', 'date-showing'));
         game.settings.set('smalltime', 'pinned', true);
         this.app.setPosition({
           left: 15,
@@ -406,6 +435,31 @@ class SmallTimeApp extends FormApplication {
             seconds: 0,
           });
        }
+    });
+    
+    $(document).on('click', '#timeDisplay', async function () {
+      if (
+        game.modules.get('about-time')?.active &&
+        game.settings.get('smalltime', 'about-time')
+      ) {
+        if (!game.settings.get('smalltime', 'date-showing')) {
+          $('#dateDisplay').addClass('active');
+          $('#smalltime-app').animate({height:'79px'}, 80);
+          if (game.settings.get('smalltime', 'pinned')) {
+            SmallTimeApp.unPinApp();
+            SmallTimeApp.pinApp(true);
+          }
+          await game.settings.set('smalltime', 'date-showing', true);
+        } else {
+          $('#dateDisplay').removeClass('active');
+          $('#smalltime-app').animate({height:'58px'}, 80);
+          if (game.settings.get('smalltime', 'pinned')) {
+            SmallTimeApp.unPinApp();
+            SmallTimeApp.pinApp(false);
+          }
+          await game.settings.set('smalltime', 'date-showing', false);
+        }
+      }
     });
 
     // Handle the increment/decrement buttons.
@@ -596,12 +650,14 @@ class SmallTimeApp extends FormApplication {
   }
 
   // Pin the app above the Players list.
-  static pinApp() {
+  static pinApp(expanded) {
     // Only do this if a pin lock isn't already in place.
     if (!$('#pin-lock').length) {
       const playerApp = document.getElementById('players');
       const playerAppPos = playerApp.getBoundingClientRect();
-      const myOffset = playerAppPos.height + 88;
+      let myOffset = playerAppPos.height + 88;
+      
+      if (expanded) myOffset += 21;
 
       // Dropping this into the DOM with an !important was the only way
       // I could get it to enable the locking behaviour.
@@ -653,8 +709,15 @@ class SmallTimeApp extends FormApplication {
       operation: 'timeChange',
       content: newTime,
     };
+    const newDate = ATobject.longDateSelect(game.settings.get("about-time", "calendarFormat")).date;
     game.modules.get('smalltime').myApp.handleTimeChange(timePackage);
     game.settings.set('smalltime', 'current-time', newTime);
+    
+    // Reformat the About Time date slightly.
+    let dateArray = newDate.split(" ");
+    let displayDate = dateArray[0] + ', ' + dateArray[1] + ' ' + dateArray[2] + ', ' + dateArray[4];
+    $('#dateDisplay').html(displayDate);
+    game.settings.set('smalltime', 'current-date', displayDate);
   }
 }
 
