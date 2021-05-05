@@ -136,18 +136,20 @@ Hooks.on('ready', () => {
 });
 
 Hooks.on('canvasReady', () => {
-  // Get currently viewed scene.
-  const thisScene = game.scenes.entities.find((s) => s._view);
-  const darknessDefault = game.settings.get('smalltime', 'darkness-default');
+  if (game.user.isGM) {
+    // Get currently viewed scene.
+    const thisScene = game.scenes.entities.find((s) => s._view);
+    const darknessDefault = game.settings.get('smalltime', 'darkness-default');
 
-  // Set the Darkness link state to the default choice.
-  if (!hasProperty(thisScene, 'data.flags.smalltime.darkness-link')) {
-    thisScene.setFlag('smalltime', 'darkness-link', darknessDefault);
-  }
+    // Set the Darkness link state to the default choice.
+    if (!hasProperty(thisScene, 'data.flags.smalltime.darkness-link')) {
+      thisScene.setFlag('smalltime', 'darkness-link', darknessDefault);
+    }
 
-  // Refresh the current scene's Darkness level if it should be linked.
-  if (thisScene.getFlag('smalltime', 'darkness-link')) {
-    SmallTimeApp.timeTransition(game.settings.get('smalltime', 'current-time'));
+    // Refresh the current scene's Darkness level if it should be linked.
+    if (thisScene.getFlag('smalltime', 'darkness-link')) {
+      SmallTimeApp.timeTransition(game.settings.get('smalltime', 'current-time'));
+    }
   }
 });
 
@@ -226,13 +228,13 @@ Hooks.on('renderPlayerList', () => {
 });
 
 Hooks.on('updateWorldTime', () => {
-  if (game.settings.get('smalltime', 'about-time')) {
+  if (game.settings.get('smalltime', 'about-time') && game.user.isGM) {
     SmallTimeApp.syncFromAboutTime();
   }
 });
 
 Hooks.on('about-time.pseudoclockMaster', () => {
-  if (game.settings.get('smalltime', 'about-time')) {
+  if (game.settings.get('smalltime', 'about-time') && game.user.isGM) {
     SmallTimeApp.syncFromAboutTime();
   }
 });
@@ -502,6 +504,7 @@ class SmallTimeApp extends FormApplication {
 
   // Render changes to the sun/moon slider, and handle Darkness link.
   static async timeTransition(timeNow) {
+    if (!game.user.isGM) return;
     // These values are arbitrary choices; could be settings eventually.
     const sunrise = 180;
     const daytime = 420;
@@ -533,7 +536,7 @@ class SmallTimeApp extends FormApplication {
     // If requested, adjust the scene's Darkness level.
     const currentScene = game.scenes.entities.find((s) => s._view);
 
-    if (currentScene.getFlag('smalltime', 'darkness-link')) {
+    if (currentScene.getFlag('smalltime', 'darkness-link') && !game.user.isGM) {
       let darknessValue = canvas.lighting.darknessLevel;
 
       if (timeNow > daytime && timeNow < sunset) {
