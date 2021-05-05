@@ -504,7 +504,6 @@ class SmallTimeApp extends FormApplication {
 
   // Render changes to the sun/moon slider, and handle Darkness link.
   static async timeTransition(timeNow) {
-    if (!game.user.isGM) return;
     // These values are arbitrary choices; could be settings eventually.
     const sunrise = 180;
     const daytime = 420;
@@ -554,7 +553,9 @@ class SmallTimeApp extends FormApplication {
       darknessValue = Math.round(darknessValue * 10) / 10;
 
       canvas.lighting.refresh(darknessValue);
-      await currentScene.update({ darkness: darknessValue });
+      if (game.user.isGM) {
+        await currentScene.update({ darkness: darknessValue });
+      }
     }
   }
 
