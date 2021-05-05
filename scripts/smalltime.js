@@ -104,6 +104,19 @@ Hooks.on('init', () => {
     type: Boolean,
     default: false,
   });
+
+  game.settings.register('smalltime', 'about-time', {
+    name: game.i18n.format('SMLTME.AboutTime'),
+    hint: game.i18n.format('SMLTME.AboutTime_Hint'),
+    scope: 'world',
+    // Only show this toggle if About Time is enabled.
+    config: game.modules.get('about-time')?.active,
+    type: Boolean,
+    default: false,
+    onChange: () => {
+      location.reload();
+    },
+  });
 });
 
 Hooks.on('ready', () => {
@@ -131,7 +144,7 @@ Hooks.on('canvasReady', () => {
   if (!hasProperty(thisScene, 'data.flags.smalltime.darkness-link')) {
     thisScene.setFlag('smalltime', 'darkness-link', darknessDefault);
   }
-  
+
   // Refresh the current scene's Darkness level if it should be linked.
   if (thisScene.getFlag('smalltime', 'darkness-link')) {
     SmallTimeApp.timeTransition(game.settings.get('smalltime', 'current-time'));
@@ -140,15 +153,15 @@ Hooks.on('canvasReady', () => {
 
 Hooks.on('renderSceneConfig', async (obj) => {
   const darknessDefault = game.settings.get('smalltime', 'darkness-default');
-  
+
   // If the Darkness link flag hasn't been set yet, set it to the default choice.
   if (!hasProperty(obj.object, 'data.flags.smalltime.darkness-link')) {
     obj.object.setFlag('smalltime', 'darkness-link', darknessDefault);
   }
-  
+
   // Set the option's checkbox as appropriate.
   const checkStatus = obj.object.getFlag('smalltime', 'darkness-link') ? 'checked' : '';
-  
+
   // Inject our new option into the config screen.
   const controlLabel = game.i18n.format('SMLTME.Darkness_Control');
   const controlHint = game.i18n.format('SMLTME.Darkness_Control_Hint');
@@ -211,6 +224,18 @@ Hooks.on('renderPlayerList', () => {
   `);
 });
 
+Hooks.on('updateWorldTime', () => {
+  if (game.settings.get('smalltime', 'about-time')) {
+    SmallTimeApp.syncFromAboutTime();
+  }
+});
+
+Hooks.on('about-time.pseudoclockMaster', () => {
+  if (game.settings.get('smalltime', 'about-time')) {
+    SmallTimeApp.syncFromAboutTime();
+  }
+});
+
 class SmallTimeApp extends FormApplication {
   constructor() {
     super();
@@ -244,7 +269,7 @@ class SmallTimeApp extends FormApplication {
       left: this.initialPosition.left,
     });
   }
-  
+
   async _updateObject(event, formData) {
     // Get the slider value.
     const newTime = formData.timeSlider;
@@ -522,7 +547,7 @@ class SmallTimeApp extends FormApplication {
 
     return `${theHours}:${theMinutes}`;
   }
-  
+
   // Pin the app above the Players list.
   static pinApp() {
     // Only do this if a pin lock isn't already in place.
@@ -572,6 +597,17 @@ class SmallTimeApp extends FormApplication {
       const myApp = new SmallTimeApp().render(true);
       game.modules.get('smalltime').myApp = myApp;
     }
+  }
+
+  static syncFromAboutTime() {
+    const ATobject = game.Gametime.DTNow();
+    const newTime = ATobject.hours * 60 + ATobject.minutes;
+    const timePackage = {
+      operation: 'timeChange',
+      content: newTime,
+    };
+    game.modules.get('smalltime').myApp.handleTimeChange(timePackage);
+    game.settings.set('smalltime', 'current-time', newTime);
   }
 }
 
