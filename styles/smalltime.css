@@ -215,15 +215,10 @@
   margin-left: auto;
   margin-right: 7px;
   position: relative;
-  top: 11px;
+  top: -1px;
   border: none;
-  width: 30px;
-  height: 30px;
-}
-
-#smalltime-config-note {
-  position: relative;
-  left: 37px;
+  width: 20px;
+  height: 20px;
 }
 
 #smalltime-app .disable-for-players {

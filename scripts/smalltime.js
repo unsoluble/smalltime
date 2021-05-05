@@ -172,7 +172,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
       <img id="smalltime-config-icon" src="modules/smalltime/images/smalltime-icon.webp">
       <label>${controlLabel}</label>
       <input id="smalltime-darkness" type="checkbox" name="flags.smalltime.darkness-link" ${checkStatus}>
-      <p id="smalltime-config-note" class="notes">${controlHint}</p>
+      <p class="notes">${controlHint}</p>
     </div>
     `;
   $('p:contains("dim conditions")').parent().after(injection);
@@ -396,8 +396,16 @@ class SmallTimeApp extends FormApplication {
         game.modules.get('about-time')?.active &&
         game.settings.get('smalltime', 'about-time')
       ) {
-        game.Gametime.setClock($(this).val() * 60);
-      }
+          let hours = $(this).val() / 60;
+          let rhours = Math.floor(hours);
+          let minutes = (hours - rhours) * 60;
+          let rminutes = Math.round(minutes);
+          game.Gametime.setTime({
+            hours: rhours,
+            minutes: rminutes,
+            seconds: 0,
+          });
+       }
     });
 
     // Handle the increment/decrement buttons.
