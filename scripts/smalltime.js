@@ -145,6 +145,8 @@ Hooks.on('ready', () => {
   const userOpacity = game.settings.get('smalltime', 'opacity');
   root.style.setProperty('--opacity', userOpacity);
   
+  // Even if the current toggle state for the date display is on shown,
+  // make it hidden to start, to simplify the initial placement.
   if (game.settings.get('smalltime', 'date-showing')) {
     game.settings.set('smalltime', 'date-showing', false);
   }
@@ -255,6 +257,7 @@ Hooks.on('renderPlayerList', () => {
   `);
 });
 
+// Grab updates from About Time on two different hooks.
 Hooks.on('updateWorldTime', () => {
   if (game.settings.get('smalltime', 'about-time') && game.user.isGM) {
     SmallTimeApp.syncFromAboutTime();
@@ -419,7 +422,6 @@ class SmallTimeApp extends FormApplication {
     });
 
     // Send slider time changes to About Time on mouseUp, not live.
-    // Multiply by 60, because AT is expecting seconds.
     $(document).on('change', '#timeSlider', function () {
       if (
         game.modules.get('about-time')?.active &&
@@ -437,7 +439,10 @@ class SmallTimeApp extends FormApplication {
        }
     });
     
-    $(document).on('click', '#timeDisplay', async function () {
+    // Toggle the date display div, if About Time sync is enabled.
+    // The inline CSS overrides are a bit hacky, but were the
+    // only way I could get the desired behaviour.
+    html.find('#timeDisplay').on('click', async function () {
       if (
         game.modules.get('about-time')?.active &&
         game.settings.get('smalltime', 'about-time')
