@@ -199,9 +199,9 @@ Hooks.on('closeSettingsConfig', () => {
 });
 
 Hooks.on('getSceneControlButtons', (buttons) => {
-  // Add a toggle button inside the Journal Notes tool layer.
+  // Add a toggle button inside the Lighting tool layer.
   if (!canvas) return;
-  let group = buttons.find((b) => b.name === 'notes');
+  let group = buttons.find((b) => b.name === 'lighting');
   group.tools.push({
     button: true,
     icon: 'fas fa-adjust',
