@@ -8,7 +8,7 @@ Hooks.on('init', () => {
     type: Number,
     default: 0,
   });
-  
+
   game.settings.register('smalltime', 'current-date', {
     name: 'Current Date',
     scope: 'world',
@@ -40,7 +40,7 @@ Hooks.on('init', () => {
     type: Boolean,
     default: true,
   });
-  
+
   game.settings.register('smalltime', 'date-showing', {
     name: 'Date Showing',
     scope: 'client',
@@ -140,11 +140,11 @@ Hooks.on('ready', () => {
   if (game.settings.get('smalltime', 'pinned') === true) {
     SmallTimeApp.pinApp();
   }
-  
+
   const root = document.documentElement;
   const userOpacity = game.settings.get('smalltime', 'opacity');
   root.style.setProperty('--opacity', userOpacity);
-  
+
   // Even if the current toggle state for the date display is on shown,
   // make it hidden to start, to simplify the initial placement.
   if (game.settings.get('smalltime', 'date-showing')) {
@@ -241,7 +241,7 @@ Hooks.on('renderPlayerList', () => {
   // when the size of the PlayerList changes.
   const element = document.getElementById('players');
   const playerAppPos = element.getBoundingClientRect();
-  
+
   // The 88 here is the ideal distance between the top of the
   // Players list and the top of SmallTime. The +21 accounts
   // for the date dropdown if enabled.
@@ -427,18 +427,18 @@ class SmallTimeApp extends FormApplication {
         game.modules.get('about-time')?.active &&
         game.settings.get('smalltime', 'about-time')
       ) {
-          let hours = $(this).val() / 60;
-          let rhours = Math.floor(hours);
-          let minutes = (hours - rhours) * 60;
-          let rminutes = Math.round(minutes);
-          game.Gametime.setTime({
-            hours: rhours,
-            minutes: rminutes,
-            seconds: 0,
-          });
-       }
+        let hours = $(this).val() / 60;
+        let rhours = Math.floor(hours);
+        let minutes = (hours - rhours) * 60;
+        let rminutes = Math.round(minutes);
+        game.Gametime.setTime({
+          hours: rhours,
+          minutes: rminutes,
+          seconds: 0,
+        });
+      }
     });
-    
+
     // Toggle the date display div, if About Time sync is enabled.
     // The inline CSS overrides are a bit hacky, but were the
     // only way I could get the desired behaviour.
@@ -449,7 +449,7 @@ class SmallTimeApp extends FormApplication {
       ) {
         if (!game.settings.get('smalltime', 'date-showing')) {
           $('#dateDisplay').addClass('active');
-          $('#smalltime-app').animate({height:'79px'}, 80);
+          $('#smalltime-app').animate({ height: '79px' }, 80);
           if (game.settings.get('smalltime', 'pinned')) {
             SmallTimeApp.unPinApp();
             SmallTimeApp.pinApp(true);
@@ -457,7 +457,7 @@ class SmallTimeApp extends FormApplication {
           await game.settings.set('smalltime', 'date-showing', true);
         } else {
           $('#dateDisplay').removeClass('active');
-          $('#smalltime-app').animate({height:'58px'}, 80);
+          $('#smalltime-app').animate({ height: '58px' }, 80);
           if (game.settings.get('smalltime', 'pinned')) {
             SmallTimeApp.unPinApp();
             SmallTimeApp.pinApp(false);
@@ -661,7 +661,7 @@ class SmallTimeApp extends FormApplication {
       const playerApp = document.getElementById('players');
       const playerAppPos = playerApp.getBoundingClientRect();
       let myOffset = playerAppPos.height + 88;
-      
+
       if (expanded) myOffset += 21;
 
       // Dropping this into the DOM with an !important was the only way
@@ -708,19 +708,23 @@ class SmallTimeApp extends FormApplication {
   }
 
   static syncFromAboutTime() {
-    const ATobject = game.Gametime.DTNow();
-    const newTime = ATobject.hours * 60 + ATobject.minutes;
+    const ATobject = game.Gametime.DTNow().longDateExtended();
+    const newTime = ATobject.hour * 60 + ATobject.minute;
+
+    const newDay = ATobject.dowString;
+    const newMonth = ATobject.monthString;
+    const newDate = ATobject.day;
+    const newYear = ATobject.year;
+
     const timePackage = {
       operation: 'timeChange',
       content: newTime,
     };
-    const newDate = ATobject.longDateSelect(game.settings.get("about-time", "calendarFormat")).date;
+
     game.modules.get('smalltime').myApp.handleTimeChange(timePackage);
     game.settings.set('smalltime', 'current-time', newTime);
-    
-    // Reformat the About Time date slightly.
-    let dateArray = newDate.split(" ");
-    let displayDate = dateArray[0] + ', ' + dateArray[1] + ' ' + dateArray[2] + ', ' + dateArray[4];
+
+    const displayDate = newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear;
     $('#dateDisplay').html(displayDate);
     game.settings.set('smalltime', 'current-date', displayDate);
   }
