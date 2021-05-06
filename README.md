@@ -1,6 +1,6 @@
-## SmallTime
+# SmallTime
 
-A small module for displaying and controlling the current time of day.
+*A small module for displaying and controlling the current time of day.*
 
 ### How to Use
 
