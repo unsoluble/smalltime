@@ -726,6 +726,8 @@ class SmallTimeApp extends FormApplication {
 
     const displayDate = newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear;
     $('#dateDisplay').html(displayDate);
+    // Save this string so we can display it on initial load-in,
+    // before About Time is ready.
     game.settings.set('smalltime', 'current-date', displayDate);
   }
 }

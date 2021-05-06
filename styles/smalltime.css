@@ -196,7 +196,8 @@
   box-shadow: inset 0px 1px 1px rgba(255, 255, 255, 0.1), 0px 0px 2px rgba(0, 0, 0, 0.2);
 }
 
-#smalltime-app #timeDisplay, #dateDisplay {
+#smalltime-app #timeDisplay,
+#dateDisplay {
   font-size: 1em;
   color: #efefe0;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
@@ -218,7 +219,7 @@
   height: auto;
   box-shadow: inset 0 6px 8px -6px rgba(0, 0, 0, 0.6),
     inset 0 -5px 8px -5px rgba(0, 0, 0, 0.5);
-  transition: transform .1s ease-out;
+  transition: transform 0.1s ease-out;
   transform: scaleY(0);
   transform-origin: top;
 }
@@ -227,18 +228,7 @@
   //display: block;
   visibility: visible;
   transform: scaleY(1);
-  transition: transform .1s ease-out;
-}
-
-.section {
-  overflow:hidden;
-  transition:transform 0.3s ease-out; // note that we're transitioning transform, not height!
-  height:auto;
-  transform:scaleY(1); // implicit, but good to specify explicitly
-  transform-origin:top; // keep the top of the element in the same place. this is optional.
-}
-.section.collapsed {
-  transform:scaleY(0); // *squish*
+  transition: transform 0.1s ease-out;
 }
 
 #smalltime-app #dragHandle {
