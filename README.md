@@ -8,6 +8,7 @@
 * Shift-click the buttons to double the amount.
 * Bottom of the window is a repositioning drag handle.
 * Button steps and various other things are changeable in Module Settings.
+* Shift-click the moon to cycle the moon's phase. If you're running Simple Calendar, your phase will be synced from there.
 * Toggle show/hide button is in Lighting Controls.
 * Darkness link toggle is in Scene Config.
 * With About Time sync enabled, click the time to display the date; Shift-click the time to toggle the realtime clock.
