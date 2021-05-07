@@ -2,6 +2,18 @@
 
 *A small module for displaying and controlling the current time of day.*
 
+## Quick Summary
+
+* Drag the sun/moon or click the forward/back buttons to change the time.
+* Shift-click the buttons to double the amount.
+* Bottom of the window is a repositioning drag handle.
+* Button steps and various other things are changeable in Module Settings.
+* Toggle show/hide button is in Lighting Controls.
+* Darkness link toggle is in Scene Config.
+* With About Time sync enabled, click the time to display the date; Shift-click the time to toggle the realtime clock.
+
+Video overview: [https://www.youtube.com/watch?v=XShiobMvatE](https://www.youtube.com/watch?v=XShiobMvatE)
+
 ### How to Use
 
 There's a show/hide toggle in the Lighting Controls tool layer:
@@ -21,7 +33,7 @@ For each scene, you can choose whether or not to link the time to the scene's Da
 ![Scene_Config](doc/Scene_Config.png)
 ![Darkness_Link](doc/Darkness_Link.gif)
 
-If you have [About Time](https://foundryvtt.com/packages/about-time) enabled, you can choose to sync with its time and date:
+If you have [About Time](https://foundryvtt.com/packages/about-time) enabled, you can choose to sync with its time and date. Clicking on the time will toggle the date display; Shift-clicking the time will toggle the realtime clock (as configured in About Time).
 
 ![About_Time_Integration](doc/About_Time_Integration.gif)
 
