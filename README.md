@@ -21,7 +21,7 @@ For each scene, you can choose whether or not to link the time to the scene's Da
 ![Scene_Config](doc/Scene_Config.png)
 ![Darkness_Link](doc/Darkness_Link.gif)
 
-If you have [About Time](https://foundryvtt.com/packages/about-time) enabled, you can choose to sync with its time and date:
+If you have [About Time](https://foundryvtt.com/packages/about-time) enabled, you can choose to sync with its time and date. Clicking on the time will toggle the date display; Shift-clicking the time will toggle the realtime clock (as configured in About Time).
 
 ![About_Time_Integration](doc/About_Time_Integration.gif)
 
