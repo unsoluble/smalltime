@@ -1,3 +1,16 @@
+const SmallTimeMoonPhases = [
+  'new',
+  'waxing_crescent',
+  'first_quarter',
+  'waxing_gibbous',
+  'full',
+  'waning_gibbous',
+  'third_quarter',
+  'waning_crescent',
+];
+
+const SmallTimeDocumentRoot = document.documentElement;
+
 Hooks.on('init', () => {
   // CONFIG.debug.hooks = true;
 
@@ -107,8 +120,7 @@ Hooks.on('init', () => {
     },
     default: 0.8,
     onChange: (value) => {
-      const root = document.documentElement;
-      root.style.setProperty('--opacity', value);
+      SmallTimeDocumentRoot.style.setProperty('--opacity', value);
     },
   });
 
@@ -119,6 +131,46 @@ Hooks.on('init', () => {
     config: true,
     type: Boolean,
     default: false,
+  });
+
+  game.settings.register('smalltime', 'sunrise-start', {
+    name: 'Sunrise Start',
+    scope: 'world',
+    config: false,
+    type: Number,
+    default: 180,
+  });
+
+  game.settings.register('smalltime', 'sunrise-end', {
+    name: 'Sunrise End',
+    scope: 'world',
+    config: false,
+    type: Number,
+    default: 420,
+  });
+
+  game.settings.register('smalltime', 'sunset-start', {
+    name: 'Sunset Start',
+    scope: 'world',
+    config: false,
+    type: Number,
+    default: 1050,
+  });
+
+  game.settings.register('smalltime', 'sunset-end', {
+    name: 'Sunset End',
+    scope: 'world',
+    config: false,
+    type: Number,
+    default: 1320,
+  });
+
+  game.settings.register('smalltime', 'moon-phase', {
+    name: 'Moon Phase',
+    scope: 'world',
+    config: false,
+    type: Number,
+    default: 4,
   });
 
   game.settings.register('smalltime', 'about-time', {
@@ -141,9 +193,8 @@ Hooks.on('ready', () => {
     SmallTimeApp.pinApp();
   }
 
-  const root = document.documentElement;
   const userOpacity = game.settings.get('smalltime', 'opacity');
-  root.style.setProperty('--opacity', userOpacity);
+  SmallTimeDocumentRoot.style.setProperty('--opacity', userOpacity);
 
   // Even if the current toggle state for the date display is on shown,
   // make it hidden to start, to simplify the initial placement.
@@ -171,7 +222,9 @@ Hooks.on('canvasReady', () => {
 
     // Refresh the current scene's Darkness level if it should be linked.
     if (thisScene.getFlag('smalltime', 'darkness-link')) {
-      SmallTimeApp.timeTransition(game.settings.get('smalltime', 'current-time'));
+      SmallTimeApp.timeTransition(
+        game.settings.get('smalltime', 'current-time')
+      );
     }
   }
 });
@@ -185,7 +238,9 @@ Hooks.on('renderSceneConfig', async (obj) => {
   }
 
   // Set the option's checkbox as appropriate.
-  const checkStatus = obj.object.getFlag('smalltime', 'darkness-link') ? 'checked' : '';
+  const checkStatus = obj.object.getFlag('smalltime', 'darkness-link')
+    ? 'checked'
+    : '';
 
   // Inject our new option into the config screen.
   const controlLabel = game.i18n.format('SMLTME.Darkness_Control');
@@ -410,8 +465,23 @@ class SmallTimeApp extends FormApplication {
     // updated since a settings change for some reason.
     SmallTimeApp.timeTransition(this.currentTime);
 
-    // WIP ------------------------------------------------------------------
+    $('#timeSlider').on('click', async function () {
+      if (event.shiftKey) {
+        const startingPhase = game.settings.get('smalltime', 'moon-phase');
+        const newPhase = (startingPhase + 1) % SmallTimeMoonPhases.length;
 
+        SmallTimeDocumentRoot.style.setProperty(
+          '--phaseURL',
+          `url('../images/moon-phases/${SmallTimeMoonPhases[newPhase]}.webp')`
+        );
+
+        await game.settings.set('smalltime', 'moon-phase', newPhase);
+      }
+    });
+
+    // WIP ------------------------------------------------------------------
+    // drag-select experiment
+    /*
     $('#timeSlider')
       .mousedown(function () {
         if (event.shiftKey) {
@@ -446,7 +516,7 @@ class SmallTimeApp extends FormApplication {
         $(this).off('mousemove');
         //$('.darkness-select').css('visibility', 'hidden');
       });
-
+    */
     // WIP ------------------------------------------------------------------
 
     $(document).on('input', '#timeSlider', function () {
@@ -619,10 +689,10 @@ class SmallTimeApp extends FormApplication {
   // Render changes to the sun/moon slider, and handle Darkness link.
   static async timeTransition(timeNow) {
     // These values are arbitrary choices; could be settings eventually.
-    const sunrise = 180;
-    const daytime = 420;
-    const sunset = 1050;
-    const nighttime = 1320;
+    const sunriseStart = game.settings.get('smalltime', 'sunrise-start');
+    const sunriseEnd = game.settings.get('smalltime', 'sunrise-end');
+    const sunsetStart = game.settings.get('smalltime', 'sunset-start');
+    const sunsetEnd = game.settings.get('smalltime', 'sunset-end');
     const midnight = 1440;
 
     // Handles the range slider's sun/moon icons, and the BG color changes.
@@ -638,12 +708,29 @@ class SmallTimeApp extends FormApplication {
     }
 
     // Swap out the moon for the sun during daytime.
-    if (timeNow > daytime && timeNow < sunset) {
+
+    const phases = [
+      'new',
+      'waxing_crescent',
+      'first_quarter',
+      'waxing_gibbous',
+      'full',
+      'waning_gibbous',
+      'third_quarter',
+      'waning_crescent',
+    ];
+    const currentPhase = game.settings.get('smalltime', 'moon-phase');
+
+    if (timeNow > sunriseEnd && timeNow < sunsetStart) {
       $('#timeSlider').removeClass('moon');
       $('#timeSlider').addClass('sun');
     } else {
       $('#timeSlider').removeClass('sun');
       $('#timeSlider').addClass('moon');
+      SmallTimeDocumentRoot.style.setProperty(
+        '--phaseURL',
+        `url('../images/moon-phases/${phases[currentPhase]}.webp')`
+      );
     }
 
     // If requested, adjust the scene's Darkness level.
@@ -652,16 +739,17 @@ class SmallTimeApp extends FormApplication {
     if (currentScene.getFlag('smalltime', 'darkness-link') && game.user.isGM) {
       let darknessValue = canvas.lighting.darknessLevel;
 
-      if (timeNow > daytime && timeNow < sunset) {
+      if (timeNow > sunriseEnd && timeNow < sunsetStart) {
         darknessValue = 0;
-      } else if (timeNow < sunrise) {
+      } else if (timeNow < sunriseStart) {
         darknessValue = 1;
-      } else if (timeNow > nighttime) {
+      } else if (timeNow > sunsetEnd) {
         darknessValue = 1;
-      } else if (timeNow >= sunrise && timeNow <= daytime) {
-        darknessValue = 1 - (timeNow - sunrise) / (daytime - sunrise);
-      } else if (timeNow >= sunset && timeNow <= nighttime) {
-        darknessValue = (timeNow - sunset) / (nighttime - sunset);
+      } else if (timeNow >= sunriseStart && timeNow <= sunriseEnd) {
+        darknessValue =
+          1 - (timeNow - sunriseStart) / (sunriseEnd - sunriseStart);
+      } else if (timeNow >= sunsetStart && timeNow <= sunsetEnd) {
+        darknessValue = (timeNow - sunsetStart) / (sunsetEnd - sunsetStart);
       }
       // Truncate long decimals.
       darknessValue = Math.round(darknessValue * 10) / 10;
@@ -771,7 +859,8 @@ class SmallTimeApp extends FormApplication {
     game.modules.get('smalltime').myApp.handleTimeChange(timePackage);
     game.settings.set('smalltime', 'current-time', newTime);
 
-    const displayDate = newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear;
+    const displayDate =
+      newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear;
     $('#dateDisplay').html(displayDate);
     // Save this string so we can display it on initial load-in,
     // before About Time is ready.

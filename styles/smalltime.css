@@ -3,6 +3,7 @@
   --height: 58px;
   --ds-left: 3px;
   --ds-width: 0px;
+  --phaseURL: url('../images/moon-phases/full.webp');
 }
 
 #smalltime-app {
@@ -102,15 +103,15 @@
 
 #smalltime-app .sun::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
   outline: 0;
   border: 0;
   cursor: ew-resize;
   background: url('../images/sun.webp');
-  background-size: 21px;
+  background-size: 24px;
   position: relative;
-  top: 11px;
+  top: 9px;
   box-shadow: none;
   -webkit-filter: drop-shadow(0px 0px 8px rgba(255, 203, 93, 0.9));
   filter: drop-shadow(0px 0px 8px rgba(255, 203, 93, 0.9));
@@ -118,14 +119,15 @@
 }
 
 #smalltime-app .sun::-moz-range-thumb {
-  width: 22px;
-  height: 23px;
+  width: 24px;
+  height: 24px;
   outline: 0;
   border: 0;
   cursor: ew-resize;
   background: url('../images/sun.webp');
-  background-size: 21px;
+  background-size: 24px;
   background-position: 0px 3px;
+  transform: translateY(-1px);
   box-shadow: none;
   filter: drop-shadow(0px 0px 8px rgba(255, 203, 93, 0.9));
   z-index: 10;
@@ -133,15 +135,15 @@
 
 #smalltime-app .moon::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 21px;
-  height: 21px;
+  width: 17px;
+  height: 17px;
   outline: 0;
   border: 0;
   cursor: ew-resize;
-  background: url('../images/moon.webp');
-  background-size: 20px;
+  background: var(--phaseURL);
+  background-size: 17px;
   position: relative;
-  top: 11px;
+  top: 13px;
   box-shadow: none;
   -webkit-filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.9));
   filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.9));
@@ -149,14 +151,15 @@
 }
 
 #smalltime-app .moon::-moz-range-thumb {
-  width: 21px;
-  height: 22px;
+  width: 17px;
+  height: 17px;
   outline: 0;
   border: 0;
   cursor: ew-resize;
-  background: url('../images/moon.webp');
-  background-size: 21px;
-  background-position: 0px 3px;
+  background: url('../images/moon-phases/full.webp');
+  background-size: 17px;
+  background-position: 0px 0px;
+  transform: translateY(2px);
   box-shadow: none;
   filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.9));
   z-index: 10;
