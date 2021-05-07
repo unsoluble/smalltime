@@ -12,6 +12,8 @@
 * Darkness link toggle is in Scene Config.
 * With About Time sync enabled, click the time to display the date; Shift-click the time to toggle the realtime clock.
 
+Video overview: [https://www.youtube.com/watch?v=XShiobMvatE](https://www.youtube.com/watch?v=XShiobMvatE)
+
 ### How to Use
 
 There's a show/hide toggle in the Lighting Controls tool layer:
