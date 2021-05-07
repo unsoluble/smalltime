@@ -465,6 +465,7 @@ class SmallTimeApp extends FormApplication {
     // updated since a settings change for some reason.
     SmallTimeApp.timeTransition(this.currentTime);
 
+    // Handle changes to the moon phase.
     $('#timeSlider').on('click', async function () {
       if (event.shiftKey) {
         const startingPhase = game.settings.get('smalltime', 'moon-phase');
@@ -476,6 +477,11 @@ class SmallTimeApp extends FormApplication {
         );
 
         await game.settings.set('smalltime', 'moon-phase', newPhase);
+
+        game.socket.emit('module.smalltime', {
+          operation: 'timeChange',
+          content: $(this).val(),
+        });
       }
     });
 
