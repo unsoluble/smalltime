@@ -1,6 +1,8 @@
 :root {
   --opacity: 0.8;
   --height: 58px;
+  --ds-left: 3px;
+  --ds-width: 0px;
 }
 
 #smalltime-app {
@@ -29,6 +31,23 @@
   background: none;
 }
 
+#smalltime-app .darkness-select {
+  visibility: hidden;
+  position: absolute;
+  top: 4px;
+  left: var(--ds-left);
+  width: var(--ds-width);
+  height: 16px;
+  border-radius: 3px;
+  border: 1px solid purple;
+  background: linear-gradient(
+    to right,
+    rgba(36, 6, 104, 0.724) 0%,
+    rgba(255, 255, 255, 0.4)
+  );
+  z-index: 5;
+}
+
 #smalltime-app #slideContainer {
   width: 100%;
   background: linear-gradient(
@@ -46,6 +65,7 @@
   );
   background-size: 200px 450px;
   background-position: 0px 0px;
+  z-index: 0;
 }
 
 #smalltime-app .slider::-webkit-slider-runnable-track {
@@ -94,6 +114,7 @@
   box-shadow: none;
   -webkit-filter: drop-shadow(0px 0px 8px rgba(255, 203, 93, 0.9));
   filter: drop-shadow(0px 0px 8px rgba(255, 203, 93, 0.9));
+  z-index: 10;
 }
 
 #smalltime-app .sun::-moz-range-thumb {
@@ -107,6 +128,7 @@
   background-position: 0px 3px;
   box-shadow: none;
   filter: drop-shadow(0px 0px 8px rgba(255, 203, 93, 0.9));
+  z-index: 10;
 }
 
 #smalltime-app .moon::-webkit-slider-thumb {
@@ -123,6 +145,7 @@
   box-shadow: none;
   -webkit-filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.9));
   filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.9));
+  z-index: 10;
 }
 
 #smalltime-app .moon::-moz-range-thumb {
@@ -136,6 +159,7 @@
   background-position: 0px 3px;
   box-shadow: none;
   filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.9));
+  z-index: 10;
 }
 
 #smalltime-app #displayContainer {
