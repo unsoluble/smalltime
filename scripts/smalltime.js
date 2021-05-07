@@ -1,12 +1,12 @@
 const SmallTimeMoonPhases = [
   'new',
-  'waxing_crescent',
-  'first_quarter',
-  'waxing_gibbous',
+  'waxing-crescent',
+  'first-quarter',
+  'waxing-gibbous',
   'full',
-  'waning_gibbous',
-  'third_quarter',
-  'waning_crescent',
+  'waning-gibbous',
+  'last-quarter',
+  'waning-crescent',
 ];
 
 const SmallTimeDocumentRoot = document.documentElement;
@@ -629,6 +629,22 @@ class SmallTimeApp extends FormApplication {
         this.timeRatchet(largeStep);
       }
     });
+
+    // Listen for moon phase changes from Simple Calendar.
+    if (
+      game.modules.get('foundryvtt-simple-calendar')?.active &&
+      game.settings.get('smalltime', 'about-time')
+    ) {
+      Hooks.on(SimpleCalendar.Hooks.DateTimeChange, async function (data) {
+        const newPhase = SmallTimeMoonPhases.findIndex(function (phase) {
+          return phase === data.moons[0].currentPhase.icon;
+        });
+        await game.settings.set('smalltime', 'moon-phase', newPhase);
+        SmallTimeApp.timeTransition(
+          game.settings.get('smalltime', 'current-time')
+        );
+      });
+    }
   }
 
   // Helper function for the socket updates.
@@ -713,18 +729,8 @@ class SmallTimeApp extends FormApplication {
       $('#slideContainer').css('background-position', `0px ${bgOffset}px`);
     }
 
-    // Swap out the moon for the sun during daytime.
-
-    const phases = [
-      'new',
-      'waxing_crescent',
-      'first_quarter',
-      'waxing_gibbous',
-      'full',
-      'waning_gibbous',
-      'third_quarter',
-      'waning_crescent',
-    ];
+    // Swap out the moon for the sun during daytime,
+    // changing phase as appropriate.
     const currentPhase = game.settings.get('smalltime', 'moon-phase');
 
     if (timeNow > sunriseEnd && timeNow < sunsetStart) {
@@ -735,7 +741,7 @@ class SmallTimeApp extends FormApplication {
       $('#timeSlider').addClass('moon');
       SmallTimeDocumentRoot.style.setProperty(
         '--phaseURL',
-        `url('../images/moon-phases/${phases[currentPhase]}.webp')`
+        `url('../images/moon-phases/${SmallTimeMoonPhases[currentPhase]}.webp')`
       );
     }
 
