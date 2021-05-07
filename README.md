@@ -2,6 +2,16 @@
 
 *A small module for displaying and controlling the current time of day.*
 
+## Quick Summary
+
+* Drag the sun/moon or click the forward/back buttons to change the time.
+* Shift-click the buttons to double the amount.
+* Bottom of the window is a repositioning drag handle.
+* Button steps and various other things are changeable in Module Settings.
+* Toggle show/hide button is in Lighting Controls.
+* Darkness link toggle is in Scene Config.
+* With About Time sync enabled, click the time to display the date; Shift-click the time to toggle the realtime clock.
+
 ### How to Use
 
 There's a show/hide toggle in the Lighting Controls tool layer:
