@@ -447,22 +447,30 @@ class SmallTimeApp extends FormApplication {
         game.modules.get('about-time')?.active &&
         game.settings.get('smalltime', 'about-time')
       ) {
-        if (!game.settings.get('smalltime', 'date-showing')) {
-          $('#dateDisplay').addClass('active');
-          $('#smalltime-app').animate({ height: '79px' }, 80);
-          if (game.settings.get('smalltime', 'pinned')) {
-            SmallTimeApp.unPinApp();
-            SmallTimeApp.pinApp(true);
+        if (event.shiftKey) {
+          if (game.Gametime.isRunning()) {
+            game.Gametime.stopRunning();
+          } else {
+            game.Gametime.startRunning();
           }
-          await game.settings.set('smalltime', 'date-showing', true);
         } else {
-          $('#dateDisplay').removeClass('active');
-          $('#smalltime-app').animate({ height: '58px' }, 80);
-          if (game.settings.get('smalltime', 'pinned')) {
-            SmallTimeApp.unPinApp();
-            SmallTimeApp.pinApp(false);
+          if (!game.settings.get('smalltime', 'date-showing')) {
+            $('#dateDisplay').addClass('active');
+            $('#smalltime-app').animate({ height: '79px' }, 80);
+            if (game.settings.get('smalltime', 'pinned')) {
+              SmallTimeApp.unPinApp();
+              SmallTimeApp.pinApp(true);
+            }
+            await game.settings.set('smalltime', 'date-showing', true);
+          } else {
+            $('#dateDisplay').removeClass('active');
+            $('#smalltime-app').animate({ height: '58px' }, 80);
+            if (game.settings.get('smalltime', 'pinned')) {
+              SmallTimeApp.unPinApp();
+              SmallTimeApp.pinApp(false);
+            }
+            await game.settings.set('smalltime', 'date-showing', false);
           }
-          await game.settings.set('smalltime', 'date-showing', false);
         }
       }
     });
