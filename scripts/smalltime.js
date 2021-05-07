@@ -631,10 +631,7 @@ class SmallTimeApp extends FormApplication {
     });
 
     // Listen for moon phase changes from Simple Calendar.
-    if (
-      game.modules.get('foundryvtt-simple-calendar')?.active &&
-      game.settings.get('smalltime', 'about-time')
-    ) {
+    if (game.modules.get('foundryvtt-simple-calendar')?.active) {
       Hooks.on(SimpleCalendar.Hooks.DateTimeChange, async function (data) {
         const newPhase = SmallTimeMoonPhases.findIndex(function (phase) {
           return phase === data.moons[0].currentPhase.icon;
