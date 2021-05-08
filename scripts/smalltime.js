@@ -62,6 +62,15 @@ Hooks.on('init', () => {
     default: false,
   });
 
+  game.settings.register('smalltime', 'hide-from-players', {
+    name: game.i18n.format('SMLTME.Hide_From_Players'),
+    hint: game.i18n.format('SMLTME.Hide_From_Players_Hint'),
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: false,
+  });
+
   game.settings.register('smalltime', 'time-format', {
     name: game.i18n.format('SMLTME.Time_Format'),
     scope: 'world',
@@ -188,7 +197,9 @@ Hooks.on('init', () => {
 });
 
 Hooks.on('ready', () => {
-  SmallTimeApp.toggleAppVis('initial');
+  if (game.user.isGM || !game.settings.get('smalltime', 'hide-from-players')) {
+    SmallTimeApp.toggleAppVis('initial');
+  }
   if (game.settings.get('smalltime', 'pinned') === true) {
     SmallTimeApp.pinApp();
   }
@@ -273,18 +284,22 @@ Hooks.on('closeSettingsConfig', () => {
 });
 
 Hooks.on('getSceneControlButtons', (buttons) => {
-  // Add a toggle button inside the Lighting tool layer.
+  // Add a toggle button inside the Notes tool layer.
+  // (Was Lighting originally, but Players don't have that layer,
+  // and we want them to be able to toggle the app.)
   if (!canvas) return;
-  let group = buttons.find((b) => b.name === 'lighting');
-  group.tools.push({
-    button: true,
-    icon: 'fas fa-adjust',
-    name: 'smalltime',
-    title: 'SmallTime',
-    onClick: () => {
-      SmallTimeApp.toggleAppVis('toggle');
-    },
-  });
+  if (game.user.isGM || !game.settings.get('smalltime', 'hide-from-players')) {
+    let group = buttons.find((b) => b.name === 'notes');
+    group.tools.push({
+      button: true,
+      icon: 'fas fa-adjust',
+      name: 'smalltime',
+      title: 'SmallTime',
+      onClick: () => {
+        SmallTimeApp.toggleAppVis('toggle');
+      },
+    });
+  }
 });
 
 Hooks.on('renderPlayerList', () => {
