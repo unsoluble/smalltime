@@ -9,7 +9,7 @@
 * Bottom of the window is a repositioning drag handle.
 * Button steps and various other things are changeable in Module Settings.
 * Shift-click the moon to cycle the moon's phase. If you're running Simple Calendar, your phase will be synced from there.
-* Toggle show/hide button is in Lighting Controls.
+* Toggle show/hide button is in Journal Notes.
 * Darkness link toggle is in Scene Config.
 * With About Time sync enabled, click the time to display the date; Shift-click the time to toggle the realtime clock.
 
@@ -17,7 +17,7 @@ Video overview: [https://www.youtube.com/watch?v=XShiobMvatE](https://www.youtub
 
 ### How to Use
 
-There's a show/hide toggle in the Lighting Controls tool layer:
+There's a show/hide toggle in the Journal Notes tool layer:
 
 ![Toggle Control](doc/Toggle_Control.png)
 
