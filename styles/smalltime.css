@@ -169,7 +169,7 @@
   position: absolute;
   top: 24px;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   margin: 0;
   padding: 0 4px 0 4px;
   border: 0;
@@ -232,6 +232,22 @@
   text-align: center;
   background: none;
   width: 100%;
+}
+
+#smalltime-app #timeSeparator {
+  position: relative;
+  top: -1px;
+  margin: 0 -2px 0 -2px;
+}
+
+#smalltime-app .blink {
+  animation: blinker 2s ease-out infinite;
+}
+
+@keyframes blinker {
+  50% {
+    opacity: 0;
+  }
 }
 
 #smalltime-app #dateDisplay {

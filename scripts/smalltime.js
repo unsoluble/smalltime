@@ -325,8 +325,13 @@ Hooks.on('renderPlayerList', () => {
 
 // Grab updates from About Time on two different hooks.
 Hooks.on('updateWorldTime', () => {
-  if (game.settings.get('smalltime', 'about-time') && game.user.isGM) {
+  if (game.settings.get('smalltime', 'about-time')) {
     SmallTimeApp.syncFromAboutTime();
+    if (!game.Gametime.isRunning()) {
+      $('#timeSeparator').removeClass('blink');
+    } else if (game.Gametime.isRunning()) {
+      $('#timeSeparator').addClass('blink');
+    }
   }
 });
 
@@ -381,7 +386,8 @@ class SmallTimeApp extends FormApplication {
     // Send values to the HTML template.
     return {
       timeValue: this.currentTime,
-      timeString: SmallTimeApp.convertTime(this.currentTime),
+      hourString: SmallTimeApp.convertTime(this.currentTime).hours,
+      minuteString: SmallTimeApp.convertTime(this.currentTime).minutes,
       dateString: game.settings.get('smalltime', 'current-date'),
     };
   }
@@ -537,7 +543,8 @@ class SmallTimeApp extends FormApplication {
     // WIP ------------------------------------------------------------------
 
     $(document).on('input', '#timeSlider', function () {
-      $('#timeDisplay').html(SmallTimeApp.convertTime($(this).val()));
+      $('#hourString').html(SmallTimeApp.convertTime($(this).val()).hours);
+      $('#minuteString').html(SmallTimeApp.convertTime($(this).val()).minutes);
 
       SmallTimeApp.timeTransition($(this).val());
 
@@ -576,9 +583,17 @@ class SmallTimeApp extends FormApplication {
         if (event.shiftKey) {
           if (game.Gametime.isRunning()) {
             game.Gametime.stopRunning();
+            $('#timeSeparator').removeClass('blink');
           } else {
             game.Gametime.startRunning();
+            if (game.Gametime.isRunning()) {
+              $('#timeSeparator').addClass('blink');
+            }
           }
+          game.socket.emit('module.smalltime', {
+            operation: 'timeChange',
+            content: game.settings.get('smalltime', 'current-time'),
+          });
         } else {
           if (!game.settings.get('smalltime', 'date-showing')) {
             $('#dateDisplay').addClass('active');
@@ -656,8 +671,14 @@ class SmallTimeApp extends FormApplication {
   // Helper function for the socket updates.
   handleTimeChange(data) {
     SmallTimeApp.timeTransition(data.content);
-    $('#timeDisplay').html(SmallTimeApp.convertTime(data.content));
+    $('#hourString').html(SmallTimeApp.convertTime(data.content).hours);
+    $('#minuteString').html(SmallTimeApp.convertTime(data.content).minutes);
     $('#timeSlider').val(data.content);
+    if (game.Gametime.isRunning()) {
+      $('#timeSeparator').addClass('blink');
+    } else {
+      $('#timeSeparator').removeClass('blink');
+    }
   }
 
   // Functionality for increment/decrement buttons.
@@ -686,7 +707,8 @@ class SmallTimeApp extends FormApplication {
 
     game.settings.set('smalltime', 'current-time', newTime);
 
-    $('#timeDisplay').html(SmallTimeApp.convertTime(newTime));
+    $('#hourString').html(SmallTimeApp.convertTime(currentTime).hours);
+    $('#minuteString').html(SmallTimeApp.convertTime(currentTime).minutes);
 
     SmallTimeApp.timeTransition(newTime);
 
@@ -802,8 +824,9 @@ class SmallTimeApp extends FormApplication {
       }
       if (theHours === 0) theHours = 12;
     }
+    const timeObj = { hours: theHours, minutes: theMinutes };
 
-    return `${theHours}:${theMinutes}`;
+    return timeObj;
   }
 
   // Pin the app above the Players list.
@@ -874,13 +897,13 @@ class SmallTimeApp extends FormApplication {
     };
 
     game.modules.get('smalltime').myApp.handleTimeChange(timePackage);
-    game.settings.set('smalltime', 'current-time', newTime);
+    if (game.user.isGM) game.settings.set('smalltime', 'current-time', newTime);
 
     const displayDate = newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear;
     $('#dateDisplay').html(displayDate);
     // Save this string so we can display it on initial load-in,
     // before About Time is ready.
-    game.settings.set('smalltime', 'current-date', displayDate);
+    if (game.user.isGM) game.settings.set('smalltime', 'current-date', displayDate);
   }
 }
 
