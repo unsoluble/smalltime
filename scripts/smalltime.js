@@ -10,8 +10,6 @@ const SmallTimeMoonPhases = [
 ];
 
 Hooks.on('init', () => {
-  // CONFIG.debug.hooks = true;
-
   game.settings.register('smalltime', 'current-time', {
     name: 'Current Time',
     scope: 'world',
@@ -212,11 +210,9 @@ Hooks.on('ready', () => {
     game.modules.get('smalltime').viewAuth = true;
     game.modules.get('smalltime').controlAuth = true;
   }
-
   if (game.settings.get('smalltime', 'hide-from-players') === false) {
     game.modules.get('smalltime').viewAuth = true;
   }
-
   if (
     game.settings.get('smalltime', 'allow-trusted') &&
     game.user.role === CONST.USER_ROLES.TRUSTED
@@ -224,6 +220,7 @@ Hooks.on('ready', () => {
     game.modules.get('smalltime').controlAuth = true;
   }
 
+  // Initial render of the app if allowed.
   if (game.modules.get('smalltime').viewAuth) {
     SmallTimeApp.toggleAppVis('initial');
   }
@@ -231,11 +228,13 @@ Hooks.on('ready', () => {
     SmallTimeApp.pinApp();
   }
 
+  // Render at opacity per user prefs.
   const userOpacity = game.settings.get('smalltime', 'opacity');
   document.documentElement.style.setProperty('--SMLTME-opacity', userOpacity);
 
   // Even if the current toggle state for the date display is on shown,
   // make it hidden to start, to simplify the initial placement.
+  // TODO: Respect the previously chosen state.
   if (game.settings.get('smalltime', 'date-showing')) {
     game.settings.set('smalltime', 'date-showing', false);
   }
