@@ -437,7 +437,7 @@ class SmallTimeApp extends FormApplication {
     const newTime = formData.timeSlider;
     // Save the new time.
     if (game.user.isGM) {
-      game.settings.set('smalltime', 'current-time', newTime);
+      await game.settings.set('smalltime', 'current-time', newTime);
     } else {
       SmallTimeApp.handleSocket('changeTime', newTime);
     }
@@ -510,7 +510,7 @@ class SmallTimeApp extends FormApplication {
       }
     };
 
-    drag._onDragMouseUp = function _newOnDragMouseUp(event) {
+    drag._onDragMouseUp = async function _newOnDragMouseUp(event) {
       event.preventDefault();
 
       window.removeEventListener(...this.handlers.dragMove);
@@ -523,7 +523,7 @@ class SmallTimeApp extends FormApplication {
       // If the mouseup happens inside the Pin zone, pin the app.
       if (pinZone) {
         SmallTimeApp.pinApp(game.settings.get('smalltime', 'date-showing'));
-        game.settings.set('smalltime', 'pinned', true);
+        await game.settings.set('smalltime', 'pinned', true);
         this.app.setPosition({
           left: 15,
           top: window.innerHeight - myOffset,
@@ -531,8 +531,8 @@ class SmallTimeApp extends FormApplication {
       } else {
         let windowPos = $('#smalltime-app').position();
         let newPos = { top: windowPos.top, left: windowPos.left };
-        game.settings.set('smalltime', 'position', newPos);
-        game.settings.set('smalltime', 'pinned', false);
+        await game.settings.set('smalltime', 'position', newPos);
+        await game.settings.set('smalltime', 'pinned', false);
       }
 
       // Kill the jiggle animation on mouseUp.
@@ -555,7 +555,7 @@ class SmallTimeApp extends FormApplication {
         );
 
         if (game.user.isGM) {
-          game.settings.set('smalltime', 'moon-phase', newPhase);
+          await game.settings.set('smalltime', 'moon-phase', newPhase);
         } else {
           SmallTimeApp.handleSocket('changeSetting', {
             scope: 'smalltime',
@@ -566,7 +566,7 @@ class SmallTimeApp extends FormApplication {
         SmallTimeApp.handleSocket('changeTime', $(this).val());
 
         if (game.user.isGM) {
-          game.settings.set('smalltime', 'current-time', $(this).val());
+          await game.settings.set('smalltime', 'current-time', $(this).val());
         } else {
           SmallTimeApp.handleSocket('changeTime', $(this).val());
         }
@@ -613,14 +613,14 @@ class SmallTimeApp extends FormApplication {
     */
     // WIP ------------------------------------------------------------------
 
-    $(document).on('input', '#timeSlider', function () {
+    $(document).on('input', '#timeSlider', async function () {
       $('#hourString').html(SmallTimeApp.convertTime($(this).val()).hours);
       $('#minuteString').html(SmallTimeApp.convertTime($(this).val()).minutes);
 
       SmallTimeApp.timeTransition($(this).val());
 
       if (game.user.isGM) {
-        game.settings.set('smalltime', 'current-time', $(this).val());
+        await game.settings.set('smalltime', 'current-time', $(this).val());
       } else {
         SmallTimeApp.handleSocket('changeSetting', {
           scope: 'smalltime',
@@ -777,7 +777,7 @@ class SmallTimeApp extends FormApplication {
   }
 
   // Functionality for increment/decrement buttons.
-  timeRatchet(delta) {
+  async timeRatchet(delta) {
     let AboutTimeSync = false;
 
     if (
@@ -799,7 +799,7 @@ class SmallTimeApp extends FormApplication {
     }
 
     if (game.user.isGM) {
-      game.settings.set('smalltime', 'current-time', newTime);
+      await game.settings.set('smalltime', 'current-time', newTime);
     } else {
       SmallTimeApp.handleSocket('changeSetting', {
         scope: 'smalltime',
@@ -898,7 +898,7 @@ class SmallTimeApp extends FormApplication {
       darknessValue = Math.round(darknessValue * 10) / 10;
 
       if (game.user.isGM) {
-        currentScene.update({ darkness: darknessValue });
+        await currentScene.update({ darkness: darknessValue });
       } else {
         SmallTimeApp.handleSocket('changeDarkness', {
           darkness: darknessValue,
@@ -938,7 +938,7 @@ class SmallTimeApp extends FormApplication {
   }
 
   // Pin the app above the Players list.
-  static pinApp(expanded) {
+  static async pinApp(expanded) {
     // Only do this if a pin lock isn't already in place.
     if (!$('#pin-lock').length) {
       const playerApp = document.getElementById('players');
@@ -957,7 +957,7 @@ class SmallTimeApp extends FormApplication {
           }
         </style>
       `);
-      game.settings.set('smalltime', 'pinned', true);
+      await game.settings.set('smalltime', 'pinned', true);
     }
   }
 
@@ -968,7 +968,7 @@ class SmallTimeApp extends FormApplication {
   }
 
   // Toggle visibility of the main window.
-  static toggleAppVis(mode) {
+  static async toggleAppVis(mode) {
     if (mode === 'toggle') {
       if (game.settings.get('smalltime', 'visible') === true) {
         // Stop any currently-running animations, and then animate the app
@@ -978,11 +978,11 @@ class SmallTimeApp extends FormApplication {
         setTimeout(function () {
           game.modules.get('smalltime').myApp.close();
         }, 200);
-        game.settings.set('smalltime', 'visible', false);
+        await game.settings.set('smalltime', 'visible', false);
       } else {
         const myApp = new SmallTimeApp().render(true);
         game.modules.get('smalltime').myApp = myApp;
-        game.settings.set('smalltime', 'visible', true);
+        await game.settings.set('smalltime', 'visible', true);
       }
     } else if (game.settings.get('smalltime', 'visible') === true) {
       const myApp = new SmallTimeApp().render(true);
@@ -990,7 +990,7 @@ class SmallTimeApp extends FormApplication {
     }
   }
 
-  static syncFromAboutTime() {
+  static async syncFromAboutTime() {
     const ATobject = game.Gametime.DTNow().longDateExtended();
     const newTime = ATobject.hour * 60 + ATobject.minute;
 
@@ -1006,13 +1006,13 @@ class SmallTimeApp extends FormApplication {
 
     game.modules.get('smalltime').myApp.handleTimeChange(timePackage);
 
-    if (game.user.isGM) game.settings.set('smalltime', 'current-time', newTime);
+    if (game.user.isGM) await game.settings.set('smalltime', 'current-time', newTime);
 
     const displayDate = newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear;
     $('#dateDisplay').html(displayDate);
     // Save this string so we can display it on initial load-in,
     // before About Time is ready.
-    if (game.user.isGM) game.settings.set('smalltime', 'current-date', displayDate);
+    if (game.user.isGM) await game.settings.set('smalltime', 'current-date', displayDate);
   }
 }
 
