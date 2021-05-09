@@ -993,11 +993,11 @@ class SmallTimeApp extends FormApplication {
         setTimeout(function () {
           game.modules.get('smalltime').myApp.close();
         }, 200);
-        await game.settings.set('smalltime', 'visible', false);
+        game.settings.set('smalltime', 'visible', false);
       } else {
         const myApp = new SmallTimeApp().render(true);
         game.modules.get('smalltime').myApp = myApp;
-        await game.settings.set('smalltime', 'visible', true);
+        game.settings.set('smalltime', 'visible', true);
       }
     } else if (game.settings.get('smalltime', 'visible') === true) {
       const myApp = new SmallTimeApp().render(true);
