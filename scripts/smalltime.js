@@ -9,8 +9,6 @@ const SmallTimeMoonPhases = [
   'waning-crescent',
 ];
 
-const SmallTimeDocumentRoot = document.documentElement;
-
 Hooks.on('init', () => {
   // CONFIG.debug.hooks = true;
 
@@ -129,13 +127,22 @@ Hooks.on('init', () => {
     },
     default: 0.8,
     onChange: (value) => {
-      SmallTimeDocumentRoot.style.setProperty('--SMLTME-opacity', value);
+      document.documentElement.style.setProperty('--SMLTME-opacity', value);
     },
   });
 
   game.settings.register('smalltime', 'darkness-default', {
     name: game.i18n.format('SMLTME.Darkness_Default'),
     hint: game.i18n.format('SMLTME.Darkness_Default_Hint'),
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: false,
+  });
+
+  game.settings.register('smalltime', 'allow-trusted', {
+    name: game.i18n.format('SMLTME.Allow_Trusted'),
+    hint: game.i18n.format('SMLTME.Allow_Trusted_Hint'),
     scope: 'world',
     config: true,
     type: Boolean,
@@ -197,7 +204,27 @@ Hooks.on('init', () => {
 });
 
 Hooks.on('ready', () => {
-  if (game.user.isGM || !game.settings.get('smalltime', 'hide-from-players')) {
+  // Check and set the correct level of authorization for the current user.
+  game.modules.get('smalltime').viewAuth = false;
+  game.modules.get('smalltime').controlAuth = false;
+
+  if (game.user.role >= USER_ROLES.ASSISTANT) {
+    game.modules.get('smalltime').viewAuth = true;
+    game.modules.get('smalltime').controlAuth = true;
+  }
+
+  if (game.settings.get('smalltime', 'hide-from-players') === false) {
+    game.modules.get('smalltime').viewAuth = true;
+  }
+
+  if (
+    game.settings.get('smalltime', 'allow-trusted') &&
+    game.user.role === USER_ROLES.TRUSTED
+  ) {
+    game.modules.get('smalltime').controlAuth = true;
+  }
+
+  if (game.modules.get('smalltime').viewAuth) {
     SmallTimeApp.toggleAppVis('initial');
   }
   if (game.settings.get('smalltime', 'pinned') === true) {
@@ -205,7 +232,7 @@ Hooks.on('ready', () => {
   }
 
   const userOpacity = game.settings.get('smalltime', 'opacity');
-  SmallTimeDocumentRoot.style.setProperty('--SMLTME-opacity', userOpacity);
+  document.documentElement.style.setProperty('--SMLTME-opacity', userOpacity);
 
   // Even if the current toggle state for the date display is on shown,
   // make it hidden to start, to simplify the initial placement.
@@ -213,15 +240,45 @@ Hooks.on('ready', () => {
     game.settings.set('smalltime', 'date-showing', false);
   }
 
-  // Socket to send any GM changes dynamically to clients.
+  // Handle incoming socket emissions in various ways.
   game.socket.on(`module.smalltime`, (data) => {
-    if (data.operation === 'timeChange')
+    if (data.type === 'changeTime') {
       game.modules.get('smalltime').myApp.handleTimeChange(data);
+    }
+    if (data.type === 'changeSetting') {
+      if (game.user.isGM)
+        game.settings.set(data.payload.scope, data.payload.key, data.payload.value);
+    }
+    if (data.type === 'changeDarkness') {
+      if (game.user.isGM) {
+        const currentScene = game.scenes.get(data.payload.sceneID);
+        currentScene.update({ darkness: data.payload.darkness });
+      }
+    }
+    if (data.type === 'ATadvance') {
+      if (game.user.isGM) {
+        game.Gametime.advanceTime({
+          days: 0,
+          hours: data.payload.hours,
+          minutes: data.payload.minutes,
+          seconds: 0,
+        });
+      }
+    }
+    if (data.type === 'ATset') {
+      if (game.user.isGM) {
+        game.Gametime.setTime({
+          hours: data.payload.hours,
+          minutes: data.payload.minutes,
+          seconds: 0,
+        });
+      }
+    }
   });
 });
 
 Hooks.on('canvasReady', () => {
-  if (game.user.isGM) {
+  if (game.modules.get('smalltime').controlAuth) {
     // Get currently viewed scene.
     const thisScene = game.scenes.entities.find((s) => s._view);
     const darknessDefault = game.settings.get('smalltime', 'darkness-default');
@@ -288,7 +345,7 @@ Hooks.on('getSceneControlButtons', (buttons) => {
   // (Was Lighting originally, but Players don't have that layer,
   // and we want them to be able to toggle the app.)
   if (!canvas) return;
-  if (game.user.isGM || !game.settings.get('smalltime', 'hide-from-players')) {
+  if (game.modules.get('smalltime').viewAuth) {
     let group = buttons.find((b) => b.name === 'notes');
     group.tools.push({
       button: true,
@@ -379,7 +436,11 @@ class SmallTimeApp extends FormApplication {
     // Get the slider value.
     const newTime = formData.timeSlider;
     // Save the new time.
-    await game.settings.set('smalltime', 'current-time', newTime);
+    if (game.user.isGM) {
+      game.settings.set('smalltime', 'current-time', newTime);
+    } else {
+      SmallTimeApp.handleSocket('changeTime', newTime);
+    }
   }
 
   getData() {
@@ -404,7 +465,7 @@ class SmallTimeApp extends FormApplication {
     let pinZone = false;
 
     // Disable controls for non-GMs.
-    if (!game.user.isGM) {
+    if (!game.modules.get('smalltime').controlAuth) {
       $('#timeSlider').addClass('disable-for-players');
       $('#decrease-large').addClass('hide-for-players');
       $('#decrease-small').addClass('hide-for-players');
@@ -484,21 +545,31 @@ class SmallTimeApp extends FormApplication {
 
     // Handle changes to the moon phase.
     $('#timeSlider').on('click', async function () {
-      if (event.shiftKey) {
+      if (event.shiftKey && game.modules.get('smalltime').controlAuth) {
         const startingPhase = game.settings.get('smalltime', 'moon-phase');
         const newPhase = (startingPhase + 1) % SmallTimeMoonPhases.length;
 
-        SmallTimeDocumentRoot.style.setProperty(
+        document.documentElement.style.setProperty(
           '--SMLTME-phaseURL',
           `url('../images/moon-phases/${SmallTimeMoonPhases[newPhase]}.webp')`
         );
 
-        await game.settings.set('smalltime', 'moon-phase', newPhase);
+        if (game.user.isGM) {
+          game.settings.set('smalltime', 'moon-phase', newPhase);
+        } else {
+          SmallTimeApp.handleSocket('changeSetting', {
+            scope: 'smalltime',
+            key: 'moon-phase',
+            value: newPhase,
+          });
+        }
+        SmallTimeApp.handleSocket('changeTime', $(this).val());
 
-        game.socket.emit('module.smalltime', {
-          operation: 'timeChange',
-          content: $(this).val(),
-        });
+        if (game.user.isGM) {
+          game.settings.set('smalltime', 'current-time', $(this).val());
+        } else {
+          SmallTimeApp.handleSocket('changeTime', $(this).val());
+        }
       }
     });
 
@@ -548,10 +619,16 @@ class SmallTimeApp extends FormApplication {
 
       SmallTimeApp.timeTransition($(this).val());
 
-      game.socket.emit('module.smalltime', {
-        operation: 'timeChange',
-        content: $(this).val(),
-      });
+      if (game.user.isGM) {
+        game.settings.set('smalltime', 'current-time', $(this).val());
+      } else {
+        SmallTimeApp.handleSocket('changeSetting', {
+          scope: 'smalltime',
+          key: 'current-time',
+          value: $(this).val(),
+        });
+      }
+      SmallTimeApp.handleSocket('changeTime', $(this).val());
     });
 
     // Send slider time changes to About Time on mouseUp, not live.
@@ -564,11 +641,19 @@ class SmallTimeApp extends FormApplication {
         let rhours = Math.floor(hours);
         let minutes = (hours - rhours) * 60;
         let rminutes = Math.round(minutes);
-        game.Gametime.setTime({
-          hours: rhours,
-          minutes: rminutes,
-          seconds: 0,
-        });
+
+        if (game.user.isGM) {
+          game.Gametime.setTime({
+            hours: rhours,
+            minutes: rminutes,
+            seconds: 0,
+          });
+        } else {
+          SmallTimeApp.handleSocket('ATset', {
+            hours: rhours,
+            minutes: rminutes,
+          });
+        }
       }
     });
 
@@ -580,7 +665,7 @@ class SmallTimeApp extends FormApplication {
         game.modules.get('about-time')?.active &&
         game.settings.get('smalltime', 'about-time')
       ) {
-        if (event.shiftKey) {
+        if (event.shiftKey && game.modules.get('smalltime').controlAuth) {
           if (game.Gametime.isRunning()) {
             game.Gametime.stopRunning();
             $('#timeSeparator').removeClass('blink');
@@ -590,10 +675,10 @@ class SmallTimeApp extends FormApplication {
               $('#timeSeparator').addClass('blink');
             }
           }
-          game.socket.emit('module.smalltime', {
-            operation: 'timeChange',
-            content: game.settings.get('smalltime', 'current-time'),
-          });
+          SmallTimeApp.handleSocket(
+            'changeTime',
+            game.settings.get('smalltime', 'current-time')
+          );
         } else {
           if (!game.settings.get('smalltime', 'date-showing')) {
             $('#dateDisplay').addClass('active');
@@ -663,17 +748,27 @@ class SmallTimeApp extends FormApplication {
           return phase === data.moons[0].currentPhase.icon;
         });
         await game.settings.set('smalltime', 'moon-phase', newPhase);
-        SmallTimeApp.timeTransition(game.settings.get('smalltime', 'current-time'));
+        let currentTime = game.settings.get('smalltime', 'current-time');
+        SmallTimeApp.timeTransition(currentTime);
+        SmallTimeApp.handleSocket('changeTime', currentTime);
       });
     }
   }
 
-  // Helper function for the socket updates.
+  // Helper function for handling sockets.
+  static handleSocket(type, payload) {
+    game.socket.emit('module.smalltime', {
+      type: type,
+      payload: payload,
+    });
+  }
+
+  // Helper function for time-changing socket updates.
   handleTimeChange(data) {
-    SmallTimeApp.timeTransition(data.content);
-    $('#hourString').html(SmallTimeApp.convertTime(data.content).hours);
-    $('#minuteString').html(SmallTimeApp.convertTime(data.content).minutes);
-    $('#timeSlider').val(data.content);
+    SmallTimeApp.timeTransition(data.payload);
+    $('#hourString').html(SmallTimeApp.convertTime(data.payload).hours);
+    $('#minuteString').html(SmallTimeApp.convertTime(data.payload).minutes);
+    $('#timeSlider').val(data.payload);
     if (game.Gametime.isRunning()) {
       $('#timeSeparator').addClass('blink');
     } else {
@@ -683,8 +778,6 @@ class SmallTimeApp extends FormApplication {
 
   // Functionality for increment/decrement buttons.
   timeRatchet(delta) {
-    if (!game.user.isGM) return;
-
     let AboutTimeSync = false;
 
     if (
@@ -705,10 +798,20 @@ class SmallTimeApp extends FormApplication {
       newTime = newTime - 1440;
     }
 
-    game.settings.set('smalltime', 'current-time', newTime);
+    if (game.user.isGM) {
+      game.settings.set('smalltime', 'current-time', newTime);
+    } else {
+      SmallTimeApp.handleSocket('changeSetting', {
+        scope: 'smalltime',
+        key: 'current-time',
+        value: newTime,
+      });
+    }
 
-    $('#hourString').html(SmallTimeApp.convertTime(currentTime).hours);
-    $('#minuteString').html(SmallTimeApp.convertTime(currentTime).minutes);
+    $('#hourString').html(SmallTimeApp.convertTime(newTime).hours);
+    $('#minuteString').html(SmallTimeApp.convertTime(newTime).minutes);
+
+    SmallTimeApp.handleSocket('changeTime', newTime);
 
     SmallTimeApp.timeTransition(newTime);
 
@@ -718,20 +821,21 @@ class SmallTimeApp extends FormApplication {
       let rhours = Math.floor(hours);
       let minutes = (hours - rhours) * 60;
       let rminutes = Math.round(minutes);
-      game.Gametime.advanceTime({
-        days: 0,
-        hours: rhours,
-        minutes: rminutes,
-        seconds: 0,
-      });
+
+      if (game.user.isGM) {
+        game.Gametime.advanceTime({
+          days: 0,
+          hours: rhours,
+          minutes: rminutes,
+          seconds: 0,
+        });
+      } else {
+        SmallTimeApp.handleSocket('ATadvance', {
+          hours: rhours,
+          minutes: rminutes,
+        });
+      }
     }
-
-    // Socket for player sync.
-    game.socket.emit('module.smalltime', {
-      operation: 'timeChange',
-      content: newTime,
-    });
-
     // Also move the slider to match.
     $('#timeSlider').val(newTime);
   }
@@ -767,16 +871,16 @@ class SmallTimeApp extends FormApplication {
     } else {
       $('#timeSlider').removeClass('sun');
       $('#timeSlider').addClass('moon');
-      SmallTimeDocumentRoot.style.setProperty(
+      document.documentElement.style.setProperty(
         '--SMLTME-phaseURL',
         `url('../images/moon-phases/${SmallTimeMoonPhases[currentPhase]}.webp')`
       );
     }
 
     // If requested, adjust the scene's Darkness level.
-    const currentScene = game.scenes.entities.find((s) => s._view);
+    const currentScene = canvas.scene;
 
-    if (currentScene.getFlag('smalltime', 'darkness-link') && game.user.isGM) {
+    if (currentScene.getFlag('smalltime', 'darkness-link')) {
       let darknessValue = canvas.lighting.darknessLevel;
 
       if (timeNow > sunriseEnd && timeNow < sunsetStart) {
@@ -793,9 +897,13 @@ class SmallTimeApp extends FormApplication {
       // Truncate long decimals.
       darknessValue = Math.round(darknessValue * 10) / 10;
 
-      canvas.lighting.refresh(darknessValue);
       if (game.user.isGM) {
-        await currentScene.update({ darkness: darknessValue });
+        currentScene.update({ darkness: darknessValue });
+      } else {
+        SmallTimeApp.handleSocket('changeDarkness', {
+          darkness: darknessValue,
+          sceneID: currentScene.id,
+        });
       }
     }
   }
@@ -892,11 +1000,12 @@ class SmallTimeApp extends FormApplication {
     const newYear = ATobject.year;
 
     const timePackage = {
-      operation: 'timeChange',
-      content: newTime,
+      type: 'changeTime',
+      payload: newTime,
     };
 
     game.modules.get('smalltime').myApp.handleTimeChange(timePackage);
+
     if (game.user.isGM) game.settings.set('smalltime', 'current-time', newTime);
 
     const displayDate = newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear;

@@ -15,5 +15,7 @@
   "SMLTME.AboutTime": "Sync with About Time",
   "SMLTME.AboutTime_Hint": "If the About Time clock changes, SmallTime will change, and vice-versa. Advancing SmallTime past midnight will also change the About Time day.",
   "SMLTME.Hide_From_Players": "Hide from Players",
-  "SMLTME.Hide_From_Players_Hint": "Hide the SmallTime window from all non-GM users."
+  "SMLTME.Hide_From_Players_Hint": "Hide the SmallTime window from all non-GM users.",
+  "SMLTME.Allow_Trusted": "Allow Trusted Player Control",
+  "SMLTME.Allow_Trusted_Hint": "Players with the Trusted role will be able to change the current time."
 }
