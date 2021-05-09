@@ -239,24 +239,29 @@ Hooks.on('ready', () => {
     game.settings.set('smalltime', 'date-showing', false);
   }
 
-  // Handle incoming socket emissions in various ways.
+  // Send incoming socket emissions through the async function.
   game.socket.on(`module.smalltime`, (data) => {
+    doSocket(data);
+    console.log('ping');
+  });
+
+  async function doSocket(data) {
     if (data.type === 'changeTime') {
       game.modules.get('smalltime').myApp.handleTimeChange(data);
     }
     if (data.type === 'changeSetting') {
       if (game.user.isGM)
-        game.settings.set(data.payload.scope, data.payload.key, data.payload.value);
+        await game.settings.set(data.payload.scope, data.payload.key, data.payload.value);
     }
     if (data.type === 'changeDarkness') {
       if (game.user.isGM) {
         const currentScene = game.scenes.get(data.payload.sceneID);
-        currentScene.update({ darkness: data.payload.darkness });
+        await currentScene.update({ darkness: data.payload.darkness });
       }
     }
     if (data.type === 'ATadvance') {
       if (game.user.isGM) {
-        game.Gametime.advanceTime({
+        await game.Gametime.advanceTime({
           days: 0,
           hours: data.payload.hours,
           minutes: data.payload.minutes,
@@ -266,14 +271,14 @@ Hooks.on('ready', () => {
     }
     if (data.type === 'ATset') {
       if (game.user.isGM) {
-        game.Gametime.setTime({
+        await game.Gametime.setTime({
           hours: data.payload.hours,
           minutes: data.payload.minutes,
           seconds: 0,
         });
       }
     }
-  });
+  }
 });
 
 Hooks.on('canvasReady', () => {
