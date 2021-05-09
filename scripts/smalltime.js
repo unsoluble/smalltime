@@ -208,7 +208,7 @@ Hooks.on('ready', () => {
   game.modules.get('smalltime').viewAuth = false;
   game.modules.get('smalltime').controlAuth = false;
 
-  if (game.user.role >= USER_ROLES.ASSISTANT) {
+  if (game.user.role >= CONST.USER_ROLES.ASSISTANT) {
     game.modules.get('smalltime').viewAuth = true;
     game.modules.get('smalltime').controlAuth = true;
   }
@@ -219,7 +219,7 @@ Hooks.on('ready', () => {
 
   if (
     game.settings.get('smalltime', 'allow-trusted') &&
-    game.user.role === USER_ROLES.TRUSTED
+    game.user.role === CONST.USER_ROLES.TRUSTED
   ) {
     game.modules.get('smalltime').controlAuth = true;
   }
