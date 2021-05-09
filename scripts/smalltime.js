@@ -124,6 +124,7 @@ Hooks.on('init', () => {
       step: 0.1,
     },
     default: 0.8,
+    // Realtime preview of the opacity setting.
     onChange: (value) => {
       document.documentElement.style.setProperty('--SMLTME-opacity', value);
     },
@@ -184,6 +185,7 @@ Hooks.on('init', () => {
     scope: 'world',
     config: false,
     type: Number,
+    // Default is full moon.
     default: 4,
   });
 
@@ -206,13 +208,17 @@ Hooks.on('ready', () => {
   game.modules.get('smalltime').viewAuth = false;
   game.modules.get('smalltime').controlAuth = false;
 
+  // First give view & control to Assistants and GMs.
   if (game.user.role >= CONST.USER_ROLES.ASSISTANT) {
     game.modules.get('smalltime').viewAuth = true;
     game.modules.get('smalltime').controlAuth = true;
   }
+  // If the Hide From Players setting isn't on, let Players view.
   if (game.settings.get('smalltime', 'hide-from-players') === false) {
     game.modules.get('smalltime').viewAuth = true;
   }
+  // If the Allow Trusted Player Control setting is on, give Trusted
+  // Players control privs as well.
   if (
     game.settings.get('smalltime', 'allow-trusted') &&
     game.user.role === CONST.USER_ROLES.TRUSTED
@@ -242,7 +248,6 @@ Hooks.on('ready', () => {
   // Send incoming socket emissions through the async function.
   game.socket.on(`module.smalltime`, (data) => {
     doSocket(data);
-    console.log('ping');
   });
 
   async function doSocket(data) {
@@ -259,6 +264,7 @@ Hooks.on('ready', () => {
         await currentScene.update({ darkness: data.payload.darkness });
       }
     }
+    // Advance the About Time clock.
     if (data.type === 'ATadvance') {
       if (game.user.isGM) {
         await game.Gametime.advanceTime({
@@ -269,6 +275,7 @@ Hooks.on('ready', () => {
         });
       }
     }
+    // Directly set the About Time clock.
     if (data.type === 'ATset') {
       if (game.user.isGM) {
         await game.Gametime.setTime({
@@ -281,6 +288,7 @@ Hooks.on('ready', () => {
   }
 });
 
+// Set the initial state for newly rendered scenes.
 Hooks.on('canvasReady', () => {
   if (game.modules.get('smalltime').controlAuth) {
     // Get currently viewed scene.
@@ -299,6 +307,7 @@ Hooks.on('canvasReady', () => {
   }
 });
 
+// Handle our changes to the Scene Config screen.
 Hooks.on('renderSceneConfig', async (obj) => {
   const darknessDefault = game.settings.get('smalltime', 'darkness-default');
 
@@ -324,8 +333,8 @@ Hooks.on('renderSceneConfig', async (obj) => {
   $('p:contains("dim conditions")').parent().after(injection);
 });
 
+// Live render the opacity changes as a preview.
 Hooks.on('renderSettingsConfig', () => {
-  // Live render the opacity changes as a preview.
   $('input[name="smalltime.opacity"]').on('input', () => {
     $('#smalltime-app').css({
       opacity: $('input[name="smalltime.opacity"]').val(),
@@ -335,8 +344,8 @@ Hooks.on('renderSettingsConfig', () => {
   });
 });
 
+// Undo the opacity preview settings.
 Hooks.on('closeSettingsConfig', () => {
-  // Undo the opacity preview settings.
   $('#smalltime-app').css({
     opacity: '',
     'transition-delay': '',
@@ -344,10 +353,8 @@ Hooks.on('closeSettingsConfig', () => {
   });
 });
 
+// Add a toggle button inside the Jounral Notes tool layer.
 Hooks.on('getSceneControlButtons', (buttons) => {
-  // Add a toggle button inside the Notes tool layer.
-  // (Was Lighting originally, but Players don't have that layer,
-  // and we want them to be able to toggle the app.)
   if (!canvas) return;
   if (game.modules.get('smalltime').viewAuth) {
     let group = buttons.find((b) => b.name === 'notes');
@@ -363,9 +370,8 @@ Hooks.on('getSceneControlButtons', (buttons) => {
   }
 });
 
+// Adjust the position of the window when the size of the PlayerList changes.
 Hooks.on('renderPlayerList', () => {
-  // Hooking in here to adjust the position of the window
-  // when the size of the PlayerList changes.
   const element = document.getElementById('players');
   const playerAppPos = element.getBoundingClientRect();
 
@@ -376,6 +382,9 @@ Hooks.on('renderPlayerList', () => {
   if (game.settings.get('smalltime', 'date-showing')) {
     myOffset += 21;
   }
+  // This would be better done with a class add, but injecting
+  // it here was the only way I could get it to enforce the
+  // absolute positioning.
   $('#pin-lock').text(`
       #smalltime-app {
         top: calc(100vh - ${myOffset}px) !important;
@@ -384,7 +393,8 @@ Hooks.on('renderPlayerList', () => {
   `);
 });
 
-// Grab updates from About Time on two different hooks.
+// Grab updates from About Time. Flash the colon when the
+// realtime clock is running.
 Hooks.on('updateWorldTime', () => {
   if (game.settings.get('smalltime', 'about-time')) {
     SmallTimeApp.syncFromAboutTime();
@@ -396,6 +406,7 @@ Hooks.on('updateWorldTime', () => {
   }
 });
 
+// Sync up with About Time when their initial clock is done setting up.
 Hooks.on('about-time.pseudoclockMaster', () => {
   if (game.settings.get('smalltime', 'about-time') && game.user.isGM) {
     SmallTimeApp.syncFromAboutTime();
@@ -492,6 +503,9 @@ class SmallTimeApp extends FormApplication {
 
       SmallTimeApp.unPinApp();
 
+      // Follow the mouse.
+      // TODO: Figure out how to account for changes to the viewport size
+      // between drags.
       this.app.setPosition({
         left: this.position.left + (event.clientX - this._initial.x),
         top: this.position.top + (event.clientY - this._initial.y),
@@ -547,7 +561,7 @@ class SmallTimeApp extends FormApplication {
     // updated since a settings change for some reason.
     SmallTimeApp.timeTransition(this.currentTime);
 
-    // Handle changes to the moon phase.
+    // Handle cycling through the moon phases on Shift-clicks.
     $('#timeSlider').on('click', async function () {
       if (event.shiftKey && game.modules.get('smalltime').controlAuth) {
         const startingPhase = game.settings.get('smalltime', 'moon-phase');
@@ -558,6 +572,7 @@ class SmallTimeApp extends FormApplication {
           `url('../images/moon-phases/${SmallTimeMoonPhases[newPhase]}.webp')`
         );
 
+        // Set and broadcast the change.
         if (game.user.isGM) {
           await game.settings.set('smalltime', 'moon-phase', newPhase);
         } else {
@@ -617,6 +632,7 @@ class SmallTimeApp extends FormApplication {
     */
     // WIP ------------------------------------------------------------------
 
+    // Handle live feedback while dragging the sun/moon slider.
     $(document).on('input', '#timeSlider', async function () {
       $('#hourString').html(SmallTimeApp.convertTime($(this).val()).hours);
       $('#minuteString').html(SmallTimeApp.convertTime($(this).val()).minutes);
@@ -773,6 +789,7 @@ class SmallTimeApp extends FormApplication {
     $('#hourString').html(SmallTimeApp.convertTime(data.payload).hours);
     $('#minuteString').html(SmallTimeApp.convertTime(data.payload).minutes);
     $('#timeSlider').val(data.payload);
+    // TODO: I think at least one of these blink handlers is redundant.
     if (game.Gametime.isRunning()) {
       $('#timeSeparator').addClass('blink');
     } else {
@@ -782,15 +799,6 @@ class SmallTimeApp extends FormApplication {
 
   // Functionality for increment/decrement buttons.
   async timeRatchet(delta) {
-    let AboutTimeSync = false;
-
-    if (
-      game.modules.get('about-time')?.active &&
-      game.settings.get('smalltime', 'about-time')
-    ) {
-      AboutTimeSync = true;
-    }
-
     let currentTime = game.settings.get('smalltime', 'current-time');
     let newTime = currentTime + delta;
 
@@ -819,8 +827,11 @@ class SmallTimeApp extends FormApplication {
 
     SmallTimeApp.timeTransition(newTime);
 
-    // Send the new time to About Time.
-    if (AboutTimeSync) {
+    // Send the new time to About Time, if it's active.
+    if (
+      game.modules.get('about-time')?.active &&
+      game.settings.get('smalltime', 'about-time')
+    ) {
       let hours = delta / 60;
       let rhours = Math.floor(hours);
       let minutes = (hours - rhours) * 60;
@@ -846,7 +857,6 @@ class SmallTimeApp extends FormApplication {
 
   // Render changes to the sun/moon slider, and handle Darkness link.
   static async timeTransition(timeNow) {
-    // These values are arbitrary choices; could be settings eventually.
     const sunriseStart = game.settings.get('smalltime', 'sunrise-start');
     const sunriseEnd = game.settings.get('smalltime', 'sunrise-end');
     const sunsetStart = game.settings.get('smalltime', 'sunset-start');
@@ -901,6 +911,7 @@ class SmallTimeApp extends FormApplication {
       // Truncate long decimals.
       darknessValue = Math.round(darknessValue * 10) / 10;
 
+      // Perform the Darkness update, and send it out to other clients.
       if (game.user.isGM) {
         await currentScene.update({ darkness: darknessValue });
       } else {
@@ -912,7 +923,7 @@ class SmallTimeApp extends FormApplication {
     }
   }
 
-  // Convert the integer time value to an hours:minutes string.
+  // Convert the integer time value to hours and minutes.
   static convertTime(timeInteger) {
     let theHours = Math.floor(timeInteger / 60);
     let theMinutes = timeInteger - theHours * 60;
@@ -1012,6 +1023,7 @@ class SmallTimeApp extends FormApplication {
 
     if (game.user.isGM) await game.settings.set('smalltime', 'current-time', newTime);
 
+    // Arbitrary/opinionated date formatting here, could be a user setting eventually.
     const displayDate = newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear;
     $('#dateDisplay').html(displayDate);
     // Save this string so we can display it on initial load-in,
