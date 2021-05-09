@@ -995,9 +995,14 @@ class SmallTimeApp extends FormApplication {
         }, 200);
         game.settings.set('smalltime', 'visible', false);
       } else {
-        const myApp = new SmallTimeApp().render(true);
-        game.modules.get('smalltime').myApp = myApp;
-        game.settings.set('smalltime', 'visible', true);
+        // Make sure there isn't already an instance of the app rendered.
+        if (
+          !Object.values(ui.windows).find((w) => w.constructor.name === 'SmallTimeApp')
+        ) {
+          const myApp = new SmallTimeApp().render(true);
+          game.modules.get('smalltime').myApp = myApp;
+          game.settings.set('smalltime', 'visible', true);
+        }
       }
     } else if (game.settings.get('smalltime', 'visible') === true) {
       const myApp = new SmallTimeApp().render(true);
