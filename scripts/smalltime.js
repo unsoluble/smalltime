@@ -9,6 +9,9 @@ const SmallTimeMoonPhases = [
   'waning-crescent',
 ];
 
+// Default offset from the Player List window when pinned,
+// plus custom offsets for game systems that draw extra borders
+// around their windows.
 let SmallTimePinOffset = 83;
 const SmallTime_WFRP4eOffset = 30;
 const SmallTime_DasSchwarzeAugeOffset = 16;
