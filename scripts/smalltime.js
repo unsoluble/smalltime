@@ -10,6 +10,8 @@ const SmallTimeMoonPhases = [
 ];
 
 let SmallTimePinOffset = 83;
+const SmallTime_WFRP4eOffset = 30;
+const SmallTime_DasSchwarzeAugeOffset = 16;
 
 Hooks.on('init', () => {
   game.settings.register('smalltime', 'current-time', {
@@ -206,9 +208,12 @@ Hooks.on('init', () => {
 });
 
 Hooks.on('ready', () => {
-  // Account for the extra border art in WFRP.
+  // Account for the extra border art in certain game systems.
   if (game.system.id === 'wfrp4e') {
-    SmallTimePinOffset += 30;
+    SmallTimePinOffset += SmallTime_WFRP4eOffset;
+  }
+  if (game.system.id === 'dsa5') {
+    SmallTimePinOffset += SmallTime_DasSchwarzeAugeOffset;
   }
 
   // Check and set the correct level of authorization for the current user.
