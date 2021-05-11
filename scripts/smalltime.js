@@ -340,7 +340,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
       <p class="notes">${controlHint}</p>
     </div>
     `;
-  $('p:contains("dim conditions")').parent().after(injection);
+  $('p:contains("' + game.i18n.format('SMLTME.InjectAfter') + '")').parent().after(injection);
 });
 
 // Live render the opacity changes as a preview.
