@@ -46,7 +46,7 @@ There are a number of settings you can change:
 
 ### Languages
 
-The settings text is only in English currently, but I'm happy to accept and implement translations.
+The settings text is in English and Japanese currently (thanks @BrotherSharper!), and I'm happy to accept and implement more translations.
 
 ### Need Help?
 
