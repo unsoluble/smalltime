@@ -9,6 +9,8 @@ const SmallTimeMoonPhases = [
   'waning-crescent',
 ];
 
+const SmallTimePinOffset = 83;
+
 Hooks.on('init', () => {
   game.settings.register('smalltime', 'current-time', {
     name: 'Current Time',
@@ -256,7 +258,11 @@ Hooks.on('ready', () => {
     }
     if (data.type === 'changeSetting') {
       if (game.user.isGM)
-        await game.settings.set(data.payload.scope, data.payload.key, data.payload.value);
+        await game.settings.set(
+          data.payload.scope,
+          data.payload.key,
+          data.payload.value
+        );
     }
     if (data.type === 'changeDarkness') {
       if (game.user.isGM) {
@@ -302,7 +308,9 @@ Hooks.on('canvasReady', () => {
 
     // Refresh the current scene's Darkness level if it should be linked.
     if (thisScene.getFlag('smalltime', 'darkness-link')) {
-      SmallTimeApp.timeTransition(game.settings.get('smalltime', 'current-time'));
+      SmallTimeApp.timeTransition(
+        game.settings.get('smalltime', 'current-time')
+      );
     }
   }
 });
@@ -317,7 +325,9 @@ Hooks.on('renderSceneConfig', async (obj) => {
   }
 
   // Set the option's checkbox as appropriate.
-  const checkStatus = obj.object.getFlag('smalltime', 'darkness-link') ? 'checked' : '';
+  const checkStatus = obj.object.getFlag('smalltime', 'darkness-link')
+    ? 'checked'
+    : '';
 
   // Inject our new option into the config screen.
   const controlLabel = game.i18n.format('SMLTME.Darkness_Control');
@@ -375,10 +385,10 @@ Hooks.on('renderPlayerList', () => {
   const element = document.getElementById('players');
   const playerAppPos = element.getBoundingClientRect();
 
-  // The 88 here is the ideal distance between the top of the
+  // The SmallTimePinOffset here is the ideal distance between the top of the
   // Players list and the top of SmallTime. The +21 accounts
   // for the date dropdown if enabled.
-  let myOffset = playerAppPos.height + 88;
+  let myOffset = playerAppPos.height + SmallTimePinOffset;
   if (game.settings.get('smalltime', 'date-showing')) {
     myOffset += 21;
   }
@@ -536,7 +546,7 @@ class SmallTimeApp extends FormApplication {
 
       const playerApp = document.getElementById('players');
       const playerAppPos = playerApp.getBoundingClientRect();
-      const myOffset = playerAppPos.height + 88;
+      const myOffset = playerAppPos.height + SmallTimePinOffset;
 
       // If the mouseup happens inside the Pin zone, pin the app.
       if (pinZone) {
@@ -867,7 +877,8 @@ class SmallTimeApp extends FormApplication {
       } else if (timeNow > sunsetEnd) {
         darknessValue = 1;
       } else if (timeNow >= sunriseStart && timeNow <= sunriseEnd) {
-        darknessValue = 1 - (timeNow - sunriseStart) / (sunriseEnd - sunriseStart);
+        darknessValue =
+          1 - (timeNow - sunriseStart) / (sunriseEnd - sunriseStart);
       } else if (timeNow >= sunsetStart && timeNow <= sunsetEnd) {
         darknessValue = (timeNow - sunsetStart) / (sunsetEnd - sunsetStart);
       }
@@ -921,7 +932,7 @@ class SmallTimeApp extends FormApplication {
     if (!$('#pin-lock').length) {
       const playerApp = document.getElementById('players');
       const playerAppPos = playerApp.getBoundingClientRect();
-      let myOffset = playerAppPos.height + 88;
+      let myOffset = playerAppPos.height + SmallTimePinOffset;
 
       if (expanded) myOffset += 21;
 
@@ -960,7 +971,9 @@ class SmallTimeApp extends FormApplication {
       } else {
         // Make sure there isn't already an instance of the app rendered.
         if (
-          !Object.values(ui.windows).find((w) => w.constructor.name === 'SmallTimeApp')
+          !Object.values(ui.windows).find(
+            (w) => w.constructor.name === 'SmallTimeApp'
+          )
         ) {
           const myApp = new SmallTimeApp().render(true);
           game.modules.get('smalltime').myApp = myApp;
@@ -989,14 +1002,17 @@ class SmallTimeApp extends FormApplication {
 
     game.modules.get('smalltime').myApp.handleTimeChange(timePackage);
 
-    if (game.user.isGM) await game.settings.set('smalltime', 'current-time', newTime);
+    if (game.user.isGM)
+      await game.settings.set('smalltime', 'current-time', newTime);
 
     // Arbitrary/opinionated date formatting here, could be a user setting eventually.
-    const displayDate = newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear;
+    const displayDate =
+      newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear;
     $('#dateDisplay').html(displayDate);
     // Save this string so we can display it on initial load-in,
     // before About Time is ready.
-    if (game.user.isGM) await game.settings.set('smalltime', 'current-date', displayDate);
+    if (game.user.isGM)
+      await game.settings.set('smalltime', 'current-date', displayDate);
   }
 }
 
