@@ -333,14 +333,16 @@ Hooks.on('renderSceneConfig', async (obj) => {
     <div class="form-group">
       <img id="smalltime-config-icon" src="modules/smalltime/images/smalltime-icon.webp">
       <label>${controlLabel}</label>
-      <input id="smalltime-darkness" 
+      <input id="smalltime-darkness"
         type="checkbox"
         name="flags.smalltime.darkness-link"
         ${checkStatus}>
       <p class="notes">${controlHint}</p>
     </div>
     `;
-  $('p:contains("' + game.i18n.format('SMLTME.InjectAfter') + '")').parent().after(injection);
+  $('p:contains("' + game.i18n.format('SMLTME.Inject_After') + '")')
+    .parent()
+    .after(injection);
 });
 
 // Live render the opacity changes as a preview.
@@ -627,10 +629,7 @@ class SmallTimeApp extends FormApplication {
       SmallTimeApp.timeTransition($(this).val());
       SmallTimeApp.handleSocket('changeTime', $(this).val());
 
-      if (
-        game.modules.get('about-time')?.active &&
-        game.settings.get('smalltime', 'about-time')
-      ) {
+      if (game.modules.get('about-time')?.active && game.settings.get('smalltime', 'about-time')) {
         let hours = $(this).val() / 60;
         let rhours = Math.floor(hours);
         let minutes = (hours - rhours) * 60;
@@ -655,10 +654,7 @@ class SmallTimeApp extends FormApplication {
     // The inline CSS overrides are a bit hacky, but were the
     // only way I could get the desired behaviour.
     html.find('#timeDisplay').on('click', async function () {
-      if (
-        game.modules.get('about-time')?.active &&
-        game.settings.get('smalltime', 'about-time')
-      ) {
+      if (game.modules.get('about-time')?.active && game.settings.get('smalltime', 'about-time')) {
         if (event.shiftKey && game.modules.get('smalltime').controlAuth) {
           if (game.Gametime.isRunning()) {
             game.Gametime.stopRunning();
@@ -669,10 +665,7 @@ class SmallTimeApp extends FormApplication {
               $('#timeSeparator').addClass('blink');
             }
           }
-          SmallTimeApp.handleSocket(
-            'changeTime',
-            game.settings.get('smalltime', 'current-time')
-          );
+          SmallTimeApp.handleSocket('changeTime', game.settings.get('smalltime', 'current-time'));
         } else {
           if (!game.settings.get('smalltime', 'date-showing')) {
             $('#dateDisplay').addClass('active');
@@ -802,10 +795,7 @@ class SmallTimeApp extends FormApplication {
     SmallTimeApp.timeTransition(newTime);
 
     // Send the new time to About Time, if it's active.
-    if (
-      game.modules.get('about-time')?.active &&
-      game.settings.get('smalltime', 'about-time')
-    ) {
+    if (game.modules.get('about-time')?.active && game.settings.get('smalltime', 'about-time')) {
       let hours = delta / 60;
       let rhours = Math.floor(hours);
       let minutes = (hours - rhours) * 60;
@@ -970,9 +960,7 @@ class SmallTimeApp extends FormApplication {
         game.settings.set('smalltime', 'visible', false);
       } else {
         // Make sure there isn't already an instance of the app rendered.
-        if (
-          !Object.values(ui.windows).find((w) => w.constructor.name === 'SmallTimeApp')
-        ) {
+        if (!Object.values(ui.windows).find((w) => w.constructor.name === 'SmallTimeApp')) {
           const myApp = new SmallTimeApp().render(true);
           game.modules.get('smalltime').myApp = myApp;
           game.settings.set('smalltime', 'visible', true);

@@ -18,5 +18,5 @@
   "SMLTME.Hide_From_Players_Hint": "Hide the SmallTime window from all non-GM users.",
   "SMLTME.Allow_Trusted": "Allow Trusted Player Control",
   "SMLTME.Allow_Trusted_Hint": "Players with the Trusted role will be able to change the current time.",
-  "SMLTME.InjectAfter": "dim conditions"
+  "SMLTME.Inject_After": "dim conditions"
 }

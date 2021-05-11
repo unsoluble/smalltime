@@ -10,7 +10,7 @@
   "SMLTME.Resting_Opacity_Hint": "Transparenz des SmallTime-Fensters, wenn nicht damit interagiert wird.",
   "SMLTME.Darkness_Default": "Dunkelheit Standardmäßig beeinflussen",
   "SMLTME.Darkness_Default_Hint": "Standardeinstellung für SmalTime Dunkelheitseinfluss in der Szenenkonfiguration",
-  "SMLTME.Darkness_Control": "SmalTime Dunkelheitseinfluss",
+  "SMLTME.Darkness_Control": "SmallTime Dunkelheitseinfluss",
   "SMLTME.Darkness_Control_Hint": "Koppelt die Dunkelheitseinstellung dieser Szene an die aktuelle Zeit in SmallTime.",
   "SMLTME.AboutTime": "Mit About Time synchronisieren",
   "SMLTME.AboutTime_Hint": "Wenn die Zeit in About Time geändert wird, ändert SmallTime sich mit und umgekehrt. Wenn mit SmallTime Mitternacht überschritten wird, wird auch der Tag in About Time fortgeschrieben.",
@@ -18,5 +18,5 @@
   "SMLTME.Hide_From_Players_Hint": "Verstecke das SmallTime Fenster vor allen Nicht-GM Benutzern.",
   "SMLTME.Allow_Trusted": "Seriöse Spieler dürfen steuern.",
   "SMLTME.Allow_Trusted_Hint": "Benutzer mit der Rolle \"Seriöser Spieler\" dürfen die aktuelle Zeit ändern.",
-  "SMLTME.InjectAfter": "Nacht oder Dämmerung simuliert werden."
+  "SMLTME.Inject_After": "Nacht oder Dämmerung simuliert werden."
 }
