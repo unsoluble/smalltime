@@ -9,7 +9,7 @@ const SmallTimeMoonPhases = [
   'waning-crescent',
 ];
 
-const SmallTimePinOffset = 83;
+let SmallTimePinOffset = 83;
 
 Hooks.on('init', () => {
   game.settings.register('smalltime', 'current-time', {
@@ -206,6 +206,11 @@ Hooks.on('init', () => {
 });
 
 Hooks.on('ready', () => {
+  // Account for the extra border art in WFRP.
+  if (game.system.id === 'wfrp4e') {
+    SmallTimePinOffset += 30;
+  }
+
   // Check and set the correct level of authorization for the current user.
   game.modules.get('smalltime').viewAuth = false;
   game.modules.get('smalltime').controlAuth = false;
@@ -258,11 +263,7 @@ Hooks.on('ready', () => {
     }
     if (data.type === 'changeSetting') {
       if (game.user.isGM)
-        await game.settings.set(
-          data.payload.scope,
-          data.payload.key,
-          data.payload.value
-        );
+        await game.settings.set(data.payload.scope, data.payload.key, data.payload.value);
     }
     if (data.type === 'changeDarkness') {
       if (game.user.isGM) {
@@ -308,9 +309,7 @@ Hooks.on('canvasReady', () => {
 
     // Refresh the current scene's Darkness level if it should be linked.
     if (thisScene.getFlag('smalltime', 'darkness-link')) {
-      SmallTimeApp.timeTransition(
-        game.settings.get('smalltime', 'current-time')
-      );
+      SmallTimeApp.timeTransition(game.settings.get('smalltime', 'current-time'));
     }
   }
 });
@@ -325,9 +324,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
   }
 
   // Set the option's checkbox as appropriate.
-  const checkStatus = obj.object.getFlag('smalltime', 'darkness-link')
-    ? 'checked'
-    : '';
+  const checkStatus = obj.object.getFlag('smalltime', 'darkness-link') ? 'checked' : '';
 
   // Inject our new option into the config screen.
   const controlLabel = game.i18n.format('SMLTME.Darkness_Control');
@@ -336,7 +333,10 @@ Hooks.on('renderSceneConfig', async (obj) => {
     <div class="form-group">
       <img id="smalltime-config-icon" src="modules/smalltime/images/smalltime-icon.webp">
       <label>${controlLabel}</label>
-      <input id="smalltime-darkness" type="checkbox" name="flags.smalltime.darkness-link" ${checkStatus}>
+      <input id="smalltime-darkness" 
+        type="checkbox"
+        name="flags.smalltime.darkness-link"
+        ${checkStatus}>
       <p class="notes">${controlHint}</p>
     </div>
     `;
@@ -389,6 +389,7 @@ Hooks.on('renderPlayerList', () => {
   // Players list and the top of SmallTime. The +21 accounts
   // for the date dropdown if enabled.
   let myOffset = playerAppPos.height + SmallTimePinOffset;
+
   if (game.settings.get('smalltime', 'date-showing')) {
     myOffset += 21;
   }
@@ -546,7 +547,7 @@ class SmallTimeApp extends FormApplication {
 
       const playerApp = document.getElementById('players');
       const playerAppPos = playerApp.getBoundingClientRect();
-      const myOffset = playerAppPos.height + SmallTimePinOffset;
+      let myOffset = playerAppPos.height + SmallTimePinOffset;
 
       // If the mouseup happens inside the Pin zone, pin the app.
       if (pinZone) {
@@ -877,8 +878,7 @@ class SmallTimeApp extends FormApplication {
       } else if (timeNow > sunsetEnd) {
         darknessValue = 1;
       } else if (timeNow >= sunriseStart && timeNow <= sunriseEnd) {
-        darknessValue =
-          1 - (timeNow - sunriseStart) / (sunriseEnd - sunriseStart);
+        darknessValue = 1 - (timeNow - sunriseStart) / (sunriseEnd - sunriseStart);
       } else if (timeNow >= sunsetStart && timeNow <= sunsetEnd) {
         darknessValue = (timeNow - sunsetStart) / (sunsetEnd - sunsetStart);
       }
@@ -971,9 +971,7 @@ class SmallTimeApp extends FormApplication {
       } else {
         // Make sure there isn't already an instance of the app rendered.
         if (
-          !Object.values(ui.windows).find(
-            (w) => w.constructor.name === 'SmallTimeApp'
-          )
+          !Object.values(ui.windows).find((w) => w.constructor.name === 'SmallTimeApp')
         ) {
           const myApp = new SmallTimeApp().render(true);
           game.modules.get('smalltime').myApp = myApp;
@@ -1002,17 +1000,14 @@ class SmallTimeApp extends FormApplication {
 
     game.modules.get('smalltime').myApp.handleTimeChange(timePackage);
 
-    if (game.user.isGM)
-      await game.settings.set('smalltime', 'current-time', newTime);
+    if (game.user.isGM) await game.settings.set('smalltime', 'current-time', newTime);
 
     // Arbitrary/opinionated date formatting here, could be a user setting eventually.
-    const displayDate =
-      newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear;
+    const displayDate = newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear;
     $('#dateDisplay').html(displayDate);
     // Save this string so we can display it on initial load-in,
     // before About Time is ready.
-    if (game.user.isGM)
-      await game.settings.set('smalltime', 'current-date', displayDate);
+    if (game.user.isGM) await game.settings.set('smalltime', 'current-date', displayDate);
   }
 }
 
