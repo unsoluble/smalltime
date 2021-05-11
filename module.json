@@ -17,6 +17,11 @@
       "name": "日本語",
       "path": "lang/ja.json"
     }
+    {
+      "lang": "de",
+      "name": "Deutsch",
+      "path": "lang/de.json"
+    }
   ],
   "socket": true,
   "url": "https://github.com/unsoluble/smalltime",
