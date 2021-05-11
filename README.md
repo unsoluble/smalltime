@@ -48,7 +48,11 @@ There are a number of settings you can change:
 
 ### Languages
 
-The settings text is in English and Japanese currently (thanks @BrotherSharper!), and I'm happy to accept and implement more translations.
+* English
+* Japanese (thanks @BrotherSharper!)
+* German (thanks @kdomke!)
+
+I'm happy to accept and implement more translations!
 
 ### Need Help?
 
