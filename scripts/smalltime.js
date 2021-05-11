@@ -592,46 +592,6 @@ class SmallTimeApp extends FormApplication {
       }
     });
 
-    // WIP ------------------------------------------------------------------
-    // drag-select experiment
-    /*
-    $('#timeSlider')
-      .mousedown(function () {
-        if (event.shiftKey) {
-          $('.darkness-select').css('visibility', 'visible');
-
-          const root = document.documentElement;
-          root.style.setProperty('--SMLTME-ds-width', '0px');
-
-          const dragStart = $(this).val();
-
-          let maxDrag = 720;
-
-          const offsetStart = Math.round((dragStart / 1440) * 180) + 10;
-
-          root.style.setProperty('--SMLTME-ds-left', offsetStart + 'px');
-
-          $(this).on('mousemove', function () {
-            const dragWidth = Math.round(
-              ((Math.min($(this).val(), maxDrag) - dragStart) / 1440) * 180
-            );
-            if ($(this).val() < dragStart) {
-              console.log($(this).val(), dragStart);
-              $('.darkness-select').css('visibility', 'hidden');
-            } else {
-              $('.darkness-select').css('visibility', 'visble');
-            }
-            root.style.setProperty('--SMLTME-ds-width', dragWidth + 'px');
-          });
-        }
-      })
-      .mouseup(function () {
-        $(this).off('mousemove');
-        //$('.darkness-select').css('visibility', 'hidden');
-      });
-    */
-    // WIP ------------------------------------------------------------------
-
     // Handle live feedback while dragging the sun/moon slider.
     $(document).on('input', '#timeSlider', async function () {
       $('#hourString').html(SmallTimeApp.convertTime($(this).val()).hours);
@@ -653,6 +613,9 @@ class SmallTimeApp extends FormApplication {
 
     // Send slider time changes to About Time on mouseUp, not live.
     $(document).on('change', '#timeSlider', function () {
+      SmallTimeApp.timeTransition($(this).val());
+      SmallTimeApp.handleSocket('changeTime', $(this).val());
+
       if (
         game.modules.get('about-time')?.active &&
         game.settings.get('smalltime', 'about-time')
