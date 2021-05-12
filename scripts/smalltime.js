@@ -619,6 +619,7 @@ class SmallTimeApp extends FormApplication {
       $('#minuteString').html(SmallTimeApp.convertTime($(this).val()).minutes);
 
       SmallTimeApp.timeTransition($(this).val());
+      SmallTimeApp.handleSocket('changeTime', $(this).val());
 
       if (game.user.isGM) {
         await game.settings.set('smalltime', 'current-time', $(this).val());
@@ -629,15 +630,20 @@ class SmallTimeApp extends FormApplication {
           value: $(this).val(),
         });
       }
-      SmallTimeApp.handleSocket('changeTime', $(this).val());
     });
 
     // Send slider time changes to About Time on mouseUp, not live.
     $(document).on('change', '#timeSlider', function () {
+      $('#hourString').html(SmallTimeApp.convertTime($(this).val()).hours);
+      $('#minuteString').html(SmallTimeApp.convertTime($(this).val()).minutes);
+
       SmallTimeApp.timeTransition($(this).val());
       SmallTimeApp.handleSocket('changeTime', $(this).val());
 
-      if (game.modules.get('about-time')?.active && game.settings.get('smalltime', 'about-time')) {
+      if (
+        game.modules.get('about-time')?.active &&
+        game.settings.get('smalltime', 'about-time')
+      ) {
         let hours = $(this).val() / 60;
         let rhours = Math.floor(hours);
         let minutes = (hours - rhours) * 60;
@@ -662,7 +668,10 @@ class SmallTimeApp extends FormApplication {
     // The inline CSS overrides are a bit hacky, but were the
     // only way I could get the desired behaviour.
     html.find('#timeDisplay').on('click', async function () {
-      if (game.modules.get('about-time')?.active && game.settings.get('smalltime', 'about-time')) {
+      if (
+        game.modules.get('about-time')?.active &&
+        game.settings.get('smalltime', 'about-time')
+      ) {
         if (event.shiftKey && game.modules.get('smalltime').controlAuth) {
           if (game.Gametime.isRunning()) {
             game.Gametime.stopRunning();
@@ -673,7 +682,10 @@ class SmallTimeApp extends FormApplication {
               $('#timeSeparator').addClass('blink');
             }
           }
-          SmallTimeApp.handleSocket('changeTime', game.settings.get('smalltime', 'current-time'));
+          SmallTimeApp.handleSocket(
+            'changeTime',
+            game.settings.get('smalltime', 'current-time')
+          );
         } else {
           if (!game.settings.get('smalltime', 'date-showing')) {
             $('#dateDisplay').addClass('active');
@@ -803,7 +815,10 @@ class SmallTimeApp extends FormApplication {
     SmallTimeApp.timeTransition(newTime);
 
     // Send the new time to About Time, if it's active.
-    if (game.modules.get('about-time')?.active && game.settings.get('smalltime', 'about-time')) {
+    if (
+      game.modules.get('about-time')?.active &&
+      game.settings.get('smalltime', 'about-time')
+    ) {
       let hours = delta / 60;
       let rhours = Math.floor(hours);
       let minutes = (hours - rhours) * 60;
@@ -968,7 +983,9 @@ class SmallTimeApp extends FormApplication {
         game.settings.set('smalltime', 'visible', false);
       } else {
         // Make sure there isn't already an instance of the app rendered.
-        if (!Object.values(ui.windows).find((w) => w.constructor.name === 'SmallTimeApp')) {
+        if (
+          !Object.values(ui.windows).find((w) => w.constructor.name === 'SmallTimeApp')
+        ) {
           const myApp = new SmallTimeApp().render(true);
           game.modules.get('smalltime').myApp = myApp;
           game.settings.set('smalltime', 'visible', true);
