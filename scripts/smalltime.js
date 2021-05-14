@@ -440,30 +440,28 @@ class SmallTimeApp extends FormApplication {
     this.currentTime = game.settings.get('smalltime', 'current-time');
   }
 
-  // Override original #close method inherited from parent class (FormApplication)
-  async close(options={}) { // Same signature as original method
-
-    // If called by SmallTime (line 1008), use original method to handle app closure
+  // Override close() to prevent Escape presses from closing the SmallTime app.
+  async close(options = {}) {
+    // If called by SmallTime, use original method to handle app closure.
     if (options.smallTime) return super.close();
 
-    // Otherwise, this method was probably called by Case 2 of KeyboardManager#_onEscape (which is called when an "Escape" keypress is registered)
-    // Handle the "Escape" keypress behaviour manually; Based on KeyboardManager#_onEscape (line 2907 in foundry.js)
-    
-    // Case 1 - Close OTHER open UI windows
-    if (Object.keys(ui.windows).length > 1) { // If there is ANOTHER app open
-      Object.values(ui.windows).forEach(app => { // Loop through each app
-        if (app.title === "SmallTime") return; // If the current app is SmallTime, skip it
-        app.close(); // Close the current app
+    // Case 1: Close other open UI windows.
+    if (Object.keys(ui.windows).length > 1) {
+      Object.values(ui.windows).forEach((app) => {
+        if (app.title === 'SmallTime') return;
+        app.close();
       });
     }
-
-    // Case 2 (GM) - Release controlled objects
-    else if (canvas?.ready && game.user.isGM && Object.keys(canvas.activeLayer._controlled).length) {
+    // Case 2 (GM only): Release controlled objects.
+    else if (
+      canvas?.ready &&
+      game.user.isGM &&
+      Object.keys(canvas.activeLayer._controlled).length
+    ) {
       event.preventDefault();
       canvas.activeLayer.releaseAll();
     }
-
-    // Case 3 - Toggle the main menu
+    // Case 3: Toggle the main menu.
     else ui.menu.toggle();
   }
 
@@ -667,10 +665,7 @@ class SmallTimeApp extends FormApplication {
       SmallTimeApp.timeTransition($(this).val());
       SmallTimeApp.handleSocket('changeTime', $(this).val());
 
-      if (
-        game.modules.get('about-time')?.active &&
-        game.settings.get('smalltime', 'about-time')
-      ) {
+      if (game.modules.get('about-time')?.active && game.settings.get('smalltime', 'about-time')) {
         let hours = $(this).val() / 60;
         let rhours = Math.floor(hours);
         let minutes = (hours - rhours) * 60;
@@ -695,10 +690,7 @@ class SmallTimeApp extends FormApplication {
     // The inline CSS overrides are a bit hacky, but were the
     // only way I could get the desired behaviour.
     html.find('#timeDisplay').on('click', async function () {
-      if (
-        game.modules.get('about-time')?.active &&
-        game.settings.get('smalltime', 'about-time')
-      ) {
+      if (game.modules.get('about-time')?.active && game.settings.get('smalltime', 'about-time')) {
         if (event.shiftKey && game.modules.get('smalltime').controlAuth) {
           if (game.Gametime.isRunning()) {
             game.Gametime.stopRunning();
@@ -709,10 +701,7 @@ class SmallTimeApp extends FormApplication {
               $('#timeSeparator').addClass('blink');
             }
           }
-          SmallTimeApp.handleSocket(
-            'changeTime',
-            game.settings.get('smalltime', 'current-time')
-          );
+          SmallTimeApp.handleSocket('changeTime', game.settings.get('smalltime', 'current-time'));
         } else {
           if (!game.settings.get('smalltime', 'date-showing')) {
             $('#dateDisplay').addClass('active');
@@ -842,10 +831,7 @@ class SmallTimeApp extends FormApplication {
     SmallTimeApp.timeTransition(newTime);
 
     // Send the new time to About Time, if it's active.
-    if (
-      game.modules.get('about-time')?.active &&
-      game.settings.get('smalltime', 'about-time')
-    ) {
+    if (game.modules.get('about-time')?.active && game.settings.get('smalltime', 'about-time')) {
       let hours = delta / 60;
       let rhours = Math.floor(hours);
       let minutes = (hours - rhours) * 60;
@@ -1005,14 +991,14 @@ class SmallTimeApp extends FormApplication {
         $('#smalltime-app').stop();
         $('#smalltime-app').css({ animation: 'close 0.2s', opacity: '0' });
         setTimeout(function () {
-          game.modules.get('smalltime').myApp.close({smallTime: true}); // Pass an object into the #close call to distinguish that it came from SmallTime and not an "Escape" keypress
+          // Pass an object to .close() to indicate that it came from SmallTime,
+          // and not from an Escape keypress.
+          game.modules.get('smalltime').myApp.close({ smallTime: true });
         }, 200);
         game.settings.set('smalltime', 'visible', false);
       } else {
         // Make sure there isn't already an instance of the app rendered.
-        if (
-          !Object.values(ui.windows).find((w) => w.constructor.name === 'SmallTimeApp')
-        ) {
+        if (!Object.values(ui.windows).find((w) => w.constructor.name === 'SmallTimeApp')) {
           const myApp = new SmallTimeApp().render(true);
           game.modules.get('smalltime').myApp = myApp;
           game.settings.set('smalltime', 'visible', true);
