@@ -348,9 +348,13 @@ Hooks.on('renderSceneConfig', async (obj) => {
       <p class="notes">${controlHint}</p>
     </div>
     `;
-  $('p:contains("' + game.i18n.format('SMLTME.Inject_After') + '")')
-    .parent()
-    .after(injection);
+
+  // Only inject if it isn't already there.
+  if (!$('#smalltime-darkness').length) {
+    $('p:contains("' + game.i18n.format('SMLTME.Inject_After') + '")')
+      .parent()
+      .after(injection);
+  }
 });
 
 // Live render the opacity changes as a preview.
