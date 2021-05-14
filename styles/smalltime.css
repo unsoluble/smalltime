@@ -60,6 +60,12 @@
   z-index: 5;
 }
 
+#smalltime-app .darkness-config-box {
+  width: 100%;
+  height: 50px;
+  background: black;
+}
+
 #smalltime-app #slideContainer {
   width: 100%;
   background: linear-gradient(
