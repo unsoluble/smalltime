@@ -139,6 +139,7 @@ Hooks.on('init', () => {
 
   game.settings.register('smalltime', 'darkness-config', {
     name: game.i18n.format('SMLTME.Darkness_Config'),
+    hint: game.i18n.format('SMLTME.Darkness_Config_Hint'),
     scope: 'world',
     config: true,
     type: Object,
@@ -366,15 +367,18 @@ Hooks.on('renderSceneConfig', async (obj) => {
 });
 
 Hooks.on('renderSettingsConfig', () => {
-  // WIP: Darkness config tool.
-
+  // Create and insert a div for the Darkness Configuration tool,
+  // and hide the default settings input control.
   const defaultInputElement = $('input[name="smalltime.darkness-config"]');
-  const injection = `
-  <div class="darkness-config-box">test
-  </div>
-  `;
   defaultInputElement.css('display', 'none');
-  defaultInputElement.after(injection);
+
+  const notesElement = defaultInputElement.parent().next();
+  const injection = `<div id="smalltime-darkness-config" class="notes"></div>`;
+
+  // Only inject if it isn't already there.
+  if (!$('#smalltime-darkness-config').length) {
+    notesElement.after(injection);
+  }
 
   // Live render the opacity changes as a preview.
   $('input[name="smalltime.opacity"]').on('input', () => {

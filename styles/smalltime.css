@@ -60,10 +60,11 @@
   z-index: 5;
 }
 
-#smalltime-app .darkness-config-box {
-  width: 100%;
+#smalltime-darkness-config {
   height: 50px;
   background: black;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px 0px rgba(0, 0, 0, 0.3);
 }
 
 #smalltime-app #slideContainer {
