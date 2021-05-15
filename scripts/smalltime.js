@@ -431,6 +431,17 @@ Hooks.on('updateWorldTime', () => {
   }
 });
 
+// Handle toggling of time separator flash when game is paused/unpaused.
+Hooks.on('pauseGame', () => {
+  if (game.paused) {
+    $('#timeSeparator').removeClass('blink');
+  } else {
+    if (game.Gametime.isRunning()) {
+      $('#timeSeparator').addClass('blink');
+    }
+  }
+});
+
 // Sync up with About Time when their initial clock is done setting up.
 Hooks.on('about-time.pseudoclockMaster', () => {
   if (game.settings.get('smalltime', 'about-time') && game.user.isGM) {
@@ -1028,7 +1039,9 @@ class SmallTimeApp extends FormApplication {
       payload: newTime,
     };
 
-    game.modules.get('smalltime').myApp.handleTimeChange(timePackage);
+    if (game.settings.get('smalltime', 'visible') === true) {
+      game.modules.get('smalltime').myApp.handleTimeChange(timePackage);
+    }
 
     if (game.user.isGM) await game.settings.set('smalltime', 'current-time', newTime);
 
