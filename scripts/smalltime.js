@@ -356,9 +356,13 @@ Hooks.on('renderSceneConfig', async (obj) => {
       <p class="notes">${controlHint}</p>
     </div>
     `;
-  $('p:contains("' + game.i18n.format('SMLTME.Inject_After') + '")')
-    .parent()
-    .after(injection);
+
+  // Only inject if it isn't already there.
+  if (!$('#smalltime-darkness').length) {
+    $('p:contains("' + game.i18n.format('SMLTME.Inject_After') + '")')
+      .parent()
+      .after(injection);
+  }
 });
 
 Hooks.on('renderSettingsConfig', () => {
@@ -445,6 +449,17 @@ Hooks.on('updateWorldTime', () => {
   }
 });
 
+// Handle toggling of time separator flash when game is paused/unpaused.
+Hooks.on('pauseGame', () => {
+  if (game.paused) {
+    $('#timeSeparator').removeClass('blink');
+  } else {
+    if (game.Gametime.isRunning()) {
+      $('#timeSeparator').addClass('blink');
+    }
+  }
+});
+
 // Sync up with About Time when their initial clock is done setting up.
 Hooks.on('about-time.pseudoclockMaster', () => {
   if (game.settings.get('smalltime', 'about-time') && game.user.isGM) {
@@ -456,6 +471,31 @@ class SmallTimeApp extends FormApplication {
   constructor() {
     super();
     this.currentTime = game.settings.get('smalltime', 'current-time');
+  }
+
+  // Override close() to prevent Escape presses from closing the SmallTime app.
+  async close(options = {}) {
+    // If called by SmallTime, use original method to handle app closure.
+    if (options.smallTime) return super.close();
+
+    // Case 1: Close other open UI windows.
+    if (Object.keys(ui.windows).length > 1) {
+      Object.values(ui.windows).forEach((app) => {
+        if (app.title === 'SmallTime') return;
+        app.close();
+      });
+    }
+    // Case 2 (GM only): Release controlled objects.
+    else if (
+      canvas?.ready &&
+      game.user.isGM &&
+      Object.keys(canvas.activeLayer._controlled).length
+    ) {
+      event.preventDefault();
+      canvas.activeLayer.releaseAll();
+    }
+    // Case 3: Toggle the main menu.
+    else ui.menu.toggle();
   }
 
   static get defaultOptions() {
@@ -984,7 +1024,9 @@ class SmallTimeApp extends FormApplication {
         $('#smalltime-app').stop();
         $('#smalltime-app').css({ animation: 'close 0.2s', opacity: '0' });
         setTimeout(function () {
-          game.modules.get('smalltime').myApp.close();
+          // Pass an object to .close() to indicate that it came from SmallTime,
+          // and not from an Escape keypress.
+          game.modules.get('smalltime').myApp.close({ smallTime: true });
         }, 200);
         game.settings.set('smalltime', 'visible', false);
       } else {
@@ -1015,7 +1057,9 @@ class SmallTimeApp extends FormApplication {
       payload: newTime,
     };
 
-    game.modules.get('smalltime').myApp.handleTimeChange(timePackage);
+    if (game.settings.get('smalltime', 'visible') === true) {
+      game.modules.get('smalltime').myApp.handleTimeChange(timePackage);
+    }
 
     if (game.user.isGM) await game.settings.set('smalltime', 'current-time', newTime);
 

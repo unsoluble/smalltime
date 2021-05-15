@@ -13,5 +13,11 @@
   "SMLTME.Darkness_Control": "SmallTimeによる照明制御",
   "SMLTME.Darkness_Control_Hint": "このシーンの暗さの度合いをSmallTimeの現在時刻とリンクします。",
   "SMLTME.AboutTime": "About Timeと同期する",
-  "SMLTME.AboutTime_Hint": "About Timeによる時間変化がSmallTimeにも反映されるようになります。またその逆も同様です。SmallTimeで深夜を超えると、About Timeの日付も更新されます。"
+  "SMLTME.AboutTime_Hint": "About Timeによる時間変化がSmallTimeにも反映されるようになります。またその逆も同様です。SmallTimeで深夜を超えると、About Timeの日付も更新されます。",
+  "SMLTME.AboutTime_Hint": "If the About Time clock changes, SmallTime will change, and vice-versa. Advancing SmallTime past midnight will also change the About Time day.",
+  "SMLTME.Hide_From_Players": "Hide from Players",
+  "SMLTME.Hide_From_Players_Hint": "Hide the SmallTime window from all non-GM users.",
+  "SMLTME.Allow_Trusted": "Allow Trusted Player Control",
+  "SMLTME.Allow_Trusted_Hint": "Players with the Trusted role will be able to change the current time.",
+  "SMLTME.Inject_After": "dim conditions"
 }
