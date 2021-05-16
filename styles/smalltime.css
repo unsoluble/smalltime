@@ -61,15 +61,16 @@
 }
 
 #smalltime-darkness-config {
-  height: 80px;
+  height: 72px;
   background: white;
+  margin-left: 10px;
   border-radius: 5px;
   box-shadow: 0 2px 4px 0px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  flex: 0 1 auto;
 }
 
-#smalltime-darkness-config .smalltime-dc-inside {
-}
-
+/*
 .shadowboard,
 .clipboard {
   position: absolute;
@@ -89,14 +90,50 @@
   -webkit-transition: opacity 0.375s;
   transition: opacity 0.375s;
 }
+*/
 
 #smalltime-darkness-config .handles {
   position: relative;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 80px;
+  height: 72px;
+  display: flex;
+  width: 554px;
+  flex-flow: row nowrap;
+  z-index: 1;
+}
+
+.sunrise-start-bounds,
+.sunrise-end-bounds,
+.sunset-start-bounds,
+.sunset-end-bounds {
+  height: 72px;
+  position: relative;
+  top: -72px;
+  margin-bottom: -72px;
+  z-index: 0;
+}
+
+.sunrise-start-bounds {
+  border: 1px solid red;
+  left: 0px;
+  width: 485px;
+}
+
+.sunrise-end-bounds {
+  border: 1px solid green;
+  left: 22px;
+  width: 485px;
+}
+
+.sunset-start-bounds {
+  border: 1px solid blue;
+  left: 44px;
+  width: 485px;
+}
+
+.sunset-end-bounds {
+  border: 1px solid purple;
+  left: 66px;
+  width: 485px;
 }
 
 #smalltime-darkness-config .handle {

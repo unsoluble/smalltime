@@ -143,7 +143,21 @@ Hooks.on('init', () => {
     scope: 'world',
     config: true,
     type: Object,
-    default: { sunrise: 180, day: 420, sunset: 1050, night: 1320 },
+    default: { sunriseStart: 180, sunriseEnd: 420, sunsetStart: 1050, sunsetEnd: 1320 },
+  });
+
+  game.settings.register('smalltime', 'max-darkness', {
+    scope: 'world',
+    config: false,
+    type: Number,
+    default: 1,
+  });
+
+  game.settings.register('smalltime', 'min-darkness', {
+    scope: 'world',
+    config: false,
+    type: Number,
+    default: 0,
   });
 
   game.settings.register('smalltime', 'darkness-default', {
@@ -162,38 +176,6 @@ Hooks.on('init', () => {
     config: true,
     type: Boolean,
     default: false,
-  });
-
-  game.settings.register('smalltime', 'sunrise-start', {
-    name: 'Sunrise Start',
-    scope: 'world',
-    config: false,
-    type: Number,
-    default: 180,
-  });
-
-  game.settings.register('smalltime', 'sunrise-end', {
-    name: 'Sunrise End',
-    scope: 'world',
-    config: false,
-    type: Number,
-    default: 420,
-  });
-
-  game.settings.register('smalltime', 'sunset-start', {
-    name: 'Sunset Start',
-    scope: 'world',
-    config: false,
-    type: Number,
-    default: 1050,
-  });
-
-  game.settings.register('smalltime', 'sunset-end', {
-    name: 'Sunset End',
-    scope: 'world',
-    config: false,
-    type: Number,
-    default: 1320,
   });
 
   game.settings.register('smalltime', 'moon-phase', {
@@ -377,11 +359,15 @@ Hooks.on('renderSettingsConfig', () => {
     <div id="smalltime-darkness-config" class="notes">
       <div class="smalltime-dc-inside">
         <div class="handles">
-          <div class="handle sunrise-start" style="top: 60px; left: 80px;"></div>
-          <div class="handle sunrise-end" style="top: 0px; left: 190px;"></div>
-          <div class="handle sunset-start" style="top: 0px; left: 360px;"></div>
-          <div class="handle sunset-end" style="top: 60px; left: 470px;"></div>
+          <div class="handle sunrise-start" style="left: 80px;"></div>
+          <div class="handle sunrise-end" style="left: 190px;"></div>
+          <div class="handle sunset-start" style="left: 360px;"></div>
+          <div class="handle sunset-end" style="left: 470px;"></div>
         </div>
+        <div class="sunrise-start-bounds"></div>
+        <div class="sunrise-end-bounds"></div>
+        <div class="sunset-start-bounds"></div>
+        <div class="sunset-end-bounds"></div>
       </div>
     </div>`;
 
@@ -403,25 +389,100 @@ Hooks.on('renderSettingsConfig', () => {
 });
 
 function setupDragHandles() {
-  var box = document.querySelector('.smalltime-dc-inside');
-  var handles = box.querySelectorAll('.handle');
+  let maxDarkness = game.settings.get('smalltime', 'max-darkness');
+  let minDarkness = game.settings.get('smalltime', 'min-darkness');
 
-  var draggies = [];
+  let snapX = 10;
+  let snapY = 5;
 
-  for (var i = 0; i < handles.length; i++) {
-    var draggableElem = handles[i];
-    var draggie = new Draggabilly(draggableElem, {
-      containment: true,
-      grid: [10, 10],
-    }).on('dragMove', function (event, pointer, moveVector) {
-      //var x = pointer.position.x;
-      //var y = pointer.position.y;
-      let top = $(draggableElem)[0].style.top;
-      let left = $(draggableElem)[0].style.left;
-      console.log(top, left);
-    });
-    draggies.push(draggie);
-  }
+  let offsetBetween = 11;
+
+  $('.sunrise-start').css('top', convertDarknessToPostion(maxDarkness));
+  $('.sunrise-end').css('top', convertDarknessToPostion(minDarkness));
+  $('.sunset-start').css('top', convertDarknessToPostion(minDarkness));
+  $('.sunset-end').css('top', convertDarknessToPostion(maxDarkness));
+
+  var sunriseStartDrag = new Draggabilly('.sunrise-start', {
+    containment: '.sunrise-start-bounds',
+    grid: [snapX, snapY],
+  }).on('dragMove', function (event, pointer, moveVector) {
+    $('.sunset-end').css('top', this.position.y + 'px');
+
+    if (this.position.x >= sunriseEndDrag.position.x - offsetBetween) {
+      $('.sunrise-end').css('left', this.position.x + offsetBetween);
+      sunriseEndDrag.setPosition(this.position.x + offsetBetween);
+    }
+  });
+
+  var sunriseEndDrag = new Draggabilly('.sunrise-end', {
+    containment: '.sunrise-end-bounds',
+    grid: [snapX, snapY],
+  }).on('dragMove', function (event, pointer, moveVector) {
+    $('.sunset-start').css('top', this.position.y + 'px');
+
+    if (this.position.x <= sunriseStartDrag.position.x + offsetBetween) {
+      $('.sunrise-start').css('left', this.position.x - offsetBetween);
+      sunriseStartDrag.setPosition(this.position.x - offsetBetween);
+    }
+
+    if (this.position.x >= sunsetStartDrag.position.x - offsetBetween) {
+      $('.sunset-start').css('left', this.position.x + offsetBetween);
+      sunsetStartDrag.setPosition(this.position.x + offsetBetween);
+    }
+  });
+
+  var sunsetStartDrag = new Draggabilly('.sunset-start', {
+    containment: '.sunset-start-bounds',
+    grid: [snapX, snapY],
+  }).on('dragMove', function (event, pointer, moveVector) {
+    $('.sunrise-end').css('top', this.position.y + 'px');
+
+    if (this.position.x <= sunriseEndDrag.position.x + offsetBetween) {
+      $('.sunrise-end').css('left', this.position.x - offsetBetween);
+      sunriseEndDrag.setPosition(this.position.x - offsetBetween);
+    }
+
+    if (this.position.x >= sunsetEndDrag.position.x - offsetBetween) {
+      $('.sunset-end').css('left', this.position.x + offsetBetween);
+      sunsetEndDrag.setPosition(this.position.x + offsetBetween);
+    }
+  });
+
+  var sunsetEndDrag = new Draggabilly('.sunset-end', {
+    containment: '.sunset-end-bounds',
+    grid: [snapX, snapY],
+  }).on('dragMove', function (event, pointer, moveVector) {
+    $('.sunrise-start').css('top', this.position.y + 'px');
+
+    if (this.position.x <= sunsetStartDrag.position.x + offsetBetween) {
+      $('.sunset-start').css('left', this.position.x - offsetBetween);
+      sunsetStartDrag.setPosition(this.position.x - offsetBetween);
+    }
+  });
+
+  sunriseStartDrag.on('dragEnd', function (event, pointer) {
+    game.settings.set('smalltime', 'max-darkness', convertPositionToDarkness(this.position.y));
+  });
+
+  sunriseEndDrag.on('dragEnd', function (event, pointer) {
+    game.settings.set('smalltime', 'min-darkness', convertPositionToDarkness(this.position.y));
+  });
+
+  sunsetStartDrag.on('dragEnd', function (event, pointer) {
+    game.settings.set('smalltime', 'min-darkness', convertPositionToDarkness(this.position.y));
+  });
+
+  sunsetEndDrag.on('dragEnd', function (event, pointer) {
+    game.settings.set('smalltime', 'max-darkness', convertPositionToDarkness(this.position.y));
+  });
+}
+
+function convertDarknessToPostion(darkness) {
+  return darkness * 50 + 5;
+}
+
+function convertPositionToDarkness(position) {
+  return Math.round((1 - (position - 55) / -50) * 10) / 10;
 }
 
 // Undo the opacity preview settings.
@@ -928,10 +989,10 @@ class SmallTimeApp extends FormApplication {
 
   // Render changes to the sun/moon slider, and handle Darkness link.
   static async timeTransition(timeNow) {
-    const sunriseStart = game.settings.get('smalltime', 'sunrise-start');
-    const sunriseEnd = game.settings.get('smalltime', 'sunrise-end');
-    const sunsetStart = game.settings.get('smalltime', 'sunset-start');
-    const sunsetEnd = game.settings.get('smalltime', 'sunset-end');
+    const sunriseStart = game.settings.get('smalltime', 'darkness-config').sunriseStart;
+    const sunriseEnd = game.settings.get('smalltime', 'darkness-config').sunriseEnd;
+    const sunsetStart = game.settings.get('smalltime', 'darkness-config').sunsetStart;
+    const sunsetEnd = game.settings.get('smalltime', 'darkness-config').sunsetEnd;
     const midnight = 1440;
 
     // Handles the range slider's sun/moon icons, and the BG color changes.
