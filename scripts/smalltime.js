@@ -373,12 +373,24 @@ Hooks.on('renderSettingsConfig', () => {
   defaultInputElement.css('display', 'none');
 
   const notesElement = defaultInputElement.parent().next();
-  const injection = `<div id="smalltime-darkness-config" class="notes"></div>`;
+  const injection = `
+    <div id="smalltime-darkness-config" class="notes">
+      <div class="smalltime-dc-inside">
+        <div class="handles">
+          <div class="handle sunrise-start" style="top: 60px; left: 80px;"></div>
+          <div class="handle sunrise-end" style="top: 0px; left: 190px;"></div>
+          <div class="handle sunset-start" style="top: 0px; left: 360px;"></div>
+          <div class="handle sunset-end" style="top: 60px; left: 470px;"></div>
+        </div>
+      </div>
+    </div>`;
 
   // Only inject if it isn't already there.
   if (!$('#smalltime-darkness-config').length) {
     notesElement.after(injection);
   }
+
+  setupDragHandles();
 
   // Live render the opacity changes as a preview.
   $('input[name="smalltime.opacity"]').on('input', () => {
@@ -389,6 +401,28 @@ Hooks.on('renderSettingsConfig', () => {
     });
   });
 });
+
+function setupDragHandles() {
+  var box = document.querySelector('.smalltime-dc-inside');
+  var handles = box.querySelectorAll('.handle');
+
+  var draggies = [];
+
+  for (var i = 0; i < handles.length; i++) {
+    var draggableElem = handles[i];
+    var draggie = new Draggabilly(draggableElem, {
+      containment: true,
+      grid: [10, 10],
+    }).on('dragMove', function (event, pointer, moveVector) {
+      //var x = pointer.position.x;
+      //var y = pointer.position.y;
+      let top = $(draggableElem)[0].style.top;
+      let left = $(draggableElem)[0].style.left;
+      console.log(top, left);
+    });
+    draggies.push(draggie);
+  }
+}
 
 // Undo the opacity preview settings.
 Hooks.on('closeSettingsConfig', () => {
