@@ -416,7 +416,7 @@ function setupDragHandles() {
   };
 
   const snapX = 10;
-  const snapY = 5;
+  const snapY = 4;
 
   const offsetBetween = 20;
 
@@ -546,12 +546,7 @@ function setupDragHandles() {
       sunsetStart: sunsetStartDrag.position.x,
       sunsetEnd: sunsetEndDrag.position.x,
     };
-
-    // TODO
-
-    const jsonString = JSON.stringify(JSON.stringify(newPositions));
-    var trimmedString = jsonString.substr(1).slice(0, -1);
-    $('input[name="smalltime.darkness-config"]').val(trimmedString);
+    saveNewDarknessConfig(newPositions);
   });
 
   sunriseEndDrag.on('dragEnd', async function () {
@@ -567,6 +562,7 @@ function setupDragHandles() {
       sunsetStart: sunsetStartDrag.position.x,
       sunsetEnd: sunsetEndDrag.position.x,
     };
+    saveNewDarknessConfig(newPositions);
   });
 
   sunsetStartDrag.on('dragEnd', async function () {
@@ -582,6 +578,7 @@ function setupDragHandles() {
       sunsetStart: sunsetStartDrag.position.x,
       sunsetEnd: sunsetEndDrag.position.x,
     };
+    saveNewDarknessConfig(newPositions);
   });
 
   sunsetEndDrag.on('dragEnd', async function () {
@@ -597,6 +594,7 @@ function setupDragHandles() {
       sunsetStart: sunsetStartDrag.position.x,
       sunsetEnd: sunsetEndDrag.position.x,
     };
+    saveNewDarknessConfig(newPositions);
   });
 }
 
