@@ -4,6 +4,12 @@
   --SMLTME-ds-left: 3px;
   --SMLTME-ds-width: 0px;
   --SMLTME-phaseURL: url('../images/moon-phases/full.webp');
+  --SMLTME-darkness-min: 0;
+  --SMLTME-darkness-max: 1;
+  --SMLTME-sunrise-start: 20%;
+  --SMLTME-sunrise-end: 40%;
+  --SMLTME-sunset-start: 60%;
+  --SMLTME-sunset-end: 80%;
 }
 
 #smalltime-app {
@@ -49,7 +55,7 @@
 
 #smalltime-darkness-config {
   height: 72px;
-  background: white;
+  background: url(../images/grass-bg.webp);
   margin-left: 10px;
   border-radius: 5px;
   box-shadow: 0 2px 4px 0px rgba(0, 0, 0, 0.3);
@@ -86,11 +92,20 @@
   width: 554px;
   flex-flow: row nowrap;
   z-index: 1;
-  background: linear-gradient(to right, rgba(36, 36, 72, 1) 0%, rgba(36, 36, 72, 0) 100%);
+  background: linear-gradient(
+    to right,
+    rgba(18, 18, 36, var(--SMLTME-darkness-max)) 0%,
+    rgba(36, 36, 72, var(--SMLTME-darkness-max)) var(--SMLTME-sunrise-start),
+    rgba(36, 36, 72, var(--SMLTME-darkness-min)) var(--SMLTME-sunrise-end),
+    rgba(36, 36, 72, var(--SMLTME-darkness-min)) var(--SMLTME-sunset-start),
+    rgba(36, 36, 72, var(--SMLTME-darkness-max)) var(--SMLTME-sunset-end),
+    rgba(18, 18, 36, var(--SMLTME-darkness-max)) 100%
+  );
   /* Use CONFIG.canvas.darknessColor */
   border-radius: 5px;
 }
 
+/* Constraint boxes for the sun/moon drag handles */
 .sunrise-start-bounds,
 .sunrise-end-bounds,
 .sunset-start-bounds,
@@ -102,22 +117,18 @@
   z-index: 0;
   width: 452px;
 }
-
 .sunrise-start-bounds {
   //border: 1px solid red;
   left: 24px;
 }
-
 .sunrise-end-bounds {
   //border: 1px solid green;
   left: 48px;
 }
-
 .sunset-start-bounds {
   //border: 1px solid blue;
   left: 68px;
 }
-
 .sunset-end-bounds {
   //border: 1px solid purple;
   left: 88px;
