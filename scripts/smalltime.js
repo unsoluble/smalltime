@@ -355,14 +355,15 @@ Hooks.on('renderSettingsConfig', () => {
   defaultInputElement.css('display', 'none');
 
   const notesElement = defaultInputElement.parent().next();
+
   const injection = `
     <div id="smalltime-darkness-config" class="notes">
       <div class="smalltime-dc-inside">
         <div class="handles">
-          <div class="handle sunrise-start" style="left: 80px;"></div>
-          <div class="handle sunrise-end" style="left: 190px;"></div>
-          <div class="handle sunset-start" style="left: 360px;"></div>
-          <div class="handle sunset-end" style="left: 470px;"></div>
+          <div data-balloon-pos="up" class="handle sunrise-start"></div>
+          <div data-balloon-pos="up" class="handle sunrise-end"></div>
+          <div data-balloon-pos="up" class="handle sunset-start"></div>
+          <div data-balloon-pos="up" class="handle sunset-end"></div>
         </div>
         <div class="sunrise-start-bounds"></div>
         <div class="sunrise-end-bounds"></div>
@@ -389,38 +390,74 @@ Hooks.on('renderSettingsConfig', () => {
 });
 
 function setupDragHandles() {
-  let maxDarkness = game.settings.get('smalltime', 'max-darkness');
-  let minDarkness = game.settings.get('smalltime', 'min-darkness');
+  const maxDarkness = game.settings.get('smalltime', 'max-darkness');
+  const minDarkness = game.settings.get('smalltime', 'min-darkness');
 
-  let snapX = 10;
-  let snapY = 5;
+  const initialPositions = {
+    sunriseStart: convertTimeIntegerToPosition(
+      game.settings.get('smalltime', 'darkness-config').sunriseStart
+    ),
+    sunriseEnd: convertTimeIntegerToPosition(
+      game.settings.get('smalltime', 'darkness-config').sunriseEnd
+    ),
+    sunsetStart: convertTimeIntegerToPosition(
+      game.settings.get('smalltime', 'darkness-config').sunsetStart
+    ),
+    sunsetEnd: convertTimeIntegerToPosition(
+      game.settings.get('smalltime', 'darkness-config').sunsetEnd
+    ),
+  };
 
-  let offsetBetween = 16;
+  const initialTimes = {
+    sunriseStart: convertPositionToDisplayTime(initialPositions.sunriseStart),
+    sunriseEnd: convertPositionToDisplayTime(initialPositions.sunriseEnd),
+    sunsetStart: convertPositionToDisplayTime(initialPositions.sunsetStart),
+    sunsetEnd: convertPositionToDisplayTime(initialPositions.sunsetEnd),
+  };
+
+  const snapX = 10;
+  const snapY = 5;
+
+  const offsetBetween = 20;
 
   $('.sunrise-start').css('top', convertDarknessToPostion(maxDarkness));
-  $('.sunrise-end').css('top', convertDarknessToPostion(minDarkness));
-  $('.sunset-start').css('top', convertDarknessToPostion(minDarkness));
-  $('.sunset-end').css('top', convertDarknessToPostion(maxDarkness));
+  $('.sunrise-start').css('left', initialPositions.sunriseStart);
+  $('.sunrise-start').attr('aria-label', initialTimes.sunriseStart);
 
-  let sunriseStartDrag = new Draggabilly('.sunrise-start', {
+  $('.sunrise-end').css('top', convertDarknessToPostion(minDarkness));
+  $('.sunrise-end').css('left', initialPositions.sunriseEnd);
+  $('.sunrise-end').attr('aria-label', initialTimes.sunriseEnd);
+
+  $('.sunset-start').css('top', convertDarknessToPostion(minDarkness));
+  $('.sunset-start').css('left', initialPositions.sunsetStart);
+  $('.sunset-start').attr('aria-label', initialTimes.sunsetStart);
+
+  $('.sunset-end').css('top', convertDarknessToPostion(maxDarkness));
+  $('.sunset-end').css('left', initialPositions.sunsetEnd);
+  $('.sunset-end').attr('aria-label', initialTimes.sunsetEnd);
+
+  const sunriseStartDrag = new Draggabilly('.sunrise-start', {
     containment: '.sunrise-start-bounds',
     grid: [snapX, snapY],
   });
-  let sunriseEndDrag = new Draggabilly('.sunrise-end', {
+  const sunriseEndDrag = new Draggabilly('.sunrise-end', {
     containment: '.sunrise-end-bounds',
     grid: [snapX, snapY],
   });
-  let sunsetStartDrag = new Draggabilly('.sunset-start', {
+  const sunsetStartDrag = new Draggabilly('.sunset-start', {
     containment: '.sunset-start-bounds',
     grid: [snapX, snapY],
   });
-  let sunsetEndDrag = new Draggabilly('.sunset-end', {
+  const sunsetEndDrag = new Draggabilly('.sunset-end', {
     containment: '.sunset-end-bounds',
     grid: [snapX, snapY],
   });
 
   sunriseStartDrag.on('dragMove', function () {
     $('.sunset-end').css('top', this.position.y + 'px');
+
+    const displayTime = convertPositionToDisplayTime(this.position.x);
+    $('.sunrise-start').attr('aria-label', displayTime);
 
     if (this.position.x >= sunriseEndDrag.position.x - offsetBetween) {
       $('.sunrise-end').css('left', this.position.x + offsetBetween);
@@ -439,6 +476,9 @@ function setupDragHandles() {
   sunriseEndDrag.on('dragMove', function () {
     $('.sunset-start').css('top', this.position.y + 'px');
 
+    const displayTime = convertPositionToDisplayTime(this.position.x);
+    $('.sunrise-end').attr('aria-label', displayTime);
+
     if (this.position.x <= sunriseStartDrag.position.x + offsetBetween) {
       $('.sunrise-start').css('left', this.position.x - offsetBetween);
       sunriseStartDrag.setPosition(this.position.x - offsetBetween);
@@ -455,6 +495,9 @@ function setupDragHandles() {
 
   sunsetStartDrag.on('dragMove', function () {
     $('.sunrise-end').css('top', this.position.y + 'px');
+
+    const displayTime = convertPositionToDisplayTime(this.position.x);
+    $('.sunset-start').attr('aria-label', displayTime);
 
     if (this.position.x <= sunriseStartDrag.position.x + offsetBetween * 2) {
       $('.sunrise-start').css('left', this.position.x - offsetBetween * 2);
@@ -473,6 +516,9 @@ function setupDragHandles() {
   sunsetEndDrag.on('dragMove', function () {
     $('.sunrise-start').css('top', this.position.y + 'px');
 
+    const displayTime = convertPositionToDisplayTime(this.position.x);
+    $('.sunset-end').attr('aria-label', displayTime);
+
     if (this.position.x <= sunriseStartDrag.position.x + offsetBetween * 3) {
       $('.sunrise-start').css('left', this.position.x - offsetBetween * 3);
       sunriseStartDrag.setPosition(this.position.x - offsetBetween * 3);
@@ -487,18 +533,89 @@ function setupDragHandles() {
     }
   });
 
-  sunriseStartDrag.on('dragEnd', function () {
-    game.settings.set('smalltime', 'max-darkness', convertPositionToDarkness(this.position.y));
+  const defaultInputElement = $('input[name="smalltime.darkness-config"]');
+
+  sunriseStartDrag.on('dragEnd', async function () {
+    await game.settings.set(
+      'smalltime',
+      'max-darkness',
+      convertPositionToDarkness(this.position.y)
+    );
+
+    const newPositions = {
+      sunriseStart: sunriseStartDrag.position.x,
+      sunriseEnd: sunriseEndDrag.position.x,
+      sunsetStart: sunsetStartDrag.position.x,
+      sunsetEnd: sunsetEndDrag.position.x,
+    };
+    $('input[name="smalltime.darkness-config"]').val(newPositions);
+    console.log($('input[name="smalltime.darkness-config"]').val());
   });
-  sunriseEndDrag.on('dragEnd', function () {
-    game.settings.set('smalltime', 'min-darkness', convertPositionToDarkness(this.position.y));
+
+  sunriseEndDrag.on('dragEnd', async function () {
+    await game.settings.set(
+      'smalltime',
+      'min-darkness',
+      convertPositionToDarkness(this.position.y)
+    );
+
+    const newPositions = {
+      sunriseStart: sunriseStartDrag.position.x,
+      sunriseEnd: sunriseEndDrag.position.x,
+      sunsetStart: sunsetStartDrag.position.x,
+      sunsetEnd: sunsetEndDrag.position.x,
+    };
+    defaultInputElement.value = newPositions;
   });
-  sunsetStartDrag.on('dragEnd', function () {
-    game.settings.set('smalltime', 'min-darkness', convertPositionToDarkness(this.position.y));
+
+  sunsetStartDrag.on('dragEnd', async function () {
+    await game.settings.set(
+      'smalltime',
+      'min-darkness',
+      convertPositionToDarkness(this.position.y)
+    );
+
+    const newPositions = {
+      sunriseStart: sunriseStartDrag.position.x,
+      sunriseEnd: sunriseEndDrag.position.x,
+      sunsetStart: sunsetStartDrag.position.x,
+      sunsetEnd: sunsetEndDrag.position.x,
+    };
+    defaultInputElement.value = newPositions;
   });
-  sunsetEndDrag.on('dragEnd', function () {
-    game.settings.set('smalltime', 'max-darkness', convertPositionToDarkness(this.position.y));
+
+  sunsetEndDrag.on('dragEnd', async function () {
+    await game.settings.set(
+      'smalltime',
+      'max-darkness',
+      convertPositionToDarkness(this.position.y)
+    );
+
+    const newPositions = {
+      sunriseStart: sunriseStartDrag.position.x,
+      sunriseEnd: sunriseEndDrag.position.x,
+      sunsetStart: sunsetStartDrag.position.x,
+      sunsetEnd: sunsetEndDrag.position.x,
+    };
+    defaultInputElement.value = newPositions;
   });
+}
+
+async function saveNewDarknessConfig(positions) {
+  await game.settings.set('smalltime', 'darkness-config', {
+    sunriseStart: convertPositionToTimeInteger(positions.sunriseStart),
+    sunriseEnd: convertPositionToTimeInteger(positions.sunriseEnd),
+    sunsetStart: convertPositionToTimeInteger(positions.sunsetStart),
+    sunsetEnd: convertPositionToTimeInteger(positions.sunsetEnd),
+  });
+}
+
+function convertPositionToTimeInteger(position) {
+  return (position - 30) * 3;
+}
+
+function convertTimeIntegerToPosition(timeInteger) {
+  return timeInteger / 3 + 30;
 }
 
 function convertDarknessToPostion(darkness) {
@@ -507,6 +624,17 @@ function convertDarknessToPostion(darkness) {
 
 function convertPositionToDarkness(position) {
   return Math.round((1 - (position - 55) / -50) * 10) / 10;
+}
+
+function convertPositionToDisplayTime(position) {
+  const displayTimeObj = SmallTimeApp.convertTimeIntegerToDisplay(
+    convertPositionToTimeInteger(position)
+  );
+  return displayTimeObj.hours + ':' + displayTimeObj.minutes;
+}
+
+function convertDisplayObjToString(displayObj) {
+  return displayObj.hours + ':' + displayObj.minutes;
 }
 
 // Undo the opacity preview settings.
@@ -664,8 +792,8 @@ class SmallTimeApp extends FormApplication {
     // Send values to the HTML template.
     return {
       timeValue: this.currentTime,
-      hourString: SmallTimeApp.convertTime(this.currentTime).hours,
-      minuteString: SmallTimeApp.convertTime(this.currentTime).minutes,
+      hourString: SmallTimeApp.convertTimeIntegerToDisplay(this.currentTime).hours,
+      minuteString: SmallTimeApp.convertTimeIntegerToDisplay(this.currentTime).minutes,
       dateString: game.settings.get('smalltime', 'current-date'),
     };
   }
@@ -796,8 +924,8 @@ class SmallTimeApp extends FormApplication {
 
     // Handle live feedback while dragging the sun/moon slider.
     $(document).on('input', '#timeSlider', async function () {
-      $('#hourString').html(SmallTimeApp.convertTime($(this).val()).hours);
-      $('#minuteString').html(SmallTimeApp.convertTime($(this).val()).minutes);
+      $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).hours);
+      $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).minutes);
 
       SmallTimeApp.timeTransition($(this).val());
       SmallTimeApp.handleSocket('changeTime', $(this).val());
@@ -815,8 +943,8 @@ class SmallTimeApp extends FormApplication {
 
     // Send slider time changes to About Time on mouseUp, not live.
     $(document).on('change', '#timeSlider', function () {
-      $('#hourString').html(SmallTimeApp.convertTime($(this).val()).hours);
-      $('#minuteString').html(SmallTimeApp.convertTime($(this).val()).minutes);
+      $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).hours);
+      $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).minutes);
 
       SmallTimeApp.timeTransition($(this).val());
       SmallTimeApp.handleSocket('changeTime', $(this).val());
@@ -945,8 +1073,8 @@ class SmallTimeApp extends FormApplication {
   // Helper function for time-changing socket updates.
   handleTimeChange(data) {
     SmallTimeApp.timeTransition(data.payload);
-    $('#hourString').html(SmallTimeApp.convertTime(data.payload).hours);
-    $('#minuteString').html(SmallTimeApp.convertTime(data.payload).minutes);
+    $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay(data.payload).hours);
+    $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay(data.payload).minutes);
     $('#timeSlider').val(data.payload);
     // TODO: I think at least one of these blink handlers is redundant.
     if (game.Gametime.isRunning()) {
@@ -979,8 +1107,8 @@ class SmallTimeApp extends FormApplication {
       });
     }
 
-    $('#hourString').html(SmallTimeApp.convertTime(newTime).hours);
-    $('#minuteString').html(SmallTimeApp.convertTime(newTime).minutes);
+    $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay(newTime).hours);
+    $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay(newTime).minutes);
 
     SmallTimeApp.handleSocket('changeTime', newTime);
 
@@ -1080,7 +1208,7 @@ class SmallTimeApp extends FormApplication {
   }
 
   // Convert the integer time value to hours and minutes.
-  static convertTime(timeInteger) {
+  static convertTimeIntegerToDisplay(timeInteger) {
     let theHours = Math.floor(timeInteger / 60);
     let theMinutes = timeInteger - theHours * 60;
 
