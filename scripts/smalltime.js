@@ -533,8 +533,6 @@ function setupDragHandles() {
     }
   });
 
-  const defaultInputElement = $('input[name="smalltime.darkness-config"]');
-
   sunriseStartDrag.on('dragEnd', async function () {
     await game.settings.set(
       'smalltime',
@@ -548,8 +546,12 @@ function setupDragHandles() {
       sunsetStart: sunsetStartDrag.position.x,
       sunsetEnd: sunsetEndDrag.position.x,
     };
-    $('input[name="smalltime.darkness-config"]').val(newPositions);
-    console.log($('input[name="smalltime.darkness-config"]').val());
+
+    // TODO
+
+    const jsonString = JSON.stringify(JSON.stringify(newPositions));
+    var trimmedString = jsonString.substr(1).slice(0, -1);
+    $('input[name="smalltime.darkness-config"]').val(trimmedString);
   });
 
   sunriseEndDrag.on('dragEnd', async function () {
@@ -565,7 +567,6 @@ function setupDragHandles() {
       sunsetStart: sunsetStartDrag.position.x,
       sunsetEnd: sunsetEndDrag.position.x,
     };
-    defaultInputElement.value = newPositions;
   });
 
   sunsetStartDrag.on('dragEnd', async function () {
@@ -581,7 +582,6 @@ function setupDragHandles() {
       sunsetStart: sunsetStartDrag.position.x,
       sunsetEnd: sunsetEndDrag.position.x,
     };
-    defaultInputElement.value = newPositions;
   });
 
   sunsetEndDrag.on('dragEnd', async function () {
@@ -597,7 +597,6 @@ function setupDragHandles() {
       sunsetStart: sunsetStartDrag.position.x,
       sunsetEnd: sunsetEndDrag.position.x,
     };
-    defaultInputElement.value = newPositions;
   });
 }
 
