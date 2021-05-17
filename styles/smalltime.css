@@ -150,14 +150,20 @@
   cursor: grab;
 }
 
-#smalltime-darkness-config .handle:after {
-  display: block;
-  content: '';
-  position: absolute;
-  top: -8px;
-  left: -8px;
-  right: -8px;
-  bottom: -8px;
+#smalltime-darkness-config .sunrise-start {
+  box-shadow: inset 0 0 0 10px red;
+}
+
+#smalltime-darkness-config .sunrise-end {
+  box-shadow: inset 0 0 0 10px green;
+}
+
+#smalltime-darkness-config .sunset-start {
+  box-shadow: inset 0 0 0 10px blue;
+}
+
+#smalltime-darkness-config .sunset-end {
+  box-shadow: inset 0 0 0 10px purple;
 }
 
 #smalltime-darkness-config .handle:hover {

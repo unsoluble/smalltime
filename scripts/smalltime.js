@@ -395,84 +395,108 @@ function setupDragHandles() {
   let snapX = 10;
   let snapY = 5;
 
-  let offsetBetween = 11;
+  let offsetBetween = 16;
 
   $('.sunrise-start').css('top', convertDarknessToPostion(maxDarkness));
   $('.sunrise-end').css('top', convertDarknessToPostion(minDarkness));
   $('.sunset-start').css('top', convertDarknessToPostion(minDarkness));
   $('.sunset-end').css('top', convertDarknessToPostion(maxDarkness));
 
-  var sunriseStartDrag = new Draggabilly('.sunrise-start', {
+  let sunriseStartDrag = new Draggabilly('.sunrise-start', {
     containment: '.sunrise-start-bounds',
     grid: [snapX, snapY],
-  }).on('dragMove', function (event, pointer, moveVector) {
+  });
+  let sunriseEndDrag = new Draggabilly('.sunrise-end', {
+    containment: '.sunrise-end-bounds',
+    grid: [snapX, snapY],
+  });
+  let sunsetStartDrag = new Draggabilly('.sunset-start', {
+    containment: '.sunset-start-bounds',
+    grid: [snapX, snapY],
+  });
+  let sunsetEndDrag = new Draggabilly('.sunset-end', {
+    containment: '.sunset-end-bounds',
+    grid: [snapX, snapY],
+  });
+
+  sunriseStartDrag.on('dragMove', function () {
     $('.sunset-end').css('top', this.position.y + 'px');
 
     if (this.position.x >= sunriseEndDrag.position.x - offsetBetween) {
       $('.sunrise-end').css('left', this.position.x + offsetBetween);
       sunriseEndDrag.setPosition(this.position.x + offsetBetween);
     }
+    if (this.position.x >= sunsetStartDrag.position.x - offsetBetween * 2) {
+      $('.sunset-start').css('left', this.position.x + offsetBetween * 2);
+      sunsetStartDrag.setPosition(this.position.x + offsetBetween * 2);
+    }
+    if (this.position.x >= sunsetEndDrag.position.x - offsetBetween * 3) {
+      $('.sunset-end').css('left', this.position.x + offsetBetween * 3);
+      sunsetEndDrag.setPosition(this.position.x + offsetBetween * 3);
+    }
   });
 
-  var sunriseEndDrag = new Draggabilly('.sunrise-end', {
-    containment: '.sunrise-end-bounds',
-    grid: [snapX, snapY],
-  }).on('dragMove', function (event, pointer, moveVector) {
+  sunriseEndDrag.on('dragMove', function () {
     $('.sunset-start').css('top', this.position.y + 'px');
 
     if (this.position.x <= sunriseStartDrag.position.x + offsetBetween) {
       $('.sunrise-start').css('left', this.position.x - offsetBetween);
       sunriseStartDrag.setPosition(this.position.x - offsetBetween);
     }
-
     if (this.position.x >= sunsetStartDrag.position.x - offsetBetween) {
       $('.sunset-start').css('left', this.position.x + offsetBetween);
       sunsetStartDrag.setPosition(this.position.x + offsetBetween);
     }
+    if (this.position.x >= sunsetEndDrag.position.x - offsetBetween * 2) {
+      $('.sunset-end').css('left', this.position.x + offsetBetween * 2);
+      sunsetEndDrag.setPosition(this.position.x + offsetBetween * 2);
+    }
   });
 
-  var sunsetStartDrag = new Draggabilly('.sunset-start', {
-    containment: '.sunset-start-bounds',
-    grid: [snapX, snapY],
-  }).on('dragMove', function (event, pointer, moveVector) {
+  sunsetStartDrag.on('dragMove', function () {
     $('.sunrise-end').css('top', this.position.y + 'px');
 
+    if (this.position.x <= sunriseStartDrag.position.x + offsetBetween * 2) {
+      $('.sunrise-start').css('left', this.position.x - offsetBetween * 2);
+      sunriseStartDrag.setPosition(this.position.x - offsetBetween * 2);
+    }
     if (this.position.x <= sunriseEndDrag.position.x + offsetBetween) {
       $('.sunrise-end').css('left', this.position.x - offsetBetween);
       sunriseEndDrag.setPosition(this.position.x - offsetBetween);
     }
-
     if (this.position.x >= sunsetEndDrag.position.x - offsetBetween) {
       $('.sunset-end').css('left', this.position.x + offsetBetween);
       sunsetEndDrag.setPosition(this.position.x + offsetBetween);
     }
   });
 
-  var sunsetEndDrag = new Draggabilly('.sunset-end', {
-    containment: '.sunset-end-bounds',
-    grid: [snapX, snapY],
-  }).on('dragMove', function (event, pointer, moveVector) {
+  sunsetEndDrag.on('dragMove', function () {
     $('.sunrise-start').css('top', this.position.y + 'px');
 
+    if (this.position.x <= sunriseStartDrag.position.x + offsetBetween * 3) {
+      $('.sunrise-start').css('left', this.position.x - offsetBetween * 3);
+      sunriseStartDrag.setPosition(this.position.x - offsetBetween * 3);
+    }
+    if (this.position.x <= sunriseEndDrag.position.x + offsetBetween * 2) {
+      $('.sunrise-end').css('left', this.position.x - offsetBetween * 2);
+      sunriseEndDrag.setPosition(this.position.x - offsetBetween * 2);
+    }
     if (this.position.x <= sunsetStartDrag.position.x + offsetBetween) {
       $('.sunset-start').css('left', this.position.x - offsetBetween);
       sunsetStartDrag.setPosition(this.position.x - offsetBetween);
     }
   });
 
-  sunriseStartDrag.on('dragEnd', function (event, pointer) {
+  sunriseStartDrag.on('dragEnd', function () {
     game.settings.set('smalltime', 'max-darkness', convertPositionToDarkness(this.position.y));
   });
-
-  sunriseEndDrag.on('dragEnd', function (event, pointer) {
+  sunriseEndDrag.on('dragEnd', function () {
     game.settings.set('smalltime', 'min-darkness', convertPositionToDarkness(this.position.y));
   });
-
-  sunsetStartDrag.on('dragEnd', function (event, pointer) {
+  sunsetStartDrag.on('dragEnd', function () {
     game.settings.set('smalltime', 'min-darkness', convertPositionToDarkness(this.position.y));
   });
-
-  sunsetEndDrag.on('dragEnd', function (event, pointer) {
+  sunsetEndDrag.on('dragEnd', function () {
     game.settings.set('smalltime', 'max-darkness', convertPositionToDarkness(this.position.y));
   });
 }
