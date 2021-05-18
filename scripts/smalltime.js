@@ -842,11 +842,11 @@ function convertTimeIntegerToPosition(timeInteger) {
 }
 
 function convertDarknessToPostion(darkness) {
-  return darkness * 50 + 5;
+  return darkness * 45 + 5;
 }
 
 function convertPositionToDarkness(position) {
-  return Math.round((1 - (position - 55) / -50) * 10) / 10;
+  return Math.round((1 - (position - 45) / -40) * 10) / 10;
 }
 
 function convertPositionToDisplayTime(position) {
@@ -1342,20 +1342,39 @@ class SmallTimeApp extends FormApplication {
     }
 
     // If requested, adjust the scene's Darkness level.
+    // The calculations in here to determine the correct level
+    // based on the custom threshold settings are kind of gross,
+    // but they get the job done.
     const currentScene = canvas.scene;
     if (currentScene.getFlag('smalltime', 'darkness-link')) {
       let darknessValue = canvas.lighting.darknessLevel;
+      const maxDarkness = game.settings.get('smalltime', 'max-darkness');
+      const minDarkness = game.settings.get('smalltime', 'min-darkness');
+
+      let multiplier = maxDarkness - minDarkness;
+      if (multiplier < 0) multiplier = minDarkness - maxDarkness;
 
       if (timeNow > sunriseEnd && timeNow < sunsetStart) {
-        darknessValue = 0;
+        darknessValue = minDarkness;
       } else if (timeNow < sunriseStart) {
-        darknessValue = 1;
+        darknessValue = maxDarkness;
       } else if (timeNow > sunsetEnd) {
-        darknessValue = 1;
-      } else if (timeNow >= sunriseStart && timeNow <= sunriseEnd) {
-        darknessValue = 1 - (timeNow - sunriseStart) / (sunriseEnd - sunriseStart);
-      } else if (timeNow >= sunsetStart && timeNow <= sunsetEnd) {
-        darknessValue = (timeNow - sunsetStart) / (sunsetEnd - sunsetStart);
+        darknessValue = maxDarkness;
+      }
+
+      if (minDarkness > maxDarkness) {
+        if (timeNow >= sunriseStart && timeNow <= sunriseEnd) {
+          darknessValue = ((timeNow - sunriseStart) / (sunriseEnd - sunriseStart)) * multiplier;
+        } else if (timeNow >= sunsetStart && timeNow <= sunsetEnd) {
+          darknessValue = (1 - (timeNow - sunsetStart) / (sunsetEnd - sunsetStart)) * multiplier;
+        }
+      } else {
+        if (timeNow >= sunriseStart && timeNow <= sunriseEnd) {
+          darknessValue = 1 - ((timeNow - sunriseStart) / (sunriseEnd - sunriseStart)) * multiplier;
+        } else if (timeNow >= sunsetStart && timeNow <= sunsetEnd) {
+          darknessValue =
+            1 - (1 - (timeNow - sunsetStart) / (sunsetEnd - sunsetStart)) * multiplier;
+        }
       }
       // Truncate long decimals.
       darknessValue = Math.round(darknessValue * 10) / 10;
