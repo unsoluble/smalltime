@@ -310,6 +310,15 @@ Hooks.on('canvasReady', () => {
     if (thisScene.getFlag('smalltime', 'darkness-link')) {
       SmallTimeApp.timeTransition(game.settings.get('smalltime', 'current-time'));
     }
+
+    // Refresh the current scene BG for the settings dialog.
+    let sceneBG = canvas.scene.data.thumb;
+    if (!sceneBG) {
+      sceneBG = 'modules/smalltime/images/generic-bg.webp';
+    } else if (sceneBG.startsWith('data')) {
+      sceneBG = canvas.scene.data.img;
+    }
+    document.documentElement.style.setProperty('--SMLTME-scene-bg', 'url(/' + sceneBG + ')');
   }
 });
 
@@ -376,6 +385,9 @@ Hooks.on('renderSettingsConfig', () => {
   if (!$('#smalltime-darkness-config').length) {
     notesElement.after(injection);
   }
+
+  const sceneBG = canvas.scene.data.img;
+  document.documentElement.style.setProperty('--SMLTME-scene-bg', 'url(/' + sceneBG + ')');
 
   setupDragHandles();
 
