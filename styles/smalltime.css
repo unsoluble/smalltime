@@ -11,6 +11,9 @@
   --SMLTME-sunset-start: 60%;
   --SMLTME-sunset-end: 80%;
   --SMLTME-scene-bg: '';
+  --SMLTME-darkness-r: 36;
+  --SMLTME-darkness-g: 36;
+  --SMLTME-darkness-b: 72;
 }
 
 #smalltime-app {
@@ -99,10 +102,34 @@
   background: linear-gradient(
     to right,
     rgba(18, 18, 36, var(--SMLTME-darkness-max)) 0%,
-    rgba(36, 36, 72, var(--SMLTME-darkness-max)) var(--SMLTME-sunrise-start),
-    rgba(36, 36, 72, var(--SMLTME-darkness-min)) var(--SMLTME-sunrise-end),
-    rgba(36, 36, 72, var(--SMLTME-darkness-min)) var(--SMLTME-sunset-start),
-    rgba(36, 36, 72, var(--SMLTME-darkness-max)) var(--SMLTME-sunset-end),
+    rgba(
+        var(--SMLTME-darkness-r),
+        var(--SMLTME-darkness-g),
+        var(--SMLTME-darkness-b),
+        var(--SMLTME-darkness-max)
+      )
+      var(--SMLTME-sunrise-start),
+    rgba(
+        var(--SMLTME-darkness-r),
+        var(--SMLTME-darkness-g),
+        var(--SMLTME-darkness-b),
+        var(--SMLTME-darkness-min)
+      )
+      var(--SMLTME-sunrise-end),
+    rgba(
+        var(--SMLTME-darkness-r),
+        var(--SMLTME-darkness-g),
+        var(--SMLTME-darkness-b),
+        var(--SMLTME-darkness-min)
+      )
+      var(--SMLTME-sunset-start),
+    rgba(
+        var(--SMLTME-darkness-r),
+        var(--SMLTME-darkness-g),
+        var(--SMLTME-darkness-b),
+        var(--SMLTME-darkness-max)
+      )
+      var(--SMLTME-sunset-end),
     rgba(18, 18, 36, var(--SMLTME-darkness-max)) 100%
   );
   /* Use CONFIG.canvas.darknessColor */

@@ -1,4 +1,4 @@
-const SmallTimeMoonPhases = [
+const SmallTime_MoonPhases = [
   'new',
   'waxing-crescent',
   'first-quarter',
@@ -12,7 +12,7 @@ const SmallTimeMoonPhases = [
 // Default offset from the Player List window when pinned,
 // plus custom offsets for game systems that draw extra borders
 // around their windows.
-let SmallTimePinOffset = 83;
+let SmallTime_PinOffset = 83;
 const SmallTime_WFRP4eOffset = 30;
 const SmallTime_DasSchwarzeAugeOffset = 16;
 
@@ -225,10 +225,10 @@ Hooks.on('init', () => {
 Hooks.on('ready', () => {
   // Account for the extra border art in certain game systems.
   if (game.system.id === 'wfrp4e') {
-    SmallTimePinOffset += SmallTime_WFRP4eOffset;
+    SmallTime_PinOffset += SmallTime_WFRP4eOffset;
   }
   if (game.system.id === 'dsa5') {
-    SmallTimePinOffset += SmallTime_DasSchwarzeAugeOffset;
+    SmallTime_PinOffset += SmallTime_DasSchwarzeAugeOffset;
   }
 
   // Check and set the correct level of authorization for the current user.
@@ -408,6 +408,12 @@ Hooks.on('renderSettingsConfig', () => {
     notesElement.after(injection);
   }
 
+  const coreDarknessColor = convertHexToRGB(CONFIG.Canvas.darknessColor.toString(16));
+
+  document.documentElement.style.setProperty('--SMLTME-darkness-r', coreDarknessColor.r);
+  document.documentElement.style.setProperty('--SMLTME-darkness-g', coreDarknessColor.g);
+  document.documentElement.style.setProperty('--SMLTME-darkness-b', coreDarknessColor.b);
+
   // Refresh the current scene BG for the settings dialog.
   grabSceneSlice();
 
@@ -455,10 +461,10 @@ Hooks.on('renderPlayerList', () => {
   const element = document.getElementById('players');
   const playerAppPos = element.getBoundingClientRect();
 
-  // The SmallTimePinOffset here is the ideal distance between the top of the
+  // The SmallTime_PinOffset here is the ideal distance between the top of the
   // Players list and the top of SmallTime. The +21 accounts
   // for the date dropdown if enabled.
-  let myOffset = playerAppPos.height + SmallTimePinOffset;
+  let myOffset = playerAppPos.height + SmallTime_PinOffset;
 
   if (game.settings.get('smalltime', 'date-showing')) {
     myOffset += 21;
@@ -867,6 +873,17 @@ function grabSceneSlice() {
   document.documentElement.style.setProperty('--SMLTME-scene-bg', 'url(/' + sceneBG + ')');
 }
 
+function convertHexToRGB(hex) {
+  var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16),
+      }
+    : null;
+}
+
 class SmallTimeApp extends FormApplication {
   constructor() {
     super();
@@ -1015,7 +1032,7 @@ class SmallTimeApp extends FormApplication {
 
       const playerApp = document.getElementById('players');
       const playerAppPos = playerApp.getBoundingClientRect();
-      let myOffset = playerAppPos.height + SmallTimePinOffset;
+      let myOffset = playerAppPos.height + SmallTime_PinOffset;
 
       // If the mouseup happens inside the Pin zone, pin the app.
       if (pinZone) {
@@ -1044,11 +1061,11 @@ class SmallTimeApp extends FormApplication {
     $('#timeSlider').on('click', async function () {
       if (event.shiftKey && game.modules.get('smalltime').controlAuth) {
         const startingPhase = game.settings.get('smalltime', 'moon-phase');
-        const newPhase = (startingPhase + 1) % SmallTimeMoonPhases.length;
+        const newPhase = (startingPhase + 1) % SmallTime_MoonPhases.length;
 
         document.documentElement.style.setProperty(
           '--SMLTME-phaseURL',
-          `url('../images/moon-phases/${SmallTimeMoonPhases[newPhase]}.webp')`
+          `url('../images/moon-phases/${SmallTime_MoonPhases[newPhase]}.webp')`
         );
 
         // Set and broadcast the change.
@@ -1200,7 +1217,7 @@ class SmallTimeApp extends FormApplication {
     // Listen for moon phase changes from Simple Calendar.
     if (game.modules.get('foundryvtt-simple-calendar')?.active) {
       Hooks.on(SimpleCalendar.Hooks.DateTimeChange, async function (data) {
-        const newPhase = SmallTimeMoonPhases.findIndex(function (phase) {
+        const newPhase = SmallTime_MoonPhases.findIndex(function (phase) {
           return phase === data.moons[0].currentPhase.icon;
         });
         await game.settings.set('smalltime', 'moon-phase', newPhase);
@@ -1320,13 +1337,12 @@ class SmallTimeApp extends FormApplication {
       $('#timeSlider').addClass('moon');
       document.documentElement.style.setProperty(
         '--SMLTME-phaseURL',
-        `url('../images/moon-phases/${SmallTimeMoonPhases[currentPhase]}.webp')`
+        `url('../images/moon-phases/${SmallTime_MoonPhases[currentPhase]}.webp')`
       );
     }
 
     // If requested, adjust the scene's Darkness level.
     const currentScene = canvas.scene;
-
     if (currentScene.getFlag('smalltime', 'darkness-link')) {
       let darknessValue = canvas.lighting.darknessLevel;
 
@@ -1391,7 +1407,7 @@ class SmallTimeApp extends FormApplication {
     if (!$('#pin-lock').length) {
       const playerApp = document.getElementById('players');
       const playerAppPos = playerApp.getBoundingClientRect();
-      let myOffset = playerAppPos.height + SmallTimePinOffset;
+      let myOffset = playerAppPos.height + SmallTime_PinOffset;
 
       if (expanded) myOffset += 21;
 
@@ -1474,4 +1490,4 @@ class SmallTimeApp extends FormApplication {
   }
 }
 
-// Icons by Freepik on flaticon.com
+// Sun & moon icons by Freepik on flaticon.com
