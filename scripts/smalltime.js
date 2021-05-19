@@ -868,6 +868,7 @@ function grabSceneSlice() {
     sceneBG = canvas.scene.data.thumb;
   }
   if (!sceneBG || sceneBG.startsWith('data')) {
+    // Generic scene slice provided by MADCartographer -- thanks! :)
     sceneBG = 'modules/smalltime/images/generic-bg.webp';
   }
   document.documentElement.style.setProperty('--SMLTME-scene-bg', 'url(/' + sceneBG + ')');
