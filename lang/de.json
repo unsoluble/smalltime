@@ -12,6 +12,8 @@
   "SMLTME.Darkness_Default_Hint": "Standardeinstellung für SmallTime Dunkelheitseinfluss in der Szenenkonfiguration",
   "SMLTME.Darkness_Control": "SmallTime Dunkelheitseinfluss",
   "SMLTME.Darkness_Control_Hint": "Koppelt die Dunkelheitseinstellung dieser Szene an die aktuelle Zeit in SmallTime.",
+  "SMLTME.Darkness_Config": "Darkness Configuration",
+  "SMLTME.Darkness_Config_Hint": "Drag the suns & moons to set sunrise and sunset times. Their heights set the maximum & minimum darkness levels.",
   "SMLTME.AboutTime": "Mit About Time synchronisieren",
   "SMLTME.AboutTime_Hint": "Wenn die Zeit in About Time geändert wird, ändert SmallTime sich mit und umgekehrt. Wenn mit SmallTime Mitternacht überschritten wird, wird auch der Tag in About Time fortgeschrieben.",
   "SMLTME.Hide_From_Players": "Vor Spielern verstecken.",
