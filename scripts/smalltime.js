@@ -685,6 +685,7 @@ function setupDragHandles() {
       newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(shovedPos));
       document.documentElement.style.setProperty('--SMLTME-sunrise-end', newTransition);
     }
+    /*
     if (this.position.x >= sunsetStartDrag.position.x - offsetBetween * 2) {
       shovedPos = this.position.x + offsetBetween * 2;
       $('.sunset-start').css('left', shovedPos);
@@ -701,6 +702,7 @@ function setupDragHandles() {
       newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(shovedPos));
       document.documentElement.style.setProperty('--SMLTME-sunset-end', newTransition);
     }
+    */
   });
 
   sunriseEndDrag.on('dragMove', function () {
@@ -729,6 +731,7 @@ function setupDragHandles() {
       newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(shovedPos));
       document.documentElement.style.setProperty('--SMLTME-sunrise-start', newTransition);
     }
+    /*
     if (this.position.x >= sunsetStartDrag.position.x - offsetBetween) {
       shovedPos = this.position.x + offsetBetween;
       $('.sunset-start').css('left', shovedPos);
@@ -745,6 +748,7 @@ function setupDragHandles() {
       newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(shovedPos));
       document.documentElement.style.setProperty('--SMLTME-sunset-end', newTransition);
     }
+    */
   });
 
   sunsetStartDrag.on('dragMove', function () {
@@ -765,6 +769,7 @@ function setupDragHandles() {
     document.documentElement.style.setProperty('--SMLTME-sunset-start', newTransition);
 
     // Shove other handles on collisions.
+    /*
     if (this.position.x <= sunriseStartDrag.position.x + offsetBetween * 2) {
       shovedPos = this.position.x - offsetBetween * 2;
       $('.sunrise-start').css('left', shovedPos);
@@ -781,6 +786,7 @@ function setupDragHandles() {
       newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(shovedPos));
       document.documentElement.style.setProperty('--SMLTME-sunrise-end', newTransition);
     }
+    */
     if (this.position.x >= sunsetEndDrag.position.x - offsetBetween) {
       shovedPos = this.position.x + offsetBetween;
       $('.sunset-end').css('left', shovedPos);
@@ -809,6 +815,7 @@ function setupDragHandles() {
     document.documentElement.style.setProperty('--SMLTME-sunset-end', newTransition);
 
     // Shove other handles on collisions.
+    /*
     if (this.position.x <= sunriseStartDrag.position.x + offsetBetween * 3) {
       shovedPos = this.position.x - offsetBetween * 3;
       $('.sunrise-start').css('left', shovedPos);
@@ -825,6 +832,7 @@ function setupDragHandles() {
       newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(shovedPos));
       document.documentElement.style.setProperty('--SMLTME-sunrise-end', newTransition);
     }
+    */
     if (this.position.x <= sunsetStartDrag.position.x + offsetBetween) {
       shovedPos = this.position.x - offsetBetween;
       $('.sunset-start').css('left', shovedPos);
