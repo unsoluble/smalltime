@@ -4,6 +4,20 @@
   --SMLTME-ds-left: 3px;
   --SMLTME-ds-width: 0px;
   --SMLTME-phaseURL: url('../images/moon-phases/full.webp');
+  --SMLTME-darkness-min: 0;
+  --SMLTME-darkness-max: 1;
+  --SMLTME-sunrise-start: 20%;
+  --SMLTME-sunrise-middle-1: 30%;
+  --SMLTME-sunrise-middle-2: 35%;
+  --SMLTME-sunrise-end: 40%;
+  --SMLTME-sunset-start: 60%;
+  --SMLTME-sunset-middle-1: 70%;
+  --SMLTME-sunset-middle-2: 75%;
+  --SMLTME-sunset-end: 80%;
+  --SMLTME-scene-bg: '';
+  --SMLTME-darkness-r: 36;
+  --SMLTME-darkness-g: 36;
+  --SMLTME-darkness-b: 72;
 }
 
 #smalltime-app {
@@ -47,35 +61,144 @@
   padding: 0;
 }
 
-#smalltime-app .darkness-select {
-  visibility: hidden;
+#smalltime-darkness-config {
+  height: 72px;
+  background: var(--SMLTME-scene-bg);
+  background-size: cover;
+  background-position: 0 50%;
+  margin-left: 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px 0px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  flex: 0 1 auto;
+}
+
+#smalltime-darkness-config .handles {
+  position: relative;
+  height: 72px;
+  display: flex;
+  width: 554px;
+  flex-flow: row nowrap;
+  z-index: 1;
+  background: linear-gradient(
+    to right,
+    rgba(18, 18, 36, var(--SMLTME-darkness-max)) 0%,
+    rgba(
+        var(--SMLTME-darkness-r),
+        var(--SMLTME-darkness-g),
+        var(--SMLTME-darkness-b),
+        var(--SMLTME-darkness-max)
+      )
+      var(--SMLTME-sunrise-start),
+    rgba(
+        var(--SMLTME-darkness-r),
+        var(--SMLTME-darkness-g),
+        var(--SMLTME-darkness-b),
+        var(--SMLTME-darkness-min)
+      )
+      var(--SMLTME-sunrise-end),
+    rgba(
+        var(--SMLTME-darkness-r),
+        var(--SMLTME-darkness-g),
+        var(--SMLTME-darkness-b),
+        var(--SMLTME-darkness-min)
+      )
+      var(--SMLTME-sunset-start),
+    rgba(
+        var(--SMLTME-darkness-r),
+        var(--SMLTME-darkness-g),
+        var(--SMLTME-darkness-b),
+        var(--SMLTME-darkness-max)
+      )
+      var(--SMLTME-sunset-end),
+    rgba(18, 18, 36, var(--SMLTME-darkness-max)) 100%
+  );
+  border-radius: 5px;
+  opacity: 0.9;
+}
+
+/* Constraint boxes for the sun/moon drag handles */
+.sunrise-start-bounds,
+.sunrise-end-bounds,
+.sunset-start-bounds,
+.sunset-end-bounds {
+  height: 67px;
+  position: relative;
+  top: -68px;
+  margin-bottom: -67px;
+  z-index: 0;
+  width: 452px;
+}
+.sunrise-start-bounds {
+  //border: 1px solid red;
+  left: 24px;
+  width: 248px;
+}
+.sunrise-end-bounds {
+  //border: 1px solid green;
+  left: 48px;
+  width: 240px;
+}
+.sunset-start-bounds {
+  //border: 1px solid blue;
+  left: 272px;
+  width: 250px;
+}
+.sunset-end-bounds {
+  //border: 1px solid purple;
+  left: 300px;
+  width: 240px;
+}
+
+#smalltime-darkness-config .handle {
   position: absolute;
-  top: 4px;
-  left: var(--SMLTME-ds-left);
-  width: var(--SMLTME-ds-width);
-  height: 16px;
-  border-radius: 3px;
-  border: 1px solid purple;
-  background: linear-gradient(to right, rgba(36, 6, 104, 0.724) 0%, rgba(255, 255, 255, 0.4));
-  z-index: 5;
+  width: 24px;
+  height: 24px;
+  cursor: -webkit-grab;
+  cursor: -moz-grab;
+  cursor: grab;
+}
+
+#smalltime-darkness-config .sunrise-start,
+#smalltime-darkness-config .sunset-end {
+  background: var(--SMLTME-phaseURL) no-repeat;
+  background-size: 16px;
+  background-position: 1px 1px;
+  -webkit-filter: drop-shadow(0px 0px 6px rgba(255, 255, 255, 0.9));
+  filter: drop-shadow(0px 0px 6px rgba(255, 255, 255, 0.9));
+}
+
+#smalltime-darkness-config .sunrise-end,
+#smalltime-darkness-config .sunset-start {
+  background: url('../images/sun-small.webp') no-repeat;
+  background-size: 18px;
+  background-position: 0px 0.5px;
+  -webkit-filter: drop-shadow(0px 0px 6px rgba(255, 203, 93, 0.9));
+  filter: drop-shadow(0px 0px 6px rgba(255, 203, 93, 0.9));
+}
+
+#smalltime-darkness-config .handle.is-dragging {
+  z-index: 100;
+  cursor: none;
 }
 
 #smalltime-app #slideContainer {
   width: 100%;
   background: linear-gradient(
     to bottom,
-    #000000 3%,
-    #351984 15%,
-    #db5a23 25%,
-    #d19621 30%,
-    #25c5ed 40%,
-    #25c5ed 60%,
-    #d19621 70%,
-    #db5a23 75%,
-    #351984 85%,
-    #000000 97%
+    #000000 0%,
+    #351984 var(--SMLTME-sunrise-start),
+    #db5a23 var(--SMLTME-sunrise-middle-1),
+    #d19621 var(--SMLTME-sunrise-middle-2),
+    #25c5ed var(--SMLTME-sunrise-end),
+    #25c5ed var(--SMLTME-sunset-start),
+    #d19621 var(--SMLTME-sunset-middle-1),
+    #db5a23 var(--SMLTME-sunset-middle-2),
+    #351984 var(--SMLTME-sunset-end),
+    #000000 100%
   );
-  background-size: 200px 450px;
+  background-size: 200px 2000px;
   background-position: 0px 0px;
   z-index: 0;
 }
@@ -277,7 +400,6 @@
 }
 
 #smalltime-app #dateDisplay.active {
-  //display: block;
   visibility: visible;
   transform: scaleY(1);
   transition: transform 0.1s ease-out;
@@ -331,4 +453,75 @@
     transform: rotate(1deg);
     animation-timing-function: ease-out;
   }
+}
+
+/* Darkness config tooltip styles. */
+
+div[aria-label][data-balloon-pos] {
+  overflow: visible;
+}
+[aria-label][data-balloon-pos] {
+  position: relative;
+}
+/* Main bubble */
+[aria-label][data-balloon-pos]:after {
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.1s ease-out 0.1s;
+  text-indent: 0;
+  font-size: 1em;
+  background: url(/ui/denim-dark-090.png) repeat;
+  color: #efefe0;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  border-radius: 5px;
+  content: attr(aria-label);
+  padding: 5px 7px 4px 7px;
+  position: absolute;
+  white-space: nowrap;
+  z-index: 10;
+  box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.4);
+}
+/* Triangle */
+[aria-label][data-balloon-pos]:before {
+  width: 0;
+  height: 0;
+  border: 5px solid transparent;
+  border-top-color: #444;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.1s ease-out 0.1s;
+  content: '';
+  position: absolute;
+  z-index: 10;
+}
+[aria-label][data-balloon-pos]:hover:before,
+[aria-label][data-balloon-pos]:hover:after {
+  opacity: 1;
+  pointer-events: none;
+}
+/* Position after appearing, bubble */
+[aria-label][data-balloon-pos][data-balloon-pos='up']:hover:after {
+  transform: translate(-55%, 0);
+}
+/* Position after appearing, triangle */
+[aria-label][data-balloon-pos][data-balloon-pos='up']:hover:before {
+  transform: translate(-85%, 0);
+}
+[aria-label][data-balloon-pos][data-balloon-pos^='up']:before,
+[aria-label][data-balloon-pos][data-balloon-pos^='up']:after {
+  bottom: 100%;
+  transform-origin: top;
+}
+[aria-label][data-balloon-pos][data-balloon-pos^='up']:after {
+  margin-bottom: 10px;
+}
+/* Position before appearing, bubble */
+[aria-label][data-balloon-pos][data-balloon-pos='up']:after {
+  left: 50%;
+  transform: translate(-55%, 4px);
+}
+/* Position before appearing, triangle */
+[aria-label][data-balloon-pos][data-balloon-pos='up']:before {
+  left: 50%;
+  transform: translate(-85%, 4px);
 }

@@ -1,4 +1,4 @@
-const SmallTimeMoonPhases = [
+const SmallTime_MoonPhases = [
   'new',
   'waxing-crescent',
   'first-quarter',
@@ -12,7 +12,7 @@ const SmallTimeMoonPhases = [
 // Default offset from the Player List window when pinned,
 // plus custom offsets for game systems that draw extra borders
 // around their windows.
-let SmallTimePinOffset = 83;
+let SmallTime_PinOffset = 83;
 const SmallTime_WFRP4eOffset = 30;
 const SmallTime_DasSchwarzeAugeOffset = 16;
 
@@ -137,6 +137,50 @@ Hooks.on('init', () => {
     },
   });
 
+  game.settings.register('smalltime', 'max-darkness', {
+    scope: 'world',
+    config: true,
+    type: Number,
+    default: 1,
+  });
+
+  game.settings.register('smalltime', 'min-darkness', {
+    scope: 'world',
+    config: true,
+    type: Number,
+    default: 0,
+  });
+
+  game.settings.register('smalltime', 'sunrise-start', {
+    scope: 'world',
+    config: true,
+    type: Number,
+    default: 180,
+  });
+
+  game.settings.register('smalltime', 'sunrise-end', {
+    scope: 'world',
+    config: true,
+    type: Number,
+    default: 420,
+  });
+
+  game.settings.register('smalltime', 'sunset-start', {
+    scope: 'world',
+    config: true,
+    type: Number,
+    default: 1050,
+  });
+
+  game.settings.register('smalltime', 'sunset-end', {
+    name: game.i18n.format('SMLTME.Darkness_Config'),
+    hint: game.i18n.format('SMLTME.Darkness_Config_Hint'),
+    scope: 'world',
+    config: true,
+    type: Number,
+    default: 1320,
+  });
+
   game.settings.register('smalltime', 'darkness-default', {
     name: game.i18n.format('SMLTME.Darkness_Default'),
     hint: game.i18n.format('SMLTME.Darkness_Default_Hint'),
@@ -153,38 +197,6 @@ Hooks.on('init', () => {
     config: true,
     type: Boolean,
     default: false,
-  });
-
-  game.settings.register('smalltime', 'sunrise-start', {
-    name: 'Sunrise Start',
-    scope: 'world',
-    config: false,
-    type: Number,
-    default: 180,
-  });
-
-  game.settings.register('smalltime', 'sunrise-end', {
-    name: 'Sunrise End',
-    scope: 'world',
-    config: false,
-    type: Number,
-    default: 420,
-  });
-
-  game.settings.register('smalltime', 'sunset-start', {
-    name: 'Sunset Start',
-    scope: 'world',
-    config: false,
-    type: Number,
-    default: 1050,
-  });
-
-  game.settings.register('smalltime', 'sunset-end', {
-    name: 'Sunset End',
-    scope: 'world',
-    config: false,
-    type: Number,
-    default: 1320,
   });
 
   game.settings.register('smalltime', 'moon-phase', {
@@ -213,10 +225,10 @@ Hooks.on('init', () => {
 Hooks.on('ready', () => {
   // Account for the extra border art in certain game systems.
   if (game.system.id === 'wfrp4e') {
-    SmallTimePinOffset += SmallTime_WFRP4eOffset;
+    SmallTime_PinOffset += SmallTime_WFRP4eOffset;
   }
   if (game.system.id === 'dsa5') {
-    SmallTimePinOffset += SmallTime_DasSchwarzeAugeOffset;
+    SmallTime_PinOffset += SmallTime_DasSchwarzeAugeOffset;
   }
 
   // Check and set the correct level of authorization for the current user.
@@ -301,6 +313,10 @@ Hooks.on('ready', () => {
       }
     }
   }
+
+  // Update the stops on the sunrise/sunset gradient, in case
+  // there's been changes to the positions.
+  updateGradientStops();
 });
 
 // Set the initial state for newly rendered scenes.
@@ -319,6 +335,9 @@ Hooks.on('canvasReady', () => {
     if (thisScene.getFlag('smalltime', 'darkness-link')) {
       SmallTimeApp.timeTransition(game.settings.get('smalltime', 'current-time'));
     }
+
+    // Refresh the current scene BG for the settings dialog.
+    grabSceneSlice();
   }
 });
 
@@ -357,8 +376,55 @@ Hooks.on('renderSceneConfig', async (obj) => {
   }
 });
 
-// Live render the opacity changes as a preview.
 Hooks.on('renderSettingsConfig', () => {
+  // Hide the elements for the threshold settings; we'll be changing
+  // these elsewhere, but still want them here for the save workflow.
+  $('input[name="smalltime.max-darkness"]').parent().parent().css('display', 'none');
+  $('input[name="smalltime.min-darkness"]').parent().parent().css('display', 'none');
+  $('input[name="smalltime.sunrise-start"]').parent().parent().css('display', 'none');
+  $('input[name="smalltime.sunrise-end"]').parent().parent().css('display', 'none');
+  $('input[name="smalltime.sunset-start"]').parent().parent().css('display', 'none');
+
+  // Create and insert a div for the Darkness Configuration tool.
+  const insertionElement = $('input[name="smalltime.sunset-end"]');
+  insertionElement.css('display', 'none');
+
+  const notesElement = insertionElement.parent().next();
+
+  const injection = `
+    <div id="smalltime-darkness-config" class="notes">
+      <div class="smalltime-dc-inside">
+        <div class="handles">
+          <div data-balloon-pos="up" class="handle sunrise-start"></div>
+          <div data-balloon-pos="up" class="handle sunrise-end"></div>
+          <div data-balloon-pos="up" class="handle sunset-start"></div>
+          <div data-balloon-pos="up" class="handle sunset-end"></div>
+        </div>
+        <div class="sunrise-start-bounds"></div>
+        <div class="sunrise-end-bounds"></div>
+        <div class="sunset-start-bounds"></div>
+        <div class="sunset-end-bounds"></div>
+      </div>
+    </div>`;
+
+  // Only inject if it isn't already there.
+  if (!$('#smalltime-darkness-config').length) {
+    notesElement.after(injection);
+  }
+
+  const coreDarknessColor = convertHexToRGB(CONFIG.Canvas.darknessColor.toString(16));
+
+  document.documentElement.style.setProperty('--SMLTME-darkness-r', coreDarknessColor.r);
+  document.documentElement.style.setProperty('--SMLTME-darkness-g', coreDarknessColor.g);
+  document.documentElement.style.setProperty('--SMLTME-darkness-b', coreDarknessColor.b);
+
+  // Refresh the current scene BG for the settings dialog.
+  grabSceneSlice();
+
+  // Build the Darkness Config interface.
+  setupDragHandles();
+
+  // Live render the opacity changes as a preview.
   $('input[name="smalltime.opacity"]').on('input', () => {
     $('#smalltime-app').css({
       opacity: $('input[name="smalltime.opacity"]').val(),
@@ -375,6 +441,10 @@ Hooks.on('closeSettingsConfig', () => {
     'transition-delay': '',
     transition: '',
   });
+
+  // Update the stops on the sunrise/sunset gradient, in case
+  // there's been changes to the positions.
+  updateGradientStops();
 });
 
 // Add a toggle button inside the Jounral Notes tool layer.
@@ -399,10 +469,10 @@ Hooks.on('renderPlayerList', () => {
   const element = document.getElementById('players');
   const playerAppPos = element.getBoundingClientRect();
 
-  // The SmallTimePinOffset here is the ideal distance between the top of the
+  // The SmallTime_PinOffset here is the ideal distance between the top of the
   // Players list and the top of SmallTime. The +21 accounts
   // for the date dropdown if enabled.
-  let myOffset = playerAppPos.height + SmallTimePinOffset;
+  let myOffset = playerAppPos.height + SmallTime_PinOffset;
 
   if (game.settings.get('smalltime', 'date-showing')) {
     myOffset += 21;
@@ -448,6 +518,361 @@ Hooks.on('about-time.pseudoclockMaster', () => {
     SmallTimeApp.syncFromAboutTime();
   }
 });
+
+function updateGradientStops() {
+  // Make the CSS linear gradient stops proportionally match the custom sunrise/sunset times.
+  // Also used to build the gradient stops in the Settings screen.
+  const initialPositions = {
+    sunriseStart: convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunrise-start')),
+    sunriseEnd: convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunrise-end')),
+    sunsetStart: convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunset-start')),
+    sunsetEnd: convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunset-end')),
+  };
+
+  const sunriseMiddle1 = Math.round(
+    (initialPositions.sunriseStart * 2) / 3 + (initialPositions.sunriseEnd * 1) / 3
+  );
+  const sunriseMiddle2 = Math.round(
+    (initialPositions.sunriseStart * 1) / 3 + (initialPositions.sunriseEnd * 2) / 3
+  );
+  const sunsetMiddle1 = Math.round(
+    (initialPositions.sunsetStart * 2) / 3 + (initialPositions.sunsetEnd * 1) / 3
+  );
+  const sunsetMiddle2 = Math.round(
+    (initialPositions.sunsetStart * 1) / 3 + (initialPositions.sunsetEnd * 2) / 3
+  );
+
+  // Set the initial gradient transition points.
+  document.documentElement.style.setProperty(
+    '--SMLTME-sunrise-start',
+    convertTimeIntegerToPercentage(convertPositionToTimeInteger(initialPositions.sunriseStart))
+  );
+  document.documentElement.style.setProperty(
+    '--SMLTME-sunrise-middle-1',
+    convertTimeIntegerToPercentage(convertPositionToTimeInteger(sunriseMiddle1))
+  );
+  document.documentElement.style.setProperty(
+    '--SMLTME-sunrise-middle-2',
+    convertTimeIntegerToPercentage(convertPositionToTimeInteger(sunriseMiddle2))
+  );
+  document.documentElement.style.setProperty(
+    '--SMLTME-sunrise-end',
+    convertTimeIntegerToPercentage(convertPositionToTimeInteger(initialPositions.sunriseEnd))
+  );
+  document.documentElement.style.setProperty(
+    '--SMLTME-sunset-start',
+    convertTimeIntegerToPercentage(convertPositionToTimeInteger(initialPositions.sunsetStart))
+  );
+  document.documentElement.style.setProperty(
+    '--SMLTME-sunset-middle-1',
+    convertTimeIntegerToPercentage(convertPositionToTimeInteger(sunsetMiddle1))
+  );
+  document.documentElement.style.setProperty(
+    '--SMLTME-sunset-middle-2',
+    convertTimeIntegerToPercentage(convertPositionToTimeInteger(sunsetMiddle2))
+  );
+  document.documentElement.style.setProperty(
+    '--SMLTME-sunset-end',
+    convertTimeIntegerToPercentage(convertPositionToTimeInteger(initialPositions.sunsetEnd))
+  );
+}
+
+async function saveNewDarknessConfig(positions, max, min) {
+  // Set the hidden inputs for these settings to the new values,
+  // so that the form-saving workflow takes care of saving them.
+  $('input[name="smalltime.sunrise-start"]').val(
+    convertPositionToTimeInteger(positions.sunriseStart)
+  );
+  $('input[name="smalltime.sunrise-end"]').val(convertPositionToTimeInteger(positions.sunriseEnd));
+  $('input[name="smalltime.sunset-start"]').val(
+    convertPositionToTimeInteger(positions.sunsetStart)
+  );
+  $('input[name="smalltime.sunset-end"]').val(convertPositionToTimeInteger(positions.sunsetEnd));
+
+  // Set the max or min Darkness, depending on which was passed.
+  if (min === false) $('input[name="smalltime.max-darkness"]').val(max);
+  if (max === false) $('input[name="smalltime.min-darkness"]').val(min);
+}
+
+function setupDragHandles() {
+  const maxDarkness = game.settings.get('smalltime', 'max-darkness');
+  const minDarkness = game.settings.get('smalltime', 'min-darkness');
+
+  document.documentElement.style.setProperty('--SMLTME-darkness-max', maxDarkness);
+  document.documentElement.style.setProperty('--SMLTME-darkness-min', minDarkness);
+
+  const initialPositions = {
+    sunriseStart: convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunrise-start')),
+    sunriseEnd: convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunrise-end')),
+    sunsetStart: convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunset-start')),
+    sunsetEnd: convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunset-end')),
+  };
+
+  const initialTimes = {
+    sunriseStart: convertPositionToDisplayTime(initialPositions.sunriseStart),
+    sunriseEnd: convertPositionToDisplayTime(initialPositions.sunriseEnd),
+    sunsetStart: convertPositionToDisplayTime(initialPositions.sunsetStart),
+    sunsetEnd: convertPositionToDisplayTime(initialPositions.sunsetEnd),
+  };
+
+  const snapX = 10;
+  const snapY = 4;
+
+  const offsetBetween = 20;
+
+  $('.sunrise-start').css('top', convertDarknessToPostion(maxDarkness));
+  $('.sunrise-start').css('left', initialPositions.sunriseStart);
+  $('.sunrise-start').attr('aria-label', initialTimes.sunriseStart);
+
+  $('.sunrise-end').css('top', convertDarknessToPostion(minDarkness));
+  $('.sunrise-end').css('left', initialPositions.sunriseEnd);
+  $('.sunrise-end').attr('aria-label', initialTimes.sunriseEnd);
+
+  $('.sunset-start').css('top', convertDarknessToPostion(minDarkness));
+  $('.sunset-start').css('left', initialPositions.sunsetStart);
+  $('.sunset-start').attr('aria-label', initialTimes.sunsetStart);
+
+  $('.sunset-end').css('top', convertDarknessToPostion(maxDarkness));
+  $('.sunset-end').css('left', initialPositions.sunsetEnd);
+  $('.sunset-end').attr('aria-label', initialTimes.sunsetEnd);
+
+  updateGradientStops();
+
+  // Create the drag handles.
+  const sunriseStartDrag = new Draggabilly('.sunrise-start', {
+    containment: '.sunrise-start-bounds',
+    grid: [snapX, snapY],
+  });
+  const sunriseEndDrag = new Draggabilly('.sunrise-end', {
+    containment: '.sunrise-end-bounds',
+    grid: [snapX, snapY],
+  });
+  const sunsetStartDrag = new Draggabilly('.sunset-start', {
+    containment: '.sunset-start-bounds',
+    grid: [snapX, snapY],
+  });
+  const sunsetEndDrag = new Draggabilly('.sunset-end', {
+    containment: '.sunset-end-bounds',
+    grid: [snapX, snapY],
+  });
+
+  let shovedPos = '';
+  let newTransition = '';
+
+  sunriseStartDrag.on('dragMove', function () {
+    // Match the paired handle.
+    $('.sunset-end').css('top', this.position.y + 'px');
+    // Update the tooltip.
+    const displayTime = convertPositionToDisplayTime(this.position.x);
+    $('.sunrise-start').attr('aria-label', displayTime);
+
+    // Live update the darkness maximum.
+    document.documentElement.style.setProperty(
+      '--SMLTME-darkness-max',
+      convertPositionToDarkness(this.position.y)
+    );
+
+    // Live update the gradient transition point.
+    newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(this.position.x));
+    document.documentElement.style.setProperty('--SMLTME-sunrise-start', newTransition);
+
+    // Shove other handle on collisions.
+    if (this.position.x >= sunriseEndDrag.position.x - offsetBetween) {
+      shovedPos = this.position.x + offsetBetween;
+      $('.sunrise-end').css('left', shovedPos);
+      $('.sunrise-end').attr('aria-label', convertPositionToDisplayTime(shovedPos));
+      sunriseEndDrag.setPosition(shovedPos);
+      newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(shovedPos));
+      document.documentElement.style.setProperty('--SMLTME-sunrise-end', newTransition);
+    }
+  });
+
+  sunriseEndDrag.on('dragMove', function () {
+    // Match the paired handle.
+    $('.sunset-start').css('top', this.position.y + 'px');
+    // Update the tooltip.
+    const displayTime = convertPositionToDisplayTime(this.position.x);
+    $('.sunrise-end').attr('aria-label', displayTime);
+
+    // Live update the darkness minimum.
+    document.documentElement.style.setProperty(
+      '--SMLTME-darkness-min',
+      convertPositionToDarkness(this.position.y)
+    );
+
+    // Live update the gradient transition point.
+    newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(this.position.x));
+    document.documentElement.style.setProperty('--SMLTME-sunrise-end', newTransition);
+
+    // Shove other handle on collisions.
+    if (this.position.x <= sunriseStartDrag.position.x + offsetBetween) {
+      shovedPos = this.position.x - offsetBetween;
+      $('.sunrise-start').css('left', shovedPos);
+      $('.sunrise-start').attr('aria-label', convertPositionToDisplayTime(shovedPos));
+      sunriseStartDrag.setPosition(shovedPos);
+      newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(shovedPos));
+      document.documentElement.style.setProperty('--SMLTME-sunrise-start', newTransition);
+    }
+  });
+
+  sunsetStartDrag.on('dragMove', function () {
+    // Match the paired handle.
+    $('.sunrise-end').css('top', this.position.y + 'px');
+    // Update the tooltip.
+    const displayTime = convertPositionToDisplayTime(this.position.x);
+    $('.sunset-start').attr('aria-label', displayTime);
+
+    // Live update the darkness minimum.
+    document.documentElement.style.setProperty(
+      '--SMLTME-darkness-min',
+      convertPositionToDarkness(this.position.y)
+    );
+
+    // Live update the gradient transition point.
+    newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(this.position.x));
+    document.documentElement.style.setProperty('--SMLTME-sunset-start', newTransition);
+
+    // Shove other handle on collisions.
+    if (this.position.x >= sunsetEndDrag.position.x - offsetBetween) {
+      shovedPos = this.position.x + offsetBetween;
+      $('.sunset-end').css('left', shovedPos);
+      $('.sunset-end').attr('aria-label', convertPositionToDisplayTime(shovedPos));
+      sunsetEndDrag.setPosition(shovedPos);
+      newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(shovedPos));
+      document.documentElement.style.setProperty('--SMLTME-sunset-end', newTransition);
+    }
+  });
+
+  sunsetEndDrag.on('dragMove', function () {
+    // Match the paired handle.
+    $('.sunrise-start').css('top', this.position.y + 'px');
+    // Update the tooltip.
+    const displayTime = convertPositionToDisplayTime(this.position.x);
+    $('.sunset-end').attr('aria-label', displayTime);
+
+    // Live update the darkness maximum.
+    document.documentElement.style.setProperty(
+      '--SMLTME-darkness-max',
+      convertPositionToDarkness(this.position.y)
+    );
+
+    // Live update the gradient transition point.
+    newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(this.position.x));
+    document.documentElement.style.setProperty('--SMLTME-sunset-end', newTransition);
+
+    // Shove other handle on collisions.
+    if (this.position.x <= sunsetStartDrag.position.x + offsetBetween) {
+      shovedPos = this.position.x - offsetBetween;
+      $('.sunset-start').css('left', shovedPos);
+      $('.sunset-start').attr('aria-label', convertPositionToDisplayTime(shovedPos));
+      sunsetStartDrag.setPosition(shovedPos);
+      newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(shovedPos));
+      document.documentElement.style.setProperty('--SMLTME-sunset-start', newTransition);
+    }
+  });
+
+  sunriseStartDrag.on('dragEnd', async function () {
+    const newPositions = {
+      sunriseStart: sunriseStartDrag.position.x,
+      sunriseEnd: sunriseEndDrag.position.x,
+      sunsetStart: sunsetStartDrag.position.x,
+      sunsetEnd: sunsetEndDrag.position.x,
+    };
+    const newMaxDarkness = convertPositionToDarkness(this.position.y);
+    saveNewDarknessConfig(newPositions, newMaxDarkness, false);
+  });
+
+  sunriseEndDrag.on('dragEnd', async function () {
+    const newPositions = {
+      sunriseStart: sunriseStartDrag.position.x,
+      sunriseEnd: sunriseEndDrag.position.x,
+      sunsetStart: sunsetStartDrag.position.x,
+      sunsetEnd: sunsetEndDrag.position.x,
+    };
+    const newMinDarkness = convertPositionToDarkness(this.position.y);
+    saveNewDarknessConfig(newPositions, false, newMinDarkness);
+  });
+
+  sunsetStartDrag.on('dragEnd', async function () {
+    const newPositions = {
+      sunriseStart: sunriseStartDrag.position.x,
+      sunriseEnd: sunriseEndDrag.position.x,
+      sunsetStart: sunsetStartDrag.position.x,
+      sunsetEnd: sunsetEndDrag.position.x,
+    };
+    const newMinDarkness = convertPositionToDarkness(this.position.y);
+    saveNewDarknessConfig(newPositions, false, newMinDarkness);
+  });
+
+  sunsetEndDrag.on('dragEnd', async function () {
+    const newPositions = {
+      sunriseStart: sunriseStartDrag.position.x,
+      sunriseEnd: sunriseEndDrag.position.x,
+      sunsetStart: sunsetStartDrag.position.x,
+      sunsetEnd: sunsetEndDrag.position.x,
+    };
+    const newMaxDarkness = convertPositionToDarkness(this.position.y);
+    saveNewDarknessConfig(newPositions, newMaxDarkness, false);
+  });
+}
+
+function convertTimeIntegerToPercentage(time) {
+  // Arbitrary/gross values here to make the transition points line
+  // up with the drag handles nicely.
+  return Math.round(((time / 3 + 32) / 550) * 100) + 1 + '%';
+}
+
+function convertPositionToTimeInteger(position) {
+  return (position - 30) * 3;
+}
+
+function convertTimeIntegerToPosition(timeInteger) {
+  return timeInteger / 3 + 30;
+}
+
+function convertDarknessToPostion(darkness) {
+  return darkness * 45 + 5;
+}
+
+function convertPositionToDarkness(position) {
+  return Math.round((1 - (position - 45) / -40) * 10) / 10;
+}
+
+function convertPositionToDisplayTime(position) {
+  const displayTimeObj = SmallTimeApp.convertTimeIntegerToDisplay(
+    convertPositionToTimeInteger(position)
+  );
+  return displayTimeObj.hours + ':' + displayTimeObj.minutes;
+}
+
+function convertDisplayObjToString(displayObj) {
+  return displayObj.hours + ':' + displayObj.minutes;
+}
+
+function grabSceneSlice() {
+  // Prefer the full image, but fall back to the thumbnail in the case
+  // of tile BGs or animations. Use a generic image for empty scenes.
+  let sceneBG = canvas.scene.data.img;
+  if (!sceneBG || sceneBG.endsWith('.m4v') || sceneBG.endsWith('.webp')) {
+    sceneBG = canvas.scene.data.thumb;
+  }
+  if (!sceneBG || sceneBG.startsWith('data')) {
+    // Generic scene slice provided by MADCartographer -- thanks! :)
+    sceneBG = 'modules/smalltime/images/generic-bg.webp';
+  }
+  document.documentElement.style.setProperty('--SMLTME-scene-bg', 'url(/' + sceneBG + ')');
+}
+
+function convertHexToRGB(hex) {
+  var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16),
+      }
+    : null;
+}
 
 class SmallTimeApp extends FormApplication {
   constructor() {
@@ -523,8 +948,8 @@ class SmallTimeApp extends FormApplication {
     // Send values to the HTML template.
     return {
       timeValue: this.currentTime,
-      hourString: SmallTimeApp.convertTime(this.currentTime).hours,
-      minuteString: SmallTimeApp.convertTime(this.currentTime).minutes,
+      hourString: SmallTimeApp.convertTimeIntegerToDisplay(this.currentTime).hours,
+      minuteString: SmallTimeApp.convertTimeIntegerToDisplay(this.currentTime).minutes,
       dateString: game.settings.get('smalltime', 'current-date'),
     };
   }
@@ -597,7 +1022,7 @@ class SmallTimeApp extends FormApplication {
 
       const playerApp = document.getElementById('players');
       const playerAppPos = playerApp.getBoundingClientRect();
-      let myOffset = playerAppPos.height + SmallTimePinOffset;
+      let myOffset = playerAppPos.height + SmallTime_PinOffset;
 
       // If the mouseup happens inside the Pin zone, pin the app.
       if (pinZone) {
@@ -626,11 +1051,11 @@ class SmallTimeApp extends FormApplication {
     $('#timeSlider').on('click', async function () {
       if (event.shiftKey && game.modules.get('smalltime').controlAuth) {
         const startingPhase = game.settings.get('smalltime', 'moon-phase');
-        const newPhase = (startingPhase + 1) % SmallTimeMoonPhases.length;
+        const newPhase = (startingPhase + 1) % SmallTime_MoonPhases.length;
 
         document.documentElement.style.setProperty(
           '--SMLTME-phaseURL',
-          `url('../images/moon-phases/${SmallTimeMoonPhases[newPhase]}.webp')`
+          `url('../images/moon-phases/${SmallTime_MoonPhases[newPhase]}.webp')`
         );
 
         // Set and broadcast the change.
@@ -655,8 +1080,8 @@ class SmallTimeApp extends FormApplication {
 
     // Handle live feedback while dragging the sun/moon slider.
     $(document).on('input', '#timeSlider', async function () {
-      $('#hourString').html(SmallTimeApp.convertTime($(this).val()).hours);
-      $('#minuteString').html(SmallTimeApp.convertTime($(this).val()).minutes);
+      $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).hours);
+      $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).minutes);
 
       SmallTimeApp.timeTransition($(this).val());
       SmallTimeApp.handleSocket('changeTime', $(this).val());
@@ -674,8 +1099,8 @@ class SmallTimeApp extends FormApplication {
 
     // Send slider time changes to About Time on mouseUp, not live.
     $(document).on('change', '#timeSlider', function () {
-      $('#hourString').html(SmallTimeApp.convertTime($(this).val()).hours);
-      $('#minuteString').html(SmallTimeApp.convertTime($(this).val()).minutes);
+      $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).hours);
+      $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).minutes);
 
       SmallTimeApp.timeTransition($(this).val());
       SmallTimeApp.handleSocket('changeTime', $(this).val());
@@ -782,7 +1207,7 @@ class SmallTimeApp extends FormApplication {
     // Listen for moon phase changes from Simple Calendar.
     if (game.modules.get('foundryvtt-simple-calendar')?.active) {
       Hooks.on(SimpleCalendar.Hooks.DateTimeChange, async function (data) {
-        const newPhase = SmallTimeMoonPhases.findIndex(function (phase) {
+        const newPhase = SmallTime_MoonPhases.findIndex(function (phase) {
           return phase === data.moons[0].currentPhase.icon;
         });
         await game.settings.set('smalltime', 'moon-phase', newPhase);
@@ -804,8 +1229,8 @@ class SmallTimeApp extends FormApplication {
   // Helper function for time-changing socket updates.
   handleTimeChange(data) {
     SmallTimeApp.timeTransition(data.payload);
-    $('#hourString').html(SmallTimeApp.convertTime(data.payload).hours);
-    $('#minuteString').html(SmallTimeApp.convertTime(data.payload).minutes);
+    $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay(data.payload).hours);
+    $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay(data.payload).minutes);
     $('#timeSlider').val(data.payload);
     // TODO: I think at least one of these blink handlers is redundant.
     if (game.Gametime.isRunning()) {
@@ -838,8 +1263,8 @@ class SmallTimeApp extends FormApplication {
       });
     }
 
-    $('#hourString').html(SmallTimeApp.convertTime(newTime).hours);
-    $('#minuteString').html(SmallTimeApp.convertTime(newTime).minutes);
+    $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay(newTime).hours);
+    $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay(newTime).minutes);
 
     SmallTimeApp.handleSocket('changeTime', newTime);
 
@@ -879,8 +1304,8 @@ class SmallTimeApp extends FormApplication {
     const midnight = 1440;
 
     // Handles the range slider's sun/moon icons, and the BG color changes.
-    // The 450 here is just a multiplier that works out nicely for the CSS move.
-    let bgOffset = Math.round((timeNow / midnight) * 450);
+    // The 450 here is the height of the CSS gradient.
+    let bgOffset = Math.round((timeNow / midnight) * 2000);
 
     // Reverse the offset direction for the BG color shift for each
     // half of the day.
@@ -889,12 +1314,14 @@ class SmallTimeApp extends FormApplication {
     } else {
       $('#slideContainer').css('background-position', `0px ${bgOffset}px`);
     }
+    //$('#slideContainer').css('background-position', `0px -${bgOffset}px`);
 
     // Swap out the moon for the sun during daytime,
     // changing phase as appropriate.
     const currentPhase = game.settings.get('smalltime', 'moon-phase');
 
-    if (timeNow > sunriseEnd && timeNow < sunsetStart) {
+    // TODO: Figure out why this is multi-triggering on the transitions.
+    if (timeNow >= sunriseEnd && timeNow < sunsetStart) {
       $('#timeSlider').removeClass('moon');
       $('#timeSlider').addClass('sun');
     } else {
@@ -902,26 +1329,44 @@ class SmallTimeApp extends FormApplication {
       $('#timeSlider').addClass('moon');
       document.documentElement.style.setProperty(
         '--SMLTME-phaseURL',
-        `url('../images/moon-phases/${SmallTimeMoonPhases[currentPhase]}.webp')`
+        `url('../images/moon-phases/${SmallTime_MoonPhases[currentPhase]}.webp')`
       );
     }
 
     // If requested, adjust the scene's Darkness level.
+    // The calculations in here to determine the correct level
+    // based on the custom threshold settings are kind of gross,
+    // but they get the job done.
     const currentScene = canvas.scene;
-
     if (currentScene.getFlag('smalltime', 'darkness-link')) {
       let darknessValue = canvas.lighting.darknessLevel;
+      const maxDarkness = game.settings.get('smalltime', 'max-darkness');
+      const minDarkness = game.settings.get('smalltime', 'min-darkness');
+
+      let multiplier = maxDarkness - minDarkness;
+      if (multiplier < 0) multiplier = minDarkness - maxDarkness;
 
       if (timeNow > sunriseEnd && timeNow < sunsetStart) {
-        darknessValue = 0;
+        darknessValue = minDarkness;
       } else if (timeNow < sunriseStart) {
-        darknessValue = 1;
+        darknessValue = maxDarkness;
       } else if (timeNow > sunsetEnd) {
-        darknessValue = 1;
-      } else if (timeNow >= sunriseStart && timeNow <= sunriseEnd) {
-        darknessValue = 1 - (timeNow - sunriseStart) / (sunriseEnd - sunriseStart);
-      } else if (timeNow >= sunsetStart && timeNow <= sunsetEnd) {
-        darknessValue = (timeNow - sunsetStart) / (sunsetEnd - sunsetStart);
+        darknessValue = maxDarkness;
+      }
+
+      if (minDarkness > maxDarkness) {
+        if (timeNow >= sunriseStart && timeNow <= sunriseEnd) {
+          darknessValue = ((timeNow - sunriseStart) / (sunriseEnd - sunriseStart)) * multiplier;
+        } else if (timeNow >= sunsetStart && timeNow <= sunsetEnd) {
+          darknessValue = (1 - (timeNow - sunsetStart) / (sunsetEnd - sunsetStart)) * multiplier;
+        }
+      } else {
+        if (timeNow >= sunriseStart && timeNow <= sunriseEnd) {
+          darknessValue = 1 - ((timeNow - sunriseStart) / (sunriseEnd - sunriseStart)) * multiplier;
+        } else if (timeNow >= sunsetStart && timeNow <= sunsetEnd) {
+          darknessValue =
+            1 - (1 - (timeNow - sunsetStart) / (sunsetEnd - sunsetStart)) * multiplier;
+        }
       }
       // Truncate long decimals.
       darknessValue = Math.round(darknessValue * 10) / 10;
@@ -939,7 +1384,7 @@ class SmallTimeApp extends FormApplication {
   }
 
   // Convert the integer time value to hours and minutes.
-  static convertTime(timeInteger) {
+  static convertTimeIntegerToDisplay(timeInteger) {
     let theHours = Math.floor(timeInteger / 60);
     let theMinutes = timeInteger - theHours * 60;
 
@@ -973,7 +1418,7 @@ class SmallTimeApp extends FormApplication {
     if (!$('#pin-lock').length) {
       const playerApp = document.getElementById('players');
       const playerAppPos = playerApp.getBoundingClientRect();
-      let myOffset = playerAppPos.height + SmallTimePinOffset;
+      let myOffset = playerAppPos.height + SmallTime_PinOffset;
 
       if (expanded) myOffset += 21;
 
@@ -1026,8 +1471,10 @@ class SmallTimeApp extends FormApplication {
   }
 
   static async syncFromAboutTime() {
-    const ATobject = game.Gametime.DTNow().longDateExtended();
-    const newTime = ATobject.hour * 60 + ATobject.minute;
+    let ATobject = game.Gametime.DTNow().longDateExtended();
+    let newTime = ATobject.hour * 60 + ATobject.minute;
+
+    // TODO: Handle slider going to 1440
 
     const newDay = ATobject.dowString;
     const newMonth = ATobject.monthString;
@@ -1054,4 +1501,4 @@ class SmallTimeApp extends FormApplication {
   }
 }
 
-// Icons by Freepik on flaticon.com
+// Sun & moon icons by Freepik on flaticon.com

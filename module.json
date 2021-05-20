@@ -4,7 +4,7 @@
   "description": "A small module for displaying and controlling the current time of day.",
   "version": "1.0.3",
   "author": "unsoluble",
-  "scripts": ["scripts/smalltime.js"],
+  "scripts": ["scripts/smalltime.js", "scripts/draggabilly.min.js"],
   "styles": ["styles/smalltime.css"],
   "languages": [
     {

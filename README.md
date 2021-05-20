@@ -13,7 +13,7 @@
 * Darkness link toggle is in Scene Config.
 * With About Time sync enabled, click the time to display the date; Shift-click the time to toggle the realtime clock.
 
-Video overview: [https://www.youtube.com/watch?v=XShiobMvatE](https://www.youtube.com/watch?v=XShiobMvatE)
+Video overview: (somewhat out of date now, but it covers the main bits :) [https://www.youtube.com/watch?v=XShiobMvatE](https://www.youtube.com/watch?v=XShiobMvatE)
 
 ### How to Use
 
@@ -44,12 +44,16 @@ If you have [Simple Calendar](https://foundryvtt.com/packages/foundryvtt-simple-
 
 There are a number of settings you can change:
 
-![Settings](doc/Settings.png)
+![Settings](doc/Settings_New.png)
+
+...including custom sunrise/sunset times, and global maximum & minimum darkness levels:
+
+![Darkness Config](doc/Darkness_Config.gif)
 
 ### Languages
 
 * English
-* Japanese (thanks @BrotherSharper!)
+* Japanese (thanks @BrotherSharp!)
 * German (thanks @kdomke!)
 
 I'm happy to accept and implement more translations!
