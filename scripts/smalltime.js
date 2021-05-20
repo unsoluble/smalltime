@@ -432,6 +432,11 @@ Hooks.on('renderSettingsConfig', () => {
       transition: 'none',
     });
   });
+
+  // Tweak to accommodate TidyUI's smaller available space.
+  if (game.modules.get('tidy-ui_game-settings')?.active) {
+    $('#smalltime-darkness-config').css('transform', 'scale(0.9, 0.9) translate(-30px, 0px)');
+  }
 });
 
 // Undo the opacity preview settings.
