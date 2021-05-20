@@ -676,7 +676,7 @@ function setupDragHandles() {
     newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(this.position.x));
     document.documentElement.style.setProperty('--SMLTME-sunrise-start', newTransition);
 
-    // Shove other handles on collisions.
+    // Shove other handle on collisions.
     if (this.position.x >= sunriseEndDrag.position.x - offsetBetween) {
       shovedPos = this.position.x + offsetBetween;
       $('.sunrise-end').css('left', shovedPos);
@@ -685,24 +685,6 @@ function setupDragHandles() {
       newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(shovedPos));
       document.documentElement.style.setProperty('--SMLTME-sunrise-end', newTransition);
     }
-    /*
-    if (this.position.x >= sunsetStartDrag.position.x - offsetBetween * 2) {
-      shovedPos = this.position.x + offsetBetween * 2;
-      $('.sunset-start').css('left', shovedPos);
-      $('.sunset-start').attr('aria-label', convertPositionToDisplayTime(shovedPos));
-      sunsetStartDrag.setPosition(shovedPos);
-      newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(shovedPos));
-      document.documentElement.style.setProperty('--SMLTME-sunset-start', newTransition);
-    }
-    if (this.position.x >= sunsetEndDrag.position.x - offsetBetween * 3) {
-      shovedPos = this.position.x + offsetBetween * 3;
-      $('.sunset-end').css('left', shovedPos);
-      $('.sunset-end').attr('aria-label', convertPositionToDisplayTime(shovedPos));
-      sunsetEndDrag.setPosition(shovedPos);
-      newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(shovedPos));
-      document.documentElement.style.setProperty('--SMLTME-sunset-end', newTransition);
-    }
-    */
   });
 
   sunriseEndDrag.on('dragMove', function () {
@@ -722,7 +704,7 @@ function setupDragHandles() {
     newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(this.position.x));
     document.documentElement.style.setProperty('--SMLTME-sunrise-end', newTransition);
 
-    // Shove other handles on collisions.
+    // Shove other handle on collisions.
     if (this.position.x <= sunriseStartDrag.position.x + offsetBetween) {
       shovedPos = this.position.x - offsetBetween;
       $('.sunrise-start').css('left', shovedPos);
@@ -731,24 +713,6 @@ function setupDragHandles() {
       newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(shovedPos));
       document.documentElement.style.setProperty('--SMLTME-sunrise-start', newTransition);
     }
-    /*
-    if (this.position.x >= sunsetStartDrag.position.x - offsetBetween) {
-      shovedPos = this.position.x + offsetBetween;
-      $('.sunset-start').css('left', shovedPos);
-      $('.sunset-start').attr('aria-label', convertPositionToDisplayTime(shovedPos));
-      sunsetStartDrag.setPosition(shovedPos);
-      newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(shovedPos));
-      document.documentElement.style.setProperty('--SMLTME-sunset-start', newTransition);
-    }
-    if (this.position.x >= sunsetEndDrag.position.x - offsetBetween * 2) {
-      shovedPos = this.position.x + offsetBetween * 2;
-      $('.sunset-end').css('left', shovedPos);
-      $('.sunset-end').attr('aria-label', convertPositionToDisplayTime(shovedPos));
-      sunsetEndDrag.setPosition(shovedPos);
-      newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(shovedPos));
-      document.documentElement.style.setProperty('--SMLTME-sunset-end', newTransition);
-    }
-    */
   });
 
   sunsetStartDrag.on('dragMove', function () {
@@ -768,25 +732,7 @@ function setupDragHandles() {
     newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(this.position.x));
     document.documentElement.style.setProperty('--SMLTME-sunset-start', newTransition);
 
-    // Shove other handles on collisions.
-    /*
-    if (this.position.x <= sunriseStartDrag.position.x + offsetBetween * 2) {
-      shovedPos = this.position.x - offsetBetween * 2;
-      $('.sunrise-start').css('left', shovedPos);
-      $('.sunrise-start').attr('aria-label', convertPositionToDisplayTime(shovedPos));
-      sunriseStartDrag.setPosition(shovedPos);
-      newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(shovedPos));
-      document.documentElement.style.setProperty('--SMLTME-sunrise-start', newTransition);
-    }
-    if (this.position.x <= sunriseEndDrag.position.x + offsetBetween) {
-      shovedPos = this.position.x - offsetBetween;
-      $('.sunrise-end').css('left', shovedPos);
-      $('.sunrise-end').attr('aria-label', convertPositionToDisplayTime(shovedPos));
-      sunriseEndDrag.setPosition(shovedPos);
-      newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(shovedPos));
-      document.documentElement.style.setProperty('--SMLTME-sunrise-end', newTransition);
-    }
-    */
+    // Shove other handle on collisions.
     if (this.position.x >= sunsetEndDrag.position.x - offsetBetween) {
       shovedPos = this.position.x + offsetBetween;
       $('.sunset-end').css('left', shovedPos);
@@ -814,25 +760,7 @@ function setupDragHandles() {
     newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(this.position.x));
     document.documentElement.style.setProperty('--SMLTME-sunset-end', newTransition);
 
-    // Shove other handles on collisions.
-    /*
-    if (this.position.x <= sunriseStartDrag.position.x + offsetBetween * 3) {
-      shovedPos = this.position.x - offsetBetween * 3;
-      $('.sunrise-start').css('left', shovedPos);
-      $('.sunrise-start').attr('aria-label', convertPositionToDisplayTime(shovedPos));
-      sunriseStartDrag.setPosition(shovedPos);
-      newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(shovedPos));
-      document.documentElement.style.setProperty('--SMLTME-sunrise-start', newTransition);
-    }
-    if (this.position.x <= sunriseEndDrag.position.x + offsetBetween * 2) {
-      shovedPos = this.position.x - offsetBetween * 2;
-      $('.sunrise-end').css('left', shovedPos);
-      $('.sunrise-end').attr('aria-label', convertPositionToDisplayTime(shovedPos));
-      sunriseEndDrag.setPosition(shovedPos);
-      newTransition = convertTimeIntegerToPercentage(convertPositionToTimeInteger(shovedPos));
-      document.documentElement.style.setProperty('--SMLTME-sunrise-end', newTransition);
-    }
-    */
+    // Shove other handle on collisions.
     if (this.position.x <= sunsetStartDrag.position.x + offsetBetween) {
       shovedPos = this.position.x - offsetBetween;
       $('.sunset-start').css('left', shovedPos);
