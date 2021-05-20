@@ -313,6 +313,10 @@ Hooks.on('ready', () => {
       }
     }
   }
+
+  // Update the stops on the sunrise/sunset gradient, in case
+  // there's been changes to the positions.
+  updateGradientStops();
 });
 
 // Set the initial state for newly rendered scenes.
@@ -437,6 +441,10 @@ Hooks.on('closeSettingsConfig', () => {
     'transition-delay': '',
     transition: '',
   });
+
+  // Update the stops on the sunrise/sunset gradient, in case
+  // there's been changes to the positions.
+  updateGradientStops();
 });
 
 // Add a toggle button inside the Jounral Notes tool layer.
@@ -511,7 +519,67 @@ Hooks.on('about-time.pseudoclockMaster', () => {
   }
 });
 
+function updateGradientStops() {
+  // Make the CSS linear gradient stops proportionally match the custom sunrise/sunset times.
+  // Also used to build the gradient stops in the Settings screen.
+  const initialPositions = {
+    sunriseStart: convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunrise-start')),
+    sunriseEnd: convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunrise-end')),
+    sunsetStart: convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunset-start')),
+    sunsetEnd: convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunset-end')),
+  };
+
+  const sunriseMiddle1 = Math.round(
+    (initialPositions.sunriseStart * 2) / 3 + (initialPositions.sunriseEnd * 1) / 3
+  );
+  const sunriseMiddle2 = Math.round(
+    (initialPositions.sunriseStart * 1) / 3 + (initialPositions.sunriseEnd * 2) / 3
+  );
+  const sunsetMiddle1 = Math.round(
+    (initialPositions.sunsetStart * 2) / 3 + (initialPositions.sunsetEnd * 1) / 3
+  );
+  const sunsetMiddle2 = Math.round(
+    (initialPositions.sunsetStart * 1) / 3 + (initialPositions.sunsetEnd * 2) / 3
+  );
+
+  // Set the initial gradient transition points.
+  document.documentElement.style.setProperty(
+    '--SMLTME-sunrise-start',
+    convertTimeIntegerToPercentage(convertPositionToTimeInteger(initialPositions.sunriseStart))
+  );
+  document.documentElement.style.setProperty(
+    '--SMLTME-sunrise-middle-1',
+    convertTimeIntegerToPercentage(convertPositionToTimeInteger(sunriseMiddle1))
+  );
+  document.documentElement.style.setProperty(
+    '--SMLTME-sunrise-middle-2',
+    convertTimeIntegerToPercentage(convertPositionToTimeInteger(sunriseMiddle2))
+  );
+  document.documentElement.style.setProperty(
+    '--SMLTME-sunrise-end',
+    convertTimeIntegerToPercentage(convertPositionToTimeInteger(initialPositions.sunriseEnd))
+  );
+  document.documentElement.style.setProperty(
+    '--SMLTME-sunset-start',
+    convertTimeIntegerToPercentage(convertPositionToTimeInteger(initialPositions.sunsetStart))
+  );
+  document.documentElement.style.setProperty(
+    '--SMLTME-sunset-middle-1',
+    convertTimeIntegerToPercentage(convertPositionToTimeInteger(sunsetMiddle1))
+  );
+  document.documentElement.style.setProperty(
+    '--SMLTME-sunset-middle-2',
+    convertTimeIntegerToPercentage(convertPositionToTimeInteger(sunsetMiddle2))
+  );
+  document.documentElement.style.setProperty(
+    '--SMLTME-sunset-end',
+    convertTimeIntegerToPercentage(convertPositionToTimeInteger(initialPositions.sunsetEnd))
+  );
+}
+
 async function saveNewDarknessConfig(positions, max, min) {
+  // Set the hidden inputs for these settings to the new values,
+  // so that the form-saving workflow takes care of saving them.
   $('input[name="smalltime.sunrise-start"]').val(
     convertPositionToTimeInteger(positions.sunriseStart)
   );
@@ -521,6 +589,7 @@ async function saveNewDarknessConfig(positions, max, min) {
   );
   $('input[name="smalltime.sunset-end"]').val(convertPositionToTimeInteger(positions.sunsetEnd));
 
+  // Set the max or min Darkness, depending on which was passed.
   if (min === false) $('input[name="smalltime.max-darkness"]').val(max);
   if (max === false) $('input[name="smalltime.min-darkness"]').val(min);
 }
@@ -567,23 +636,7 @@ function setupDragHandles() {
   $('.sunset-end').css('left', initialPositions.sunsetEnd);
   $('.sunset-end').attr('aria-label', initialTimes.sunsetEnd);
 
-  // Set the initial gradient transition points.
-  document.documentElement.style.setProperty(
-    '--SMLTME-sunrise-start',
-    convertTimeIntegerToPercentage(convertPositionToTimeInteger(initialPositions.sunriseStart))
-  );
-  document.documentElement.style.setProperty(
-    '--SMLTME-sunrise-end',
-    convertTimeIntegerToPercentage(convertPositionToTimeInteger(initialPositions.sunriseEnd))
-  );
-  document.documentElement.style.setProperty(
-    '--SMLTME-sunset-start',
-    convertTimeIntegerToPercentage(convertPositionToTimeInteger(initialPositions.sunsetStart))
-  );
-  document.documentElement.style.setProperty(
-    '--SMLTME-sunset-end',
-    convertTimeIntegerToPercentage(convertPositionToTimeInteger(initialPositions.sunsetEnd))
-  );
+  updateGradientStops();
 
   // Create the drag handles.
   const sunriseStartDrag = new Draggabilly('.sunrise-start', {
@@ -1315,8 +1368,8 @@ class SmallTimeApp extends FormApplication {
     const midnight = 1440;
 
     // Handles the range slider's sun/moon icons, and the BG color changes.
-    // The 450 here is just a multiplier that works out nicely for the CSS move.
-    let bgOffset = Math.round((timeNow / midnight) * 450);
+    // The 450 here is the height of the CSS gradient.
+    let bgOffset = Math.round((timeNow / midnight) * 2000);
 
     // Reverse the offset direction for the BG color shift for each
     // half of the day.
@@ -1325,11 +1378,13 @@ class SmallTimeApp extends FormApplication {
     } else {
       $('#slideContainer').css('background-position', `0px ${bgOffset}px`);
     }
+    //$('#slideContainer').css('background-position', `0px -${bgOffset}px`);
 
     // Swap out the moon for the sun during daytime,
     // changing phase as appropriate.
     const currentPhase = game.settings.get('smalltime', 'moon-phase');
 
+    // TODO: Figure out why this is multi-triggering on the transitions.
     if (timeNow >= sunriseEnd && timeNow < sunsetStart) {
       $('#timeSlider').removeClass('moon');
       $('#timeSlider').addClass('sun');

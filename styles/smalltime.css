@@ -7,8 +7,12 @@
   --SMLTME-darkness-min: 0;
   --SMLTME-darkness-max: 1;
   --SMLTME-sunrise-start: 20%;
+  --SMLTME-sunrise-middle-1: 30%;
+  --SMLTME-sunrise-middle-2: 35%;
   --SMLTME-sunrise-end: 40%;
   --SMLTME-sunset-start: 60%;
+  --SMLTME-sunset-middle-1: 70%;
+  --SMLTME-sunset-middle-2: 75%;
   --SMLTME-sunset-end: 80%;
   --SMLTME-scene-bg: '';
   --SMLTME-darkness-r: 36;
@@ -129,18 +133,22 @@
 .sunrise-start-bounds {
   //border: 1px solid red;
   left: 24px;
+  width: 248px;
 }
 .sunrise-end-bounds {
   //border: 1px solid green;
   left: 48px;
+  width: 240px;
 }
 .sunset-start-bounds {
   //border: 1px solid blue;
-  left: 68px;
+  left: 272px;
+  width: 250px;
 }
 .sunset-end-bounds {
   //border: 1px solid purple;
-  left: 88px;
+  left: 300px;
+  width: 240px;
 }
 
 #smalltime-darkness-config .handle {
@@ -179,18 +187,18 @@
   width: 100%;
   background: linear-gradient(
     to bottom,
-    #000000 3%,
-    #351984 15%,
-    #db5a23 25%,
-    #d19621 30%,
-    #25c5ed 40%,
-    #25c5ed 60%,
-    #d19621 70%,
-    #db5a23 75%,
-    #351984 85%,
-    #000000 97%
+    #000000 0%,
+    #351984 var(--SMLTME-sunrise-start),
+    #db5a23 var(--SMLTME-sunrise-middle-1),
+    #d19621 var(--SMLTME-sunrise-middle-2),
+    #25c5ed var(--SMLTME-sunrise-end),
+    #25c5ed var(--SMLTME-sunset-start),
+    #d19621 var(--SMLTME-sunset-middle-1),
+    #db5a23 var(--SMLTME-sunset-middle-2),
+    #351984 var(--SMLTME-sunset-end),
+    #000000 100%
   );
-  background-size: 200px 450px;
+  background-size: 200px 2000px;
   background-position: 0px 0px;
   z-index: 0;
 }
