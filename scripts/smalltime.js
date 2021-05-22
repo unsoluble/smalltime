@@ -498,23 +498,12 @@ Hooks.on('renderPlayerList', () => {
 Hooks.on('updateWorldTime', () => {
   if (game.settings.get('smalltime', 'about-time')) {
     SmallTimeApp.syncFromAboutTime();
-    if (!game.Gametime.isRunning()) {
-      $('#timeSeparator').removeClass('blink');
-    } else if (game.Gametime.isRunning()) {
-      $('#timeSeparator').addClass('blink');
-    }
   }
 });
 
 // Handle toggling of time separator flash when game is paused/unpaused.
 Hooks.on('pauseGame', () => {
-  if (game.paused) {
-    $('#timeSeparator').removeClass('blink');
-  } else {
-    if (game.Gametime.isRunning()) {
-      $('#timeSeparator').addClass('blink');
-    }
-  }
+  handleRealtimeState();
 });
 
 // Sync up with About Time when their initial clock is done setting up.
@@ -523,6 +512,22 @@ Hooks.on('about-time.pseudoclockMaster', () => {
     SmallTimeApp.syncFromAboutTime();
   }
 });
+
+Hooks.on('about-time.clockRunningStatus', () => {
+  if (game.settings.get('smalltime', 'about-time') && game.user.isGM) {
+    handleRealtimeState();
+  }
+});
+
+function handleRealtimeState() {
+  if (game.settings.get('smalltime', 'about-time') && game.modules.get('about-time')?.active) {
+    if (game.paused || !game.Gametime.isRunning()) {
+      $('#timeSeparator').removeClass('blink');
+    } else if (!game.paused && game.Gametime.isRunning()) {
+      $('#timeSeparator').addClass('blink');
+    }
+  }
+}
 
 function updateGradientStops() {
   // Make the CSS linear gradient stops proportionally match the custom sunrise/sunset times.
@@ -1136,16 +1141,13 @@ class SmallTimeApp extends FormApplication {
     // only way I could get the desired behaviour.
     html.find('#timeDisplay').on('click', async function () {
       if (game.modules.get('about-time')?.active && game.settings.get('smalltime', 'about-time')) {
-        if (event.shiftKey && game.modules.get('smalltime').controlAuth) {
+        if (event.shiftKey && game.modules.get('smalltime').controlAuth && !game.paused) {
           if (game.Gametime.isRunning()) {
             game.Gametime.stopRunning();
-            $('#timeSeparator').removeClass('blink');
           } else {
             game.Gametime.startRunning();
-            if (game.Gametime.isRunning()) {
-              $('#timeSeparator').addClass('blink');
-            }
           }
+          handleRealtimeState();
           SmallTimeApp.handleSocket('changeTime', game.settings.get('smalltime', 'current-time'));
         } else {
           if (!game.settings.get('smalltime', 'date-showing')) {
@@ -1237,12 +1239,7 @@ class SmallTimeApp extends FormApplication {
     $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay(data.payload).hours);
     $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay(data.payload).minutes);
     $('#timeSlider').val(data.payload);
-    // TODO: I think at least one of these blink handlers is redundant.
-    if (game.Gametime.isRunning()) {
-      $('#timeSeparator').addClass('blink');
-    } else {
-      $('#timeSeparator').removeClass('blink');
-    }
+    handleRealtimeState();
   }
 
   // Functionality for increment/decrement buttons.
