@@ -19,6 +19,5 @@
   "SMLTME.Hide_From_Players": "Vor Spielern verstecken.",
   "SMLTME.Hide_From_Players_Hint": "Verstecke das SmallTime Fenster vor allen Nicht-GM Benutzern.",
   "SMLTME.Allow_Trusted": "Seriöse Spieler dürfen steuern.",
-  "SMLTME.Allow_Trusted_Hint": "Benutzer mit der Rolle \"Seriöser Spieler\" dürfen die aktuelle Zeit ändern.",
-  "SMLTME.Inject_After": "Nacht oder Dämmerung simuliert werden."
+  "SMLTME.Allow_Trusted_Hint": "Benutzer mit der Rolle \"Seriöser Spieler\" dürfen die aktuelle Zeit ändern."
 }

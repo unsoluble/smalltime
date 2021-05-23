@@ -387,7 +387,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
 
   // Only inject if it isn't already there.
   if (!$('#smalltime-darkness').length) {
-    $('p:contains("' + game.i18n.format('SMLTME.Inject_After') + '")')
+    $('p:contains("' + game.i18n.format('SCENES.DarknessHint') + '")')
       .parent()
       .after(injection);
   }

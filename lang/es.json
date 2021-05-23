@@ -19,6 +19,5 @@
   "SMLTME.Hide_From_Players": "Esconder a los Jugadores",
   "SMLTME.Hide_From_Players_Hint": "Esconder la ventana de SmallTime para todos los usuarios no-GM.",
   "SMLTME.Allow_Trusted": "Permitir el control a Jugador de Confianza",
-  "SMLTME.Allow_Trusted_Hint": "Jugadores con el rol de Confianza serán capaces de cambiar la hora actual.",
-  "SMLTME.Inject_After": "lugares de poca luz"
+  "SMLTME.Allow_Trusted_Hint": "Jugadores con el rol de Confianza serán capaces de cambiar la hora actual."
 }
