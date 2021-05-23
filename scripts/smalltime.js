@@ -66,8 +66,8 @@ Hooks.on('init', () => {
   });
 
   game.settings.register('smalltime', 'hide-from-players', {
-    name: game.i18n.format('SMLTME.Hide_From_Players'),
-    hint: game.i18n.format('SMLTME.Hide_From_Players_Hint'),
+    name: game.i18n.localize('SMLTME.Hide_From_Players'),
+    hint: game.i18n.localize('SMLTME.Hide_From_Players_Hint'),
     scope: 'world',
     config: true,
     type: Boolean,
@@ -75,21 +75,21 @@ Hooks.on('init', () => {
   });
 
   game.settings.register('smalltime', 'time-format', {
-    name: game.i18n.format('SMLTME.Time_Format'),
+    name: game.i18n.localize('SMLTME.Time_Format'),
     scope: 'world',
     config: true,
     type: Number,
     default: 12,
     choices: {
-      12: game.i18n.format('SMLTME.12hr'),
-      24: game.i18n.format('SMLTME.24hr'),
+      12: game.i18n.localize('SMLTME.12hr'),
+      24: game.i18n.localize('SMLTME.24hr'),
     },
     default: 12,
   });
 
   game.settings.register('smalltime', 'small-step', {
-    name: game.i18n.format('SMLTME.Small_Step'),
-    hint: game.i18n.format('SMLTME.Small_Step_Hint'),
+    name: game.i18n.localize('SMLTME.Small_Step'),
+    hint: game.i18n.localize('SMLTME.Small_Step_Hint'),
     scope: 'world',
     config: true,
     type: Number,
@@ -105,8 +105,8 @@ Hooks.on('init', () => {
   });
 
   game.settings.register('smalltime', 'large-step', {
-    name: game.i18n.format('SMLTME.Large_Step'),
-    hint: game.i18n.format('SMLTME.Large_Step_Hint'),
+    name: game.i18n.localize('SMLTME.Large_Step'),
+    hint: game.i18n.localize('SMLTME.Large_Step_Hint'),
     scope: 'world',
     config: true,
     type: Number,
@@ -120,8 +120,8 @@ Hooks.on('init', () => {
   });
 
   game.settings.register('smalltime', 'opacity', {
-    name: game.i18n.format('SMLTME.Resting_Opacity'),
-    hint: game.i18n.format('SMLTME.Resting_Opacity_Hint'),
+    name: game.i18n.localize('SMLTME.Resting_Opacity'),
+    hint: game.i18n.localize('SMLTME.Resting_Opacity_Hint'),
     scope: 'client',
     config: true,
     type: Number,
@@ -173,8 +173,8 @@ Hooks.on('init', () => {
   });
 
   game.settings.register('smalltime', 'sunset-end', {
-    name: game.i18n.format('SMLTME.Darkness_Config'),
-    hint: game.i18n.format('SMLTME.Darkness_Config_Hint'),
+    name: game.i18n.localize('SMLTME.Darkness_Config'),
+    hint: game.i18n.localize('SMLTME.Darkness_Config_Hint'),
     scope: 'world',
     config: true,
     type: Number,
@@ -182,8 +182,8 @@ Hooks.on('init', () => {
   });
 
   game.settings.register('smalltime', 'darkness-default', {
-    name: game.i18n.format('SMLTME.Darkness_Default'),
-    hint: game.i18n.format('SMLTME.Darkness_Default_Hint'),
+    name: game.i18n.localize('SMLTME.Darkness_Default'),
+    hint: game.i18n.localize('SMLTME.Darkness_Default_Hint'),
     scope: 'world',
     config: true,
     type: Boolean,
@@ -191,8 +191,8 @@ Hooks.on('init', () => {
   });
 
   game.settings.register('smalltime', 'allow-trusted', {
-    name: game.i18n.format('SMLTME.Allow_Trusted'),
-    hint: game.i18n.format('SMLTME.Allow_Trusted_Hint'),
+    name: game.i18n.localize('SMLTME.Allow_Trusted'),
+    hint: game.i18n.localize('SMLTME.Allow_Trusted_Hint'),
     scope: 'world',
     config: true,
     type: Boolean,
@@ -209,8 +209,8 @@ Hooks.on('init', () => {
   });
 
   game.settings.register('smalltime', 'about-time', {
-    name: game.i18n.format('SMLTME.AboutTime'),
-    hint: game.i18n.format('SMLTME.AboutTime_Hint'),
+    name: game.i18n.localize('SMLTME.AboutTime'),
+    hint: game.i18n.localize('SMLTME.AboutTime_Hint'),
     scope: 'world',
     // Only show this toggle if About Time is enabled.
     config: game.modules.get('about-time')?.active,
@@ -371,8 +371,8 @@ Hooks.on('renderSceneConfig', async (obj) => {
   const checkStatus = obj.object.getFlag('smalltime', 'darkness-link') ? 'checked' : '';
 
   // Inject our new option into the config screen.
-  const controlLabel = game.i18n.format('SMLTME.Darkness_Control');
-  const controlHint = game.i18n.format('SMLTME.Darkness_Control_Hint');
+  const controlLabel = game.i18n.localize('SMLTME.Darkness_Control');
+  const controlHint = game.i18n.localize('SMLTME.Darkness_Control_Hint');
   const injection = `
     <div class="form-group">
       <img id="smalltime-config-icon" src="modules/smalltime/images/smalltime-icon.webp">
@@ -387,7 +387,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
 
   // Only inject if it isn't already there.
   if (!$('#smalltime-darkness').length) {
-    $('p:contains("' + game.i18n.format('SCENES.DarknessHint') + '")')
+    $('p:contains("' + game.i18n.localize('SCENES.DarknessHint') + '")')
       .parent()
       .after(injection);
   }
