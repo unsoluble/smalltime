@@ -26,51 +26,6 @@
       "lang": "es",
       "name": "Español",
       "path": "lang/es.json"
-    },
-    {
-      "lang": "pl",
-      "name": "Polski",
-      "path": "lang/pl.json"
-    },
-    {
-      "lang": "ar",
-      "name": "Arabic",
-      "path": "lang/ar.json"
-    },
-    {
-      "lang": "ca",
-      "name": "Català",
-      "path": "lang/ca.json"
-    },
-    {
-      "lang": "ko",
-      "name": "Korean",
-      "path": "lang/ko.json"
-    },
-    {
-      "lang": "fr",
-      "name": "Français",
-      "path": "lang/fr.json"
-    },
-    {
-      "lang": "pt-BR",
-      "name": "Português (Brasil)",
-      "path": "lang/pt-BR.json"
-    },
-    {
-      "lang": "it",
-      "name": "Italian",
-      "path": "lang/it.json"
-    },
-    {
-      "lang": "cs",
-      "name": "Čeština",
-      "path": "lang/cs.json"
-    },
-    {
-      "lang": "gl",
-      "name": "Galego",
-      "path": "lang/gl.json"
     }
   ],
   "socket": true,

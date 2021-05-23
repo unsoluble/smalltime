@@ -15,6 +15,12 @@ const SmallTime_MoonPhases = [
 let SmallTime_PinOffset = 83;
 const SmallTime_WFRP4eOffset = 30;
 const SmallTime_DasSchwarzeAugeOffset = 16;
+const SmallTime_SunriseStartDefault = 180;
+const SmallTime_SunriseEndDefault = 420;
+const SmallTime_SunsetStartDefault = 1050;
+const SmallTime_SunsetEndDefault = 1320;
+const SmallTime_MaxDarknessDefault = 1;
+const SmallTime_MinDarknessDefault = 0;
 
 Hooks.on('init', () => {
   game.settings.register('smalltime', 'current-time', {
@@ -141,35 +147,35 @@ Hooks.on('init', () => {
     scope: 'world',
     config: true,
     type: Number,
-    default: 1,
+    default: SmallTime_MaxDarknessDefault,
   });
 
   game.settings.register('smalltime', 'min-darkness', {
     scope: 'world',
     config: true,
     type: Number,
-    default: 0,
+    default: SmallTime_MinDarknessDefault,
   });
 
   game.settings.register('smalltime', 'sunrise-start', {
     scope: 'world',
     config: true,
     type: Number,
-    default: 180,
+    default: SmallTime_SunriseStartDefault,
   });
 
   game.settings.register('smalltime', 'sunrise-end', {
     scope: 'world',
     config: true,
     type: Number,
-    default: 420,
+    default: SmallTime_SunriseEndDefault,
   });
 
   game.settings.register('smalltime', 'sunset-start', {
     scope: 'world',
     config: true,
     type: Number,
-    default: 1050,
+    default: SmallTime_SunsetStartDefault,
   });
 
   game.settings.register('smalltime', 'sunset-end', {
@@ -178,7 +184,7 @@ Hooks.on('init', () => {
     scope: 'world',
     config: true,
     type: Number,
-    default: 1320,
+    default: SmallTime_SunsetEndDefault,
   });
 
   game.settings.register('smalltime', 'darkness-default', {
@@ -401,6 +407,29 @@ Hooks.on('renderSettingsConfig', () => {
   $('input[name="smalltime.sunrise-start"]').parent().parent().css('display', 'none');
   $('input[name="smalltime.sunrise-end"]').parent().parent().css('display', 'none');
   $('input[name="smalltime.sunset-start"]').parent().parent().css('display', 'none');
+
+  // Add the reset-to-defaults popup to the setting title.
+  const titleElement = $('label:contains(' + game.i18n.localize('SMLTME.Darkness_Config') + ')');
+  titleElement.attr({
+    'aria-label': game.i18n.localize('SMLTME.Darkness_Reset'),
+    'data-balloon-pos': 'right',
+  });
+
+  // Reset to defaults on Shift-click, and close the window.
+  $(titleElement).on('click', function () {
+    if (event.shiftKey) {
+      game.settings.set('smalltime', 'sunrise-start', SmallTime_SunriseStartDefault);
+      game.settings.set('smalltime', 'sunrise-end', SmallTime_SunriseEndDefault);
+      game.settings.set('smalltime', 'sunset-start', SmallTime_SunsetStartDefault);
+      game.settings.set('smalltime', 'sunset-end', SmallTime_SunsetEndDefault);
+      game.settings.set('smalltime', 'max-darkness', SmallTime_MaxDarknessDefault);
+      game.settings.set('smalltime', 'min-darkness', SmallTime_MinDarknessDefault);
+
+      Object.values(ui.windows).forEach((app) => {
+        if (app.options.id === 'client-settings') app.close();
+      });
+    }
+  });
 
   // Create and insert a div for the Darkness Configuration tool.
   const insertionElement = $('input[name="smalltime.sunset-end"]');
