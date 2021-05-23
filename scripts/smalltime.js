@@ -410,9 +410,11 @@ Hooks.on('renderSettingsConfig', () => {
 
   // Add the reset-to-defaults popup to the setting title.
   const titleElement = $('label:contains(' + game.i18n.localize('SMLTME.Darkness_Config') + ')');
+  let popupDirection = 'right';
+  if (game.modules.get('tidy-ui_game-settings')?.active) popupDirection = 'up';
   titleElement.attr({
     'aria-label': game.i18n.localize('SMLTME.Darkness_Reset'),
-    'data-balloon-pos': 'right',
+    'data-balloon-pos': popupDirection,
   });
 
   // Reset to defaults on Shift-click, and close the window.
