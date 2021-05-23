@@ -256,21 +256,20 @@ Hooks.on('ready', () => {
   // Initial render of the app if allowed.
   if (game.modules.get('smalltime').viewAuth) {
     SmallTimeApp.toggleAppVis('initial');
-  }
-  if (game.settings.get('smalltime', 'pinned') === true) {
-    SmallTimeApp.pinApp();
+    if (game.settings.get('smalltime', 'pinned')) {
+      if (game.settings.get('smalltime', 'date-showing')) {
+        // Sending true here tells the pin to offset to
+        // accommodate the date display.
+        SmallTimeApp.pinApp(true);
+      } else {
+        SmallTimeApp.pinApp();
+      }
+    }
   }
 
   // Render at opacity per user prefs.
   const userOpacity = game.settings.get('smalltime', 'opacity');
   document.documentElement.style.setProperty('--SMLTME-opacity', userOpacity);
-
-  // Even if the current toggle state for the date display is on shown,
-  // make it hidden to start, to simplify the initial placement.
-  // TODO: Respect the previously chosen state.
-  if (game.settings.get('smalltime', 'date-showing')) {
-    game.settings.set('smalltime', 'date-showing', false);
-  }
 
   // Send incoming socket emissions through the async function.
   game.socket.on(`module.smalltime`, (data) => {
@@ -338,6 +337,24 @@ Hooks.on('canvasReady', () => {
 
     // Refresh the current scene BG for the settings dialog.
     grabSceneSlice();
+  }
+});
+
+// Wait for the app to be rendered, then adjust the CSS to
+// account for the date display, if showing.
+Hooks.on('renderSmallTimeApp', () => {
+  if (game.settings.get('smalltime', 'date-showing')) {
+    $('#dateDisplay').addClass('active');
+    $('#smalltime-app').css({ height: '79px' });
+  }
+
+  // Disable controls for non-GMs.
+  if (!game.modules.get('smalltime').controlAuth) {
+    $('#timeSlider').addClass('disable-for-players');
+    $('#decrease-large').addClass('hide-for-players');
+    $('#decrease-small').addClass('hide-for-players');
+    $('#increase-large').addClass('hide-for-players');
+    $('#increase-small').addClass('hide-for-players');
   }
 });
 
@@ -513,6 +530,7 @@ Hooks.on('about-time.pseudoclockMaster', () => {
   }
 });
 
+// Listen for changes to the realtime clock state.
 Hooks.on('about-time.clockRunningStatus', () => {
   if (game.settings.get('smalltime', 'about-time') && game.user.isGM) {
     handleRealtimeState();
@@ -605,6 +623,7 @@ async function saveNewDarknessConfig(positions, max, min) {
 }
 
 function setupDragHandles() {
+  // Build the sun/moon drag handles for the darkness config UI.
   const maxDarkness = game.settings.get('smalltime', 'max-darkness');
   const minDarkness = game.settings.get('smalltime', 'min-darkness');
 
@@ -975,15 +994,6 @@ class SmallTimeApp extends FormApplication {
     // we're currently in that area.
     let pinZone = false;
 
-    // Disable controls for non-GMs.
-    if (!game.modules.get('smalltime').controlAuth) {
-      $('#timeSlider').addClass('disable-for-players');
-      $('#decrease-large').addClass('hide-for-players');
-      $('#decrease-small').addClass('hide-for-players');
-      $('#increase-large').addClass('hide-for-players');
-      $('#increase-small').addClass('hide-for-players');
-    }
-
     // Have to override this because of the non-standard drag handle, and
     // also to manage the pin lock zone and animation effects.
     drag._onDragMouseMove = function _newOnDragMouseMove(event) {
@@ -1002,9 +1012,17 @@ class SmallTimeApp extends FormApplication {
       // Follow the mouse.
       // TODO: Figure out how to account for changes to the viewport size
       // between drags.
+      let dateOffset = 0;
+      if (
+        game.settings.get('smalltime', 'date-showing') &&
+        game.settings.get('smalltime', 'pinned')
+      ) {
+        dateOffset = 20;
+      }
+
       this.app.setPosition({
         left: this.position.left + (event.clientX - this._initial.x),
-        top: this.position.top + (event.clientY - this._initial.y),
+        top: this.position.top + (event.clientY - this._initial.y - dateOffset),
       });
 
       // Defining a region above the PlayerList that will trigger the jiggle.
@@ -1160,7 +1178,7 @@ class SmallTimeApp extends FormApplication {
             await game.settings.set('smalltime', 'date-showing', true);
           } else {
             $('#dateDisplay').removeClass('active');
-            $('#smalltime-app').animate({ height: '58px' }, 80);
+            $('#smalltime-app').animate({ height: '59px' }, 80);
             if (game.settings.get('smalltime', 'pinned')) {
               SmallTimeApp.unPinApp();
               SmallTimeApp.pinApp(false);
@@ -1422,7 +1440,11 @@ class SmallTimeApp extends FormApplication {
       const playerAppPos = playerApp.getBoundingClientRect();
       let myOffset = playerAppPos.height + SmallTime_PinOffset;
 
-      if (expanded) myOffset += 21;
+      if (expanded) {
+        myOffset += 21;
+        //$('#dateDisplay').addClass('active');
+        //$('#smalltime-app').animate({ height: '79px' }, 80);
+      }
 
       // Dropping this into the DOM with an !important was the only way
       // I could get it to enable the locking behaviour.
