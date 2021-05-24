@@ -838,7 +838,8 @@ function setupDragHandles() {
       sunsetStart: sunsetStartDrag.position.x,
       sunsetEnd: sunsetEndDrag.position.x,
     };
-    const newMaxDarkness = convertPositionToDarkness(this.position.y);
+    let newMaxDarkness = convertPositionToDarkness(this.position.y);
+    if (newMaxDarkness > 1) newMaxDarkness = 1;
     saveNewDarknessConfig(newPositions, newMaxDarkness, false);
   });
 
@@ -849,7 +850,8 @@ function setupDragHandles() {
       sunsetStart: sunsetStartDrag.position.x,
       sunsetEnd: sunsetEndDrag.position.x,
     };
-    const newMinDarkness = convertPositionToDarkness(this.position.y);
+    let newMinDarkness = convertPositionToDarkness(this.position.y);
+    if (newMinDarkness < 0) newMinDarkness = 0;
     saveNewDarknessConfig(newPositions, false, newMinDarkness);
   });
 
@@ -860,7 +862,8 @@ function setupDragHandles() {
       sunsetStart: sunsetStartDrag.position.x,
       sunsetEnd: sunsetEndDrag.position.x,
     };
-    const newMinDarkness = convertPositionToDarkness(this.position.y);
+    let newMinDarkness = convertPositionToDarkness(this.position.y);
+    if (newMinDarkness < 0) newMinDarkness = 0;
     saveNewDarknessConfig(newPositions, false, newMinDarkness);
   });
 
@@ -871,7 +874,8 @@ function setupDragHandles() {
       sunsetStart: sunsetStartDrag.position.x,
       sunsetEnd: sunsetEndDrag.position.x,
     };
-    const newMaxDarkness = convertPositionToDarkness(this.position.y);
+    let newMaxDarkness = convertPositionToDarkness(this.position.y);
+    if (newMaxDarkness > 1) newMaxDarkness = 1;
     saveNewDarknessConfig(newPositions, newMaxDarkness, false);
   });
 }
