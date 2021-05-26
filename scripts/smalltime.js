@@ -71,13 +71,18 @@ Hooks.on('init', () => {
     default: false,
   });
 
-  game.settings.register('smalltime', 'hide-from-players', {
-    name: game.i18n.localize('SMLTME.Hide_From_Players'),
-    hint: game.i18n.localize('SMLTME.Hide_From_Players_Hint'),
+  game.settings.register('smalltime', 'player-visibility-default', {
+    name: game.i18n.localize('SMLTME.Player_Visibility_Default'),
+    hint: game.i18n.localize('SMLTME.Player_Visibility_Default_Hint'),
     scope: 'world',
     config: true,
-    type: Boolean,
-    default: false,
+    type: Number,
+    choices: {
+      2: game.i18n.localize('SMLTME.Player_Vis_2'),
+      1: game.i18n.localize('SMLTME.Player_Vis_1'),
+      0: game.i18n.localize('SMLTME.Player_Vis_0'),
+    },
+    default: 2,
   });
 
   game.settings.register('smalltime', 'time-format', {
@@ -366,39 +371,55 @@ Hooks.on('renderSmallTimeApp', () => {
 
 // Handle our changes to the Scene Config screen.
 Hooks.on('renderSceneConfig', async (obj) => {
-  const darknessDefault = game.settings.get('smalltime', 'darkness-default');
+  // If the Player Visibility flag hasn't been set yet, set it to the default choice.
+  const visDefault = game.settings.get('smalltime', 'player-visibility-default');
+  if (!hasProperty(obj.object, 'data.flags.smalltime.player-vis')) {
+    obj.object.setFlag('smalltime', 'darkness-link', visDefault);
+  }
 
   // If the Darkness link flag hasn't been set yet, set it to the default choice.
+  const darknessDefault = game.settings.get('smalltime', 'darkness-default');
   if (!hasProperty(obj.object, 'data.flags.smalltime.darkness-link')) {
     obj.object.setFlag('smalltime', 'darkness-link', darknessDefault);
   }
 
-  // Set the option's checkbox as appropriate.
+  // Set the Player Vis dropdown as appropriate.
+  const visChoice = obj.object.getFlag('smalltime', 'player-vis');
+
+  // Set the Darkness checkbox as appropriate.
   const checkStatus = obj.object.getFlag('smalltime', 'darkness-link') ? 'checked' : '';
 
   // Inject our new option into the config screen.
+  const visibilityLabel = game.i18n.localize('SMLTME.Player_Visibility');
+  const visibilityHint = game.i18n.localize('SMLTME.Player_Visibility_Hint');
+  const vis0 = game.i18n.localize('SMLTME.Player_Vis_0');
+  const vis1 = game.i18n.localize('SMLTME.Player_Vis_1');
+  const vis2 = game.i18n.localize('SMLTME.Player_Vis_2');
+
   const controlLabel = game.i18n.localize('SMLTME.Darkness_Control');
   const controlHint = game.i18n.localize('SMLTME.Darkness_Control_Hint');
   const injection = `
-    
     <fieldset style="border: 1px solid #999; border-radius: 8px; margin: 8px 0; padding: 0 15px 5px; 15px;">
       <legend style="padding: 0 5px; margin-left: -7px;">
         <img id="smalltime-config-icon" src="modules/smalltime/images/smalltime-icon.webp">
         <span style="position: relative; top: 1px; left: -2px; text-shadow: 0px 2px 2px rgba(0, 0, 0, 0.2);">SmallTime</span>
       </legend>
       <div class="form-group">
+      <label>${visibilityLabel}</label>
+      <select id="smalltime-player-vis"
+        name="flags.smalltime.player-vis">
+        <option value="2">${vis2}</option>
+        <option value="1">${vis1}</option>
+        <option value="0">${vis0}</option>
+      </select>
+      <p class="notes">${visibilityHint}</p>
         <label>${controlLabel}</label>
         <input id="smalltime-darkness"
           type="checkbox"
           name="flags.smalltime.darkness-link"
           ${checkStatus}>
         <p class="notes">${controlHint}</p>
-        <label>Player Visibility</label>
-        <select id="smalltime-player-vis"
-          name="flags.smalltime.player-vis">
-          <option value="test">Test</option>
-        </select>
-        <p class="notes">Show things or not.</p>
+        
       </div>
     </fieldset>
     `;

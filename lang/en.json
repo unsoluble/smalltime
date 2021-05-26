@@ -20,5 +20,12 @@
   "SMLTME.Hide_From_Players": "Hide from Players",
   "SMLTME.Hide_From_Players_Hint": "Hide the SmallTime window from all non-GM users.",
   "SMLTME.Allow_Trusted": "Allow Trusted Player Control",
-  "SMLTME.Allow_Trusted_Hint": "Players with the Trusted role will be able to change the current time."
+  "SMLTME.Allow_Trusted_Hint": "Players with the Trusted role will be able to change the current time.",
+  "SMLTME.Player_Visibility": "Player Visibility",
+  "SMLTME.Player_Visibility_Hint": "Choose which parts of SmallTime are visible to players in this scene.",
+  "SMLTME.Player_Visibility_Default": "Player Visibility Default",
+  "SMLTME.Player_Visibility_Default_Hint": "Default visibility level for new scenes.",
+  "SMLTME.Player_Vis_0": "Nothing",
+  "SMLTME.Player_Vis_1": "Sun/Moon position only",
+  "SMLTME.Player_Vis_2": "Sun/Moon position and time of day"
 }
