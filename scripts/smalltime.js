@@ -380,20 +380,32 @@ Hooks.on('renderSceneConfig', async (obj) => {
   const controlLabel = game.i18n.localize('SMLTME.Darkness_Control');
   const controlHint = game.i18n.localize('SMLTME.Darkness_Control_Hint');
   const injection = `
-    <div class="form-group">
-      <img id="smalltime-config-icon" src="modules/smalltime/images/smalltime-icon.webp">
-      <label>${controlLabel}</label>
-      <input id="smalltime-darkness"
-        type="checkbox"
-        name="flags.smalltime.darkness-link"
-        ${checkStatus}>
-      <p class="notes">${controlHint}</p>
-    </div>
+    
+    <fieldset style="border: 1px solid #999; border-radius: 8px; margin: 8px 0; padding: 0 15px 5px; 15px;">
+      <legend style="padding: 0 5px; margin-left: -7px;">
+        <img id="smalltime-config-icon" src="modules/smalltime/images/smalltime-icon.webp">
+        <span style="position: relative; top: 1px; left: -2px; text-shadow: 0px 2px 2px rgba(0, 0, 0, 0.2);">SmallTime</span>
+      </legend>
+      <div class="form-group">
+        <label>${controlLabel}</label>
+        <input id="smalltime-darkness"
+          type="checkbox"
+          name="flags.smalltime.darkness-link"
+          ${checkStatus}>
+        <p class="notes">${controlHint}</p>
+        <label>Player Visibility</label>
+        <select id="smalltime-player-vis"
+          name="flags.smalltime.player-vis">
+          <option value="test">Test</option>
+        </select>
+        <p class="notes">Show things or not.</p>
+      </div>
+    </fieldset>
     `;
 
   // Only inject if it isn't already there.
   if (!$('#smalltime-darkness').length) {
-    $('p:contains("' + game.i18n.localize('SCENES.DarknessHint') + '")')
+    $('p:contains("' + game.i18n.localize('SCENES.GlobalLightThresholdHint') + '")')
       .parent()
       .after(injection);
   }

@@ -10,7 +10,7 @@
   "SMLTME.Resting_Opacity_Hint": "Opacity of the SmallTime window when you're not interacting with it.",
   "SMLTME.Darkness_Default": "Affect Darkness by Default",
   "SMLTME.Darkness_Default_Hint": "Default setting for the SmallTime Darkness Control setting in Scene Config.",
-  "SMLTME.Darkness_Control": "SmallTime Darkness Control",
+  "SMLTME.Darkness_Control": "Darkness Control",
   "SMLTME.Darkness_Control_Hint": "Link this scene's Darkness Level to the current time in SmallTime.",
   "SMLTME.Darkness_Config": "Darkness Configuration",
   "SMLTME.Darkness_Reset": "Shift-click to reset times to defaults",
