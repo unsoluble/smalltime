@@ -251,10 +251,7 @@ Hooks.on('ready', () => {
     game.modules.get('smalltime').viewAuth = true;
     game.modules.get('smalltime').controlAuth = true;
   }
-  // If the Hide From Players setting isn't on, let Players view.
-  if (game.settings.get('smalltime', 'hide-from-players') === false) {
-    game.modules.get('smalltime').viewAuth = true;
-  }
+
   // If the Allow Trusted Player Control setting is on, give Trusted
   // Players control privs as well.
   if (
@@ -264,7 +261,6 @@ Hooks.on('ready', () => {
     game.modules.get('smalltime').controlAuth = true;
   }
 
-  // Initial render of the app if allowed.
   if (game.modules.get('smalltime').viewAuth) {
     SmallTimeApp.toggleAppVis('initial');
     if (game.settings.get('smalltime', 'pinned')) {
@@ -334,11 +330,18 @@ Hooks.on('canvasReady', () => {
   if (game.modules.get('smalltime').controlAuth) {
     // Get currently viewed scene.
     const thisScene = game.scenes.entities.find((s) => s._view);
+
     const darknessDefault = game.settings.get('smalltime', 'darkness-default');
+    const visDefault = game.settings.get('smalltime', 'player-visibility-default');
 
     // Set the Darkness link state to the default choice.
     if (!hasProperty(thisScene, 'data.flags.smalltime.darkness-link')) {
       thisScene.setFlag('smalltime', 'darkness-link', darknessDefault);
+    }
+
+    // Set the Player Vis state to the default choice.
+    if (!hasProperty(thisScene, 'data.flags.smalltime.player-vis')) {
+      thisScene.setFlag('smalltime', 'player-vis', visDefault);
     }
 
     // Refresh the current scene's Darkness level if it should be linked.
@@ -371,16 +374,17 @@ Hooks.on('renderSmallTimeApp', () => {
 
 // Handle our changes to the Scene Config screen.
 Hooks.on('renderSceneConfig', async (obj) => {
-  // If the Player Visibility flag hasn't been set yet, set it to the default choice.
-  const visDefault = game.settings.get('smalltime', 'player-visibility-default');
-  if (!hasProperty(obj.object, 'data.flags.smalltime.player-vis')) {
-    obj.object.setFlag('smalltime', 'darkness-link', visDefault);
-  }
-
-  // If the Darkness link flag hasn't been set yet, set it to the default choice.
+  // Set defaults here (duplicate of what we did on canvasReady, in case the
+  // scene config is being accessed for a non-rendered scene.
   const darknessDefault = game.settings.get('smalltime', 'darkness-default');
+  const visDefault = game.settings.get('smalltime', 'player-visibility-default');
+  // Set the Darkness link state to the default choice.
   if (!hasProperty(obj.object, 'data.flags.smalltime.darkness-link')) {
     obj.object.setFlag('smalltime', 'darkness-link', darknessDefault);
+  }
+  // Set the Player Vis state to the default choice.
+  if (!hasProperty(obj.object, 'data.flags.smalltime.player-vis')) {
+    obj.object.setFlag('smalltime', 'player-vis', visDefault);
   }
 
   // Set the Player Vis dropdown as appropriate.
@@ -392,9 +396,16 @@ Hooks.on('renderSceneConfig', async (obj) => {
   // Inject our new option into the config screen.
   const visibilityLabel = game.i18n.localize('SMLTME.Player_Visibility');
   const visibilityHint = game.i18n.localize('SMLTME.Player_Visibility_Hint');
-  const vis0 = game.i18n.localize('SMLTME.Player_Vis_0');
-  const vis1 = game.i18n.localize('SMLTME.Player_Vis_1');
-  const vis2 = game.i18n.localize('SMLTME.Player_Vis_2');
+  const vis0text = game.i18n.localize('SMLTME.Player_Vis_0');
+  const vis1text = game.i18n.localize('SMLTME.Player_Vis_1');
+  const vis2text = game.i18n.localize('SMLTME.Player_Vis_2');
+
+  let vis0 = '';
+  let vis1 = '';
+  let vis2 = '';
+  if (visChoice === 0) vis0 = 'selected';
+  if (visChoice === 1) vis1 = 'selected';
+  if (visChoice === 2) vis2 = 'selected';
 
   const controlLabel = game.i18n.localize('SMLTME.Darkness_Control');
   const controlHint = game.i18n.localize('SMLTME.Darkness_Control_Hint');
@@ -402,15 +413,16 @@ Hooks.on('renderSceneConfig', async (obj) => {
     <fieldset style="border: 1px solid #999; border-radius: 8px; margin: 8px 0; padding: 0 15px 5px; 15px;">
       <legend style="padding: 0 5px; margin-left: -7px;">
         <img id="smalltime-config-icon" src="modules/smalltime/images/smalltime-icon.webp">
-        <span style="position: relative; top: 1px; left: -2px; text-shadow: 0px 2px 2px rgba(0, 0, 0, 0.2);">SmallTime</span>
+        <span style="position: relative; top: 1px; left: -2px; text-shadow: 0px 2px 2px rgba(0, 0, 0, 0.15);">SmallTime</span>
       </legend>
       <div class="form-group">
       <label>${visibilityLabel}</label>
       <select id="smalltime-player-vis"
-        name="flags.smalltime.player-vis">
-        <option value="2">${vis2}</option>
-        <option value="1">${vis1}</option>
-        <option value="0">${vis0}</option>
+        name="flags.smalltime.player-vis"
+        data-dtype="number">
+        <option value="2" ${vis2}>${vis2text}</option>
+        <option value="1" ${vis1}>${vis1text}</option>
+        <option value="0" ${vis0}>${vis0text}</option>
       </select>
       <p class="notes">${visibilityHint}</p>
         <label>${controlLabel}</label>
@@ -419,7 +431,6 @@ Hooks.on('renderSceneConfig', async (obj) => {
           name="flags.smalltime.darkness-link"
           ${checkStatus}>
         <p class="notes">${controlHint}</p>
-        
       </div>
     </fieldset>
     `;
