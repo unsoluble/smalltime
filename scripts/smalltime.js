@@ -403,9 +403,9 @@ Hooks.on('renderSceneConfig', async (obj) => {
   let vis0 = '';
   let vis1 = '';
   let vis2 = '';
-  if (visChoice === 0) vis0 = 'selected';
-  if (visChoice === 1) vis1 = 'selected';
-  if (visChoice === 2) vis2 = 'selected';
+  if (visChoice === '0') vis0 = 'selected';
+  if (visChoice === '1') vis1 = 'selected';
+  if (visChoice === '2') vis2 = 'selected';
 
   const controlLabel = game.i18n.localize('SMLTME.Darkness_Control');
   const controlHint = game.i18n.localize('SMLTME.Darkness_Control_Hint');
