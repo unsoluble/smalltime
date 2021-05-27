@@ -76,7 +76,7 @@ Hooks.on('init', () => {
     hint: game.i18n.localize('SMLTME.Player_Visibility_Default_Hint'),
     scope: 'world',
     config: true,
-    type: Number,
+    type: String,
     choices: {
       2: game.i18n.localize('SMLTME.Player_Vis_2'),
       1: game.i18n.localize('SMLTME.Player_Vis_1'),
@@ -380,11 +380,11 @@ Hooks.on('renderSceneConfig', async (obj) => {
   const visDefault = game.settings.get('smalltime', 'player-visibility-default');
   // Set the Darkness link state to the default choice.
   if (!hasProperty(obj.object, 'data.flags.smalltime.darkness-link')) {
-    obj.object.setFlag('smalltime', 'darkness-link', darknessDefault);
+    await obj.object.setFlag('smalltime', 'darkness-link', darknessDefault);
   }
   // Set the Player Vis state to the default choice.
   if (!hasProperty(obj.object, 'data.flags.smalltime.player-vis')) {
-    obj.object.setFlag('smalltime', 'player-vis', visDefault);
+    await obj.object.setFlag('smalltime', 'player-vis', visDefault);
   }
 
   // Set the Player Vis dropdown as appropriate.
