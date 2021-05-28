@@ -308,6 +308,10 @@ Hooks.on('canvasReady', () => {
   if (thisScene.getFlag('smalltime', 'player-vis') > 0) {
     game.modules.get('smalltime').viewAuth = true;
   }
+  // Also give them the clock if the permission level allows.
+  if (thisScene.getFlag('smalltime', 'player-vis') > 1) {
+    game.modules.get('smalltime').clockAuth = true;
+  }
 
   // If the Allow Trusted Player Control setting is on, give Trusted
   // Players control privs as well.
@@ -341,7 +345,8 @@ Hooks.on('canvasReady', () => {
   // Collapse the display if the user isn't allowed to see the clock.
   if (!game.modules.get('smalltime').clockAuth) {
     document.documentElement.style.setProperty('--SMLTME-display-vis', 'none');
-    document.documentElement.style.setProperty('--SMLTME-height', '38px');
+  } else {
+    document.documentElement.style.setProperty('--SMLTME-display-vis', 'flex');
   }
 
   // Render at opacity per user prefs.
@@ -375,11 +380,6 @@ Hooks.on('canvasReady', () => {
 // Wait for the app to be rendered, then adjust the CSS to
 // account for the date display, if showing.
 Hooks.on('renderSmallTimeApp', () => {
-  if (game.settings.get('smalltime', 'date-showing')) {
-    $('#dateDisplay').addClass('active');
-    $('#smalltime-app').css({ height: '79px' });
-  }
-
   // Disable controls for non-GMs.
   if (!game.modules.get('smalltime').controlAuth) {
     $('#timeSlider').addClass('disable-for-players');
@@ -390,6 +390,14 @@ Hooks.on('renderSmallTimeApp', () => {
   }
   if (!game.modules.get('smalltime').clockAuth) {
     $('#timeDisplay').addClass('hide-for-players');
+    $('#smalltime-app').css({ height: '35px' });
+  } else {
+    $('#timeDisplay').removeClass('hide-for-players');
+    $('#smalltime-app').css({ height: '58px' });
+  }
+  if (game.settings.get('smalltime', 'date-showing')) {
+    $('#dateDisplay').addClass('active');
+    $('#smalltime-app').css({ height: '79px' });
   }
 });
 
@@ -590,11 +598,15 @@ Hooks.on('renderPlayerList', () => {
 
   // The SmallTime_PinOffset here is the ideal distance between the top of the
   // Players list and the top of SmallTime. The +21 accounts
-  // for the date dropdown if enabled.
+  // for the date dropdown if enabled; the -23 accounts for the clock row
+  // being disabled in some cases.
   let myOffset = playerAppPos.height + SmallTime_PinOffset;
 
   if (game.settings.get('smalltime', 'date-showing')) {
     myOffset += 21;
+  }
+  if (!game.modules.get('smalltime').clockAuth) {
+    myOffset -= 23;
   }
   // This would be better done with a class add, but injecting
   // it here was the only way I could get it to enforce the
@@ -1113,17 +1125,20 @@ class SmallTimeApp extends FormApplication {
       // Follow the mouse.
       // TODO: Figure out how to account for changes to the viewport size
       // between drags.
-      let dateOffset = 0;
+      let conditionalOffset = 0;
       if (
         game.settings.get('smalltime', 'date-showing') &&
         game.settings.get('smalltime', 'pinned')
       ) {
-        dateOffset = 20;
+        conditionalOffset = 20;
+      }
+      if (!game.modules.get('smalltime').clockAuth && game.settings.get('smalltime', 'pinned')) {
+        conditionalOffset = -23;
       }
 
       this.app.setPosition({
         left: this.position.left + (event.clientX - this._initial.x),
-        top: this.position.top + (event.clientY - this._initial.y - dateOffset),
+        top: this.position.top + (event.clientY - this._initial.y - conditionalOffset),
       });
 
       // Defining a region above the PlayerList that will trigger the jiggle.
@@ -1543,8 +1558,9 @@ class SmallTimeApp extends FormApplication {
 
       if (expanded) {
         myOffset += 21;
-        //$('#dateDisplay').addClass('active');
-        //$('#smalltime-app').animate({ height: '79px' }, 80);
+      }
+      if (!game.modules.get('smalltime').clockAuth) {
+        myOffset -= 23;
       }
 
       // Dropping this into the DOM with an !important was the only way
