@@ -338,6 +338,12 @@ Hooks.on('canvasReady', () => {
     game.modules.get('smalltime').myApp.close({ smallTime: true });
   }
 
+  // Collapse the display if the user isn't allowed to see the clock.
+  if (!game.modules.get('smalltime').clockAuth) {
+    document.documentElement.style.setProperty('--SMLTME-display-vis', 'none');
+    document.documentElement.style.setProperty('--SMLTME-height', '38px');
+  }
+
   // Render at opacity per user prefs.
   const userOpacity = game.settings.get('smalltime', 'opacity');
   document.documentElement.style.setProperty('--SMLTME-opacity', userOpacity);

@@ -18,6 +18,7 @@
   --SMLTME-darkness-r: 36;
   --SMLTME-darkness-g: 36;
   --SMLTME-darkness-b: 72;
+  --SMLTME-display-vis: flex;
 }
 
 #smalltime-app {
@@ -321,7 +322,7 @@
 #smalltime-app #displayContainer {
   position: absolute;
   top: 24px;
-  display: flex;
+  display: var(--SMLTME-display-vis);
   justify-content: center;
   margin: 0;
   padding: 0 4px 0 4px;
