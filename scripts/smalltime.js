@@ -939,7 +939,7 @@ function convertTimeIntegerToPosition(timeInteger) {
 }
 
 function convertDarknessToPostion(darkness) {
-  return darkness * 45 + 5;
+  return darkness * 45 + 2;
 }
 
 function convertPositionToDarkness(position) {

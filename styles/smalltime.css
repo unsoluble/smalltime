@@ -173,7 +173,7 @@
 #smalltime-darkness-config .sunset-start {
   background: url('../images/sun-small.webp') no-repeat;
   background-size: 18px;
-  background-position: 0px 0.5px;
+  background-position: 0px 0px;
   -webkit-filter: drop-shadow(0px 0px 6px rgba(255, 203, 93, 0.9));
   filter: drop-shadow(0px 0px 6px rgba(255, 203, 93, 0.9));
 }
