@@ -410,14 +410,14 @@ Hooks.on('renderSceneConfig', async (obj) => {
   const controlLabel = game.i18n.localize('SMLTME.Darkness_Control');
   const controlHint = game.i18n.localize('SMLTME.Darkness_Control_Hint');
   const injection = `
-    <fieldset style="border: 1px solid #999; border-radius: 8px; margin: 8px 0; padding: 0 15px 5px; 15px;">
-      <legend style="padding: 0 5px; margin-left: -7px;">
+    <fieldset class="st-scene-config">
+      <legend>
         <img id="smalltime-config-icon" src="modules/smalltime/images/smalltime-icon.webp">
-        <span style="position: relative; top: 1px; left: -2px; text-shadow: 0px 2px 2px rgba(0, 0, 0, 0.15);">SmallTime</span>
+        <span>SmallTime</span>
       </legend>
       <div class="form-group">
       <label>${visibilityLabel}</label>
-      <select id="smalltime-player-vis"
+      <select
         name="flags.smalltime.player-vis"
         data-dtype="number">
         <option value="2" ${vis2}>${vis2text}</option>
@@ -426,14 +426,13 @@ Hooks.on('renderSceneConfig', async (obj) => {
       </select>
       <p class="notes">${visibilityHint}</p>
         <label>${controlLabel}</label>
-        <input id="smalltime-darkness"
+        <input
           type="checkbox"
           name="flags.smalltime.darkness-link"
           ${checkStatus}>
         <p class="notes">${controlHint}</p>
       </div>
-    </fieldset>
-    `;
+    </fieldset>`;
 
   // Inject the SmallTime controls, but only into the config window
   // for the current scene.
