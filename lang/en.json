@@ -13,7 +13,6 @@
   "SMLTME.Darkness_Control": "Darkness Control",
   "SMLTME.Darkness_Control_Hint": "Link this scene's Darkness Level to the current time in SmallTime.",
   "SMLTME.Darkness_Config": "Darkness Configuration",
-  "SMLTME.Darkness_Reset": "Shift-click to reset times to defaults",
   "SMLTME.Darkness_Config_Hint": "Drag the suns & moons to set sunrise and sunset times. Their heights set the maximum & minimum darkness levels.",
   "SMLTME.AboutTime": "Sync with About Time",
   "SMLTME.AboutTime_Hint": "If the About Time clock changes, SmallTime will change, and vice-versa. Advancing SmallTime past midnight will also change the About Time day.",
@@ -27,5 +26,6 @@
   "SMLTME.Player_Visibility_Default_Hint": "Default visibility level for new scenes.",
   "SMLTME.Player_Vis_0": "Nothing",
   "SMLTME.Player_Vis_1": "Sun/Moon position only",
-  "SMLTME.Player_Vis_2": "Sun/Moon position and time of day"
+  "SMLTME.Player_Vis_2": "Sun/Moon position and time of day",
+  "SMLTME.Darkness_Reset": "Shift-click to reset times to defaults"
 }
