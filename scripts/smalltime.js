@@ -319,6 +319,8 @@ Hooks.on('canvasReady', () => {
     game.settings.get('smalltime', 'allow-trusted') &&
     game.user.role === CONST.USER_ROLES.TRUSTED
   ) {
+    game.modules.get('smalltime').viewAuth = true;
+    game.modules.get('smalltime').clockAuth = true;
     game.modules.get('smalltime').controlAuth = true;
   }
 
