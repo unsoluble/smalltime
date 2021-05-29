@@ -12,12 +12,20 @@
   "SMLTME.Darkness_Default_Hint": "Standardeinstellung für SmallTime Dunkelheitseinfluss in der Szenenkonfiguration",
   "SMLTME.Darkness_Control": "SmallTime Dunkelheitseinfluss",
   "SMLTME.Darkness_Control_Hint": "Koppelt die Dunkelheitseinstellung dieser Szene an die aktuelle Zeit in SmallTime.",
-  "SMLTME.Darkness_Config": "Darkness Configuration",
-  "SMLTME.Darkness_Config_Hint": "Drag the suns & moons to set sunrise and sunset times. Their heights set the maximum & minimum darkness levels.",
+  "SMLTME.Darkness_Config": "Einstelungen für Dunkelheit",
+  "SMLTME.Darkness_Config_Hint": "Sonne und Mond verschieben, um die Einstellungen zu ändern. Links und Rechts bestimmen Zeiten von Sonnenauf und -untergang und der Dämmerungslänge. Die Höhe bestimmt maximale/minimale Beleuchtung",
   "SMLTME.AboutTime": "Mit About Time synchronisieren",
   "SMLTME.AboutTime_Hint": "Wenn die Zeit in About Time geändert wird, ändert SmallTime sich mit und umgekehrt. Wenn mit SmallTime Mitternacht überschritten wird, wird auch der Tag in About Time fortgeschrieben.",
   "SMLTME.Hide_From_Players": "Vor Spielern verstecken.",
   "SMLTME.Hide_From_Players_Hint": "Verstecke das SmallTime Fenster vor allen Nicht-GM Benutzern.",
   "SMLTME.Allow_Trusted": "Seriöse Spieler dürfen steuern.",
-  "SMLTME.Allow_Trusted_Hint": "Benutzer mit der Rolle \"Seriöser Spieler\" dürfen die aktuelle Zeit ändern."
+  "SMLTME.Allow_Trusted_Hint": "Benutzer mit der Rolle \"Seriöser Spieler\" dürfen die aktuelle Zeit ändern.",
+  "SMLTME.Player_Visibility": "Sichbarkeit für Spieler",
+  "SMLTME.Player_Visibility_Hint": "Auswahl, welche Teile von SmallTime für Spieler sichtbar sein sollen",
+  "SMLTME.Player_Visibility_Default": "Standardsichbarkeit für Spieler",
+  "SMLTME.Player_Visibility_Default_Hint": "Voreinstellungen für die Sichbarkeit bei neuen Szenen.",
+  "SMLTME.Player_Vis_0": "Nichts",
+  "SMLTME.Player_Vis_1": "Nur Position von Sonne/Mond ",
+  "SMLTME.Player_Vis_2": "Position von Sonne/Mond und Tageszeit",
+  "SMLTME.Darkness_Reset": "Umschalttaste+Klick für Standardeinstellungen"
 }
