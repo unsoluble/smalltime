@@ -71,13 +71,18 @@ Hooks.on('init', () => {
     default: false,
   });
 
-  game.settings.register('smalltime', 'hide-from-players', {
-    name: game.i18n.localize('SMLTME.Hide_From_Players'),
-    hint: game.i18n.localize('SMLTME.Hide_From_Players_Hint'),
+  game.settings.register('smalltime', 'player-visibility-default', {
+    name: game.i18n.localize('SMLTME.Player_Visibility_Default'),
+    hint: game.i18n.localize('SMLTME.Player_Visibility_Default_Hint'),
     scope: 'world',
     config: true,
-    type: Boolean,
-    default: false,
+    type: String,
+    choices: {
+      2: game.i18n.localize('SMLTME.Player_Vis_2'),
+      1: game.i18n.localize('SMLTME.Player_Vis_1'),
+      0: game.i18n.localize('SMLTME.Player_Vis_0'),
+    },
+    default: 2,
   });
 
   game.settings.register('smalltime', 'time-format', {
@@ -229,54 +234,6 @@ Hooks.on('init', () => {
 });
 
 Hooks.on('ready', () => {
-  // Account for the extra border art in certain game systems.
-  if (game.system.id === 'wfrp4e') {
-    SmallTime_PinOffset += SmallTime_WFRP4eOffset;
-  }
-  if (game.system.id === 'dsa5') {
-    SmallTime_PinOffset += SmallTime_DasSchwarzeAugeOffset;
-  }
-
-  // Check and set the correct level of authorization for the current user.
-  game.modules.get('smalltime').viewAuth = false;
-  game.modules.get('smalltime').controlAuth = false;
-
-  // First give view & control to Assistants and GMs.
-  if (game.user.role >= CONST.USER_ROLES.ASSISTANT) {
-    game.modules.get('smalltime').viewAuth = true;
-    game.modules.get('smalltime').controlAuth = true;
-  }
-  // If the Hide From Players setting isn't on, let Players view.
-  if (game.settings.get('smalltime', 'hide-from-players') === false) {
-    game.modules.get('smalltime').viewAuth = true;
-  }
-  // If the Allow Trusted Player Control setting is on, give Trusted
-  // Players control privs as well.
-  if (
-    game.settings.get('smalltime', 'allow-trusted') &&
-    game.user.role === CONST.USER_ROLES.TRUSTED
-  ) {
-    game.modules.get('smalltime').controlAuth = true;
-  }
-
-  // Initial render of the app if allowed.
-  if (game.modules.get('smalltime').viewAuth) {
-    SmallTimeApp.toggleAppVis('initial');
-    if (game.settings.get('smalltime', 'pinned')) {
-      if (game.settings.get('smalltime', 'date-showing')) {
-        // Sending true here tells the pin to offset to
-        // accommodate the date display.
-        SmallTimeApp.pinApp(true);
-      } else {
-        SmallTimeApp.pinApp();
-      }
-    }
-  }
-
-  // Render at opacity per user prefs.
-  const userOpacity = game.settings.get('smalltime', 'opacity');
-  document.documentElement.style.setProperty('--SMLTME-opacity', userOpacity);
-
   // Send incoming socket emissions through the async function.
   game.socket.on(`module.smalltime`, (data) => {
     doSocket(data);
@@ -326,14 +283,85 @@ Hooks.on('ready', () => {
 
 // Set the initial state for newly rendered scenes.
 Hooks.on('canvasReady', () => {
+  // Account for the extra border art in certain game systems.
+  if (game.system.id === 'wfrp4e') {
+    SmallTime_PinOffset += SmallTime_WFRP4eOffset;
+  }
+  if (game.system.id === 'dsa5') {
+    SmallTime_PinOffset += SmallTime_DasSchwarzeAugeOffset;
+  }
+
+  // Check and set the correct level of authorization for the current user.
+  game.modules.get('smalltime').viewAuth = false;
+  game.modules.get('smalltime').clockAuth = false;
+  game.modules.get('smalltime').controlAuth = false;
+  // First give view & control to Assistants and GMs.
+  if (game.user.role >= CONST.USER_ROLES.ASSISTANT) {
+    game.modules.get('smalltime').viewAuth = true;
+    game.modules.get('smalltime').clockAuth = true;
+    game.modules.get('smalltime').controlAuth = true;
+  }
+  // Give basic view auth to players if they're allowed in this scene.
+  const thisScene = game.scenes.entities.find((s) => s._view);
+  if (thisScene.getFlag('smalltime', 'player-vis') > 0) {
+    game.modules.get('smalltime').viewAuth = true;
+  }
+  // Also give them the clock if the permission level allows.
+  if (thisScene.getFlag('smalltime', 'player-vis') > 1) {
+    game.modules.get('smalltime').clockAuth = true;
+  }
+  // If the Allow Trusted Player Control setting is on, give Trusted
+  // Players control privs as well.
+  if (
+    game.settings.get('smalltime', 'allow-trusted') &&
+    game.user.role === CONST.USER_ROLES.TRUSTED
+  ) {
+    game.modules.get('smalltime').viewAuth = true;
+    game.modules.get('smalltime').clockAuth = true;
+    game.modules.get('smalltime').controlAuth = true;
+  }
+
+  if (game.modules.get('smalltime').viewAuth) {
+    SmallTimeApp.toggleAppVis('initial');
+    if (game.settings.get('smalltime', 'pinned')) {
+      if (game.settings.get('smalltime', 'date-showing')) {
+        // Sending true here tells the pin to offset to
+        // accommodate the date display.
+        SmallTimeApp.pinApp(true);
+      } else {
+        SmallTimeApp.pinApp();
+      }
+    }
+  } else if (
+    // If the SmallTime app was visible, but we're now in a scene where
+    // the player doesn't have permission to view it, close the app.
+    Object.values(ui.windows).find((w) => w.constructor.name === 'SmallTimeApp') &&
+    !game.modules.get('smalltime').controlAuth
+  ) {
+    game.modules.get('smalltime').myApp.close({ smallTime: true });
+  }
+  // Collapse the display if the user isn't allowed to see the clock.
+  if (!game.modules.get('smalltime').clockAuth) {
+    document.documentElement.style.setProperty('--SMLTME-display-vis', 'none');
+  } else {
+    document.documentElement.style.setProperty('--SMLTME-display-vis', 'flex');
+  }
+  // Render at opacity per user prefs.
+  const userOpacity = game.settings.get('smalltime', 'opacity');
+  document.documentElement.style.setProperty('--SMLTME-opacity', userOpacity);
+
   if (game.modules.get('smalltime').controlAuth) {
-    // Get currently viewed scene.
-    const thisScene = game.scenes.entities.find((s) => s._view);
     const darknessDefault = game.settings.get('smalltime', 'darkness-default');
+    const visDefault = game.settings.get('smalltime', 'player-visibility-default');
 
     // Set the Darkness link state to the default choice.
     if (!hasProperty(thisScene, 'data.flags.smalltime.darkness-link')) {
       thisScene.setFlag('smalltime', 'darkness-link', darknessDefault);
+    }
+
+    // Set the Player Vis state to the default choice.
+    if (!hasProperty(thisScene, 'data.flags.smalltime.player-vis')) {
+      thisScene.setFlag('smalltime', 'player-vis', visDefault);
     }
 
     // Refresh the current scene's Darkness level if it should be linked.
@@ -349,11 +377,6 @@ Hooks.on('canvasReady', () => {
 // Wait for the app to be rendered, then adjust the CSS to
 // account for the date display, if showing.
 Hooks.on('renderSmallTimeApp', () => {
-  if (game.settings.get('smalltime', 'date-showing')) {
-    $('#dateDisplay').addClass('active');
-    $('#smalltime-app').css({ height: '79px' });
-  }
-
   // Disable controls for non-GMs.
   if (!game.modules.get('smalltime').controlAuth) {
     $('#timeSlider').addClass('disable-for-players');
@@ -362,44 +385,92 @@ Hooks.on('renderSmallTimeApp', () => {
     $('#increase-large').addClass('hide-for-players');
     $('#increase-small').addClass('hide-for-players');
   }
+  // Also manage the height of the app window to match the contents.
+  if (!game.modules.get('smalltime').clockAuth) {
+    $('#timeDisplay').addClass('hide-for-players');
+    $('#smalltime-app').css({ height: '35px' });
+  } else {
+    $('#timeDisplay').removeClass('hide-for-players');
+    $('#smalltime-app').css({ height: '58px' });
+  }
+  if (game.settings.get('smalltime', 'date-showing')) {
+    $('#dateDisplay').addClass('active');
+    $('#smalltime-app').css({ height: '79px' });
+  }
 });
 
 // Handle our changes to the Scene Config screen.
 Hooks.on('renderSceneConfig', async (obj) => {
+  // Set defaults here (duplicate of what we did on canvasReady, in case the
+  // scene config is being accessed for a non-rendered scene.
   const darknessDefault = game.settings.get('smalltime', 'darkness-default');
-
-  // If the Darkness link flag hasn't been set yet, set it to the default choice.
+  const visDefault = game.settings.get('smalltime', 'player-visibility-default');
+  // Set the Darkness link state to the default choice.
   if (!hasProperty(obj.object, 'data.flags.smalltime.darkness-link')) {
-    obj.object.setFlag('smalltime', 'darkness-link', darknessDefault);
+    await obj.object.setFlag('smalltime', 'darkness-link', darknessDefault);
+  }
+  // Set the Player Vis state to the default choice.
+  if (!hasProperty(obj.object, 'data.flags.smalltime.player-vis')) {
+    await obj.object.setFlag('smalltime', 'player-vis', visDefault);
   }
 
-  // Set the option's checkbox as appropriate.
+  // Set the Player Vis dropdown as appropriate.
+  const visChoice = obj.object.getFlag('smalltime', 'player-vis');
+  // Set the Darkness checkbox as appropriate.
   const checkStatus = obj.object.getFlag('smalltime', 'darkness-link') ? 'checked' : '';
 
-  // Inject our new option into the config screen.
+  // Build our new options.
+  const visibilityLabel = game.i18n.localize('SMLTME.Player_Visibility');
+  const visibilityHint = game.i18n.localize('SMLTME.Player_Visibility_Hint');
+  const vis0text = game.i18n.localize('SMLTME.Player_Vis_0');
+  const vis1text = game.i18n.localize('SMLTME.Player_Vis_1');
+  const vis2text = game.i18n.localize('SMLTME.Player_Vis_2');
+
+  let vis0 = '';
+  let vis1 = '';
+  let vis2 = '';
+  if (visChoice === '0') vis0 = 'selected';
+  if (visChoice === '1') vis1 = 'selected';
+  if (visChoice === '2') vis2 = 'selected';
+
   const controlLabel = game.i18n.localize('SMLTME.Darkness_Control');
   const controlHint = game.i18n.localize('SMLTME.Darkness_Control_Hint');
   const injection = `
-    <div class="form-group">
-      <img id="smalltime-config-icon" src="modules/smalltime/images/smalltime-icon.webp">
-      <label>${controlLabel}</label>
-      <input id="smalltime-darkness"
-        type="checkbox"
-        name="flags.smalltime.darkness-link"
-        ${checkStatus}>
-      <p class="notes">${controlHint}</p>
-    </div>
-    `;
+    <fieldset class="st-scene-config">
+      <legend>
+        <img id="smalltime-config-icon" src="modules/smalltime/images/smalltime-icon.webp">
+        <span>SmallTime</span>
+      </legend>
+      <div class="form-group">
+      <label>${visibilityLabel}</label>
+      <select
+        name="flags.smalltime.player-vis"
+        data-dtype="number">
+        <option value="2" ${vis2}>${vis2text}</option>
+        <option value="1" ${vis1}>${vis1text}</option>
+        <option value="0" ${vis0}>${vis0text}</option>
+      </select>
+      <p class="notes">${visibilityHint}</p>
+        <label>${controlLabel}</label>
+        <input
+          type="checkbox"
+          name="flags.smalltime.darkness-link"
+          ${checkStatus}>
+        <p class="notes">${controlHint}</p>
+      </div>
+    </fieldset>`;
 
-  // Only inject if it isn't already there.
-  if (!$('#smalltime-darkness').length) {
-    $('p:contains("' + game.i18n.localize('SCENES.DarknessHint') + '")')
-      .parent()
-      .after(injection);
-  }
+  // Inject the SmallTime controls, but only into the config window
+  // for the current scene.
+  const sceneConfigID = '#scene-config-' + obj.object.data._id;
+  $(sceneConfigID)
+    .find('p:contains("' + game.i18n.localize('SCENES.GlobalLightThresholdHint') + '")')
+    .parent()
+    .after(injection);
 });
 
 Hooks.on('renderSettingsConfig', () => {
+  if (!game.user.isGM) return;
   // Hide the elements for the threshold settings; we'll be changing
   // these elsewhere, but still want them here for the save workflow.
   $('input[name="smalltime.max-darkness"]').parent().parent().css('display', 'none');
@@ -460,8 +531,8 @@ Hooks.on('renderSettingsConfig', () => {
     notesElement.after(injection);
   }
 
+  // Get the current Darkness overlay color.
   const coreDarknessColor = convertHexToRGB(CONFIG.Canvas.darknessColor.toString(16));
-
   document.documentElement.style.setProperty('--SMLTME-darkness-r', coreDarknessColor.r);
   document.documentElement.style.setProperty('--SMLTME-darkness-g', coreDarknessColor.g);
   document.documentElement.style.setProperty('--SMLTME-darkness-b', coreDarknessColor.b);
@@ -524,11 +595,15 @@ Hooks.on('renderPlayerList', () => {
 
   // The SmallTime_PinOffset here is the ideal distance between the top of the
   // Players list and the top of SmallTime. The +21 accounts
-  // for the date dropdown if enabled.
+  // for the date dropdown if enabled; the -23 accounts for the clock row
+  // being disabled in some cases.
   let myOffset = playerAppPos.height + SmallTime_PinOffset;
 
   if (game.settings.get('smalltime', 'date-showing')) {
     myOffset += 21;
+  }
+  if (!game.modules.get('smalltime').clockAuth) {
+    myOffset -= 23;
   }
   // This would be better done with a class add, but injecting
   // it here was the only way I could get it to enforce the
@@ -895,7 +970,7 @@ function convertTimeIntegerToPosition(timeInteger) {
 }
 
 function convertDarknessToPostion(darkness) {
-  return darkness * 45 + 5;
+  return darkness * 45 + 2;
 }
 
 function convertPositionToDarkness(position) {
@@ -1047,17 +1122,20 @@ class SmallTimeApp extends FormApplication {
       // Follow the mouse.
       // TODO: Figure out how to account for changes to the viewport size
       // between drags.
-      let dateOffset = 0;
+      let conditionalOffset = 0;
       if (
         game.settings.get('smalltime', 'date-showing') &&
         game.settings.get('smalltime', 'pinned')
       ) {
-        dateOffset = 20;
+        conditionalOffset = 20;
+      }
+      if (!game.modules.get('smalltime').clockAuth && game.settings.get('smalltime', 'pinned')) {
+        conditionalOffset = -23;
       }
 
       this.app.setPosition({
         left: this.position.left + (event.clientX - this._initial.x),
-        top: this.position.top + (event.clientY - this._initial.y - dateOffset),
+        top: this.position.top + (event.clientY - this._initial.y - conditionalOffset),
       });
 
       // Defining a region above the PlayerList that will trigger the jiggle.
@@ -1477,8 +1555,9 @@ class SmallTimeApp extends FormApplication {
 
       if (expanded) {
         myOffset += 21;
-        //$('#dateDisplay').addClass('active');
-        //$('#smalltime-app').animate({ height: '79px' }, 80);
+      }
+      if (!game.modules.get('smalltime').clockAuth) {
+        myOffset -= 23;
       }
 
       // Dropping this into the DOM with an !important was the only way
@@ -1503,6 +1582,7 @@ class SmallTimeApp extends FormApplication {
 
   // Toggle visibility of the main window.
   static async toggleAppVis(mode) {
+    if (!game.modules.get('smalltime').viewAuth) return;
     if (mode === 'toggle') {
       if (game.settings.get('smalltime', 'visible') === true) {
         // Stop any currently-running animations, and then animate the app

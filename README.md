@@ -29,9 +29,9 @@ You can position the window anywhere you like with the drag handle at the bottom
 
 ![Placement](doc/Placement.gif)
 
-For each scene, you can choose whether or not to link the time to the scene's Darkness Level:
+For each scene, you can choose how much of the display can be seen by Players, and whether or not to link the time to the scene's Darkness Level:
 
-![Scene_Config](doc/Scene_Config.png)
+![Scene_Config](doc/Scene_Config.webp)
 ![Darkness_Link](doc/Darkness_Link.gif)
 
 If you have [About Time](https://foundryvtt.com/packages/about-time) enabled, you can choose to sync with its time and date. Clicking on the time will toggle the date display; Shift-clicking the time will toggle the realtime clock (as configured in About Time).
@@ -44,7 +44,7 @@ If you have [Simple Calendar](https://foundryvtt.com/packages/foundryvtt-simple-
 
 There are a number of settings you can change:
 
-![Settings](doc/Settings_New.png)
+![Settings](doc/Settings.webp)
 
 ...including custom sunrise/sunset times, and global maximum & minimum darkness levels:
 
@@ -58,8 +58,6 @@ Full support for:
 - Japanese (thanks @BrotherSharp!)
 - German (thanks @kdomke!)
 - Spanish (thanks @masr!)
-
-Rudimentary support for: Arabic, Català, Čeština, Français, Galego, Italian, Korean, Polski, and Português (Brasil).
 
 I'm happy to accept and implement more translations!
 
