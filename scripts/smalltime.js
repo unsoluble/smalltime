@@ -974,7 +974,8 @@ function convertDarknessToPostion(darkness) {
 }
 
 function convertPositionToDarkness(position) {
-  return Math.round((1 - (position - 45) / -40) * 10) / 10;
+  let darkCalc = Math.round((1 - (position - 45) / -40) * 10) / 10;
+  return Math.min(Math.max(darkCalc, 0), 1);
 }
 
 function convertPositionToDisplayTime(position) {
@@ -1473,8 +1474,12 @@ class SmallTimeApp extends FormApplication {
     const currentScene = canvas.scene;
     if (currentScene.getFlag('smalltime', 'darkness-link')) {
       let darknessValue = canvas.lighting.darknessLevel;
-      const maxDarkness = game.settings.get('smalltime', 'max-darkness');
-      const minDarkness = game.settings.get('smalltime', 'min-darkness');
+      const maxD = game.settings.get('smalltime', 'max-darkness');
+      const minD = game.settings.get('smalltime', 'min-darkness');
+
+      // Clamp the values between 0 and 1 just in case they're out of bounds.
+      const maxDarkness = Math.min(Math.max(maxD, 0), 1);
+      const minDarkness = Math.min(Math.max(minD, 0), 1);
 
       let multiplier = maxDarkness - minDarkness;
       if (multiplier < 0) multiplier = minDarkness - maxDarkness;
