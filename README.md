@@ -10,7 +10,7 @@ _A small module for displaying and controlling the current time of day._
 - Button steps and various other things are changeable in Module Settings.
 - Shift-click the moon to cycle the moon's phase. If you're running Simple Calendar, your phase will be synced from there.
 - Toggle show/hide button is in Journal Notes.
-- Darkness link toggle is in Scene Config.
+- Darkness link toggle and Player visibility controls are in Scene Config.
 - With About Time sync enabled, click the time to display the date; Shift-click the time to toggle the realtime clock.
 
 Video overview: (somewhat out of date now, but it covers the main bits :) [https://www.youtube.com/watch?v=XShiobMvatE](https://www.youtube.com/watch?v=XShiobMvatE)
