@@ -461,12 +461,14 @@ Hooks.on('renderSceneConfig', async (obj) => {
     </fieldset>`;
 
   // Inject the SmallTime controls, but only into the config window
-  // for the current scene.
+  // for the current scene, and only if it hasn't already been inserted.
   const sceneConfigID = '#scene-config-' + obj.object.data._id;
-  $(sceneConfigID)
-    .find('p:contains("' + game.i18n.localize('SCENES.GlobalLightThresholdHint') + '")')
-    .parent()
-    .after(injection);
+  if ($(sceneConfigID).find('.st-scene-config').length === 0) {
+    $(sceneConfigID)
+      .find('p:contains("' + game.i18n.localize('SCENES.GlobalLightThresholdHint') + '")')
+      .parent()
+      .after(injection);
+  }
 });
 
 Hooks.on('renderSettingsConfig', () => {
