@@ -19,5 +19,13 @@
   "SMLTME.Hide_From_Players": "Esconder a los Jugadores",
   "SMLTME.Hide_From_Players_Hint": "Esconder la ventana de SmallTime para todos los usuarios no-GM.",
   "SMLTME.Allow_Trusted": "Permitir el control a Jugador de Confianza",
-  "SMLTME.Allow_Trusted_Hint": "Jugadores con el rol de Confianza serán capaces de cambiar la hora actual."
+  "SMLTME.Allow_Trusted_Hint": "Jugadores con el rol de Confianza serán capaces de cambiar la hora actual.",
+  "SMLTME.Player_Visibility": "Visibilidad de Jugador",
+  "SMLTME.Player_Visibility_Hint": "Escoge qué partes de SmallTime son visibles para los jugadores en esta escena.",
+  "SMLTME.Player_Visibility_Default": "Visibilidad por defecto para Jugador",
+  "SMLTME.Player_Visibility_Default_Hint": "Nivel de visibilidad por defecto para nuevas escenas.",
+  "SMLTME.Player_Vis_0": "Nada",
+  "SMLTME.Player_Vis_1": "Sólo posición de sol/luna",
+  "SMLTME.Player_Vis_2": "Posición de sol/luna y hora del día",
+  "SMLTME.Darkness_Reset": "Shift-click para resetear a horas por defecto"
 }
