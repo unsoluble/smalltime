@@ -13,7 +13,7 @@
   "media": [
     {
       "type": "cover",
-      "url": "url",
+      "url": "https://raw.githubusercontent.com/unsoluble/smalltime/main/doc/manifest-cover.webp",
       "caption": "SmallTime"
     }
   ],
