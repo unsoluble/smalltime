@@ -4,6 +4,19 @@
   "description": "A small module for displaying and controlling the current time of day.",
   "version": "1.0.3",
   "author": "unsoluble",
+  "authors": [
+    {
+      "name": "unsoluble",
+      "discord": "unsoluble#5084"
+    }
+  ],
+  "media": [
+    {
+      "type": "cover",
+      "url": "url",
+      "caption": "SmallTime"
+    }
+  ],
   "scripts": ["scripts/smalltime.js", "scripts/draggabilly.min.js"],
   "styles": ["styles/smalltime.css"],
   "languages": [
