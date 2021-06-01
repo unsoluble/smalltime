@@ -12,12 +12,13 @@
   "SMLTME.Darkness_Default_Hint": "シーン設定内にある「SmallTimeによる照明制御」をデフォルトで有効にします。",
   "SMLTME.Darkness_Control": "SmallTimeによる照明制御",
   "SMLTME.Darkness_Control_Hint": "このシーンの暗さの度合いをSmallTimeの現在時刻とリンクします。",
-  "SMLTME.Darkness_Config": "Darkness Configuration",
-  "SMLTME.Darkness_Config_Hint": "Drag the suns & moons to set sunrise and sunset times. Their heights set the maximum & minimum darkness levels.",
+  "SMLTME.Darkness_Config": "暗さの設定",
+  "SMLTME.Darkness_Reset": "［Shift］＋クリックすると時刻がデフォルトにリセットされます。",
+  "SMLTME.Darkness_Config_Hint": "太陽と月をドラッグして日出と日没の時間を決定します。また太陽と月の高さによって、暗さの最大値と最小値が設定できます。",
   "SMLTME.AboutTime": "About Timeと同期する",
   "SMLTME.AboutTime_Hint": "About Timeによる時間変化がSmallTimeにも反映されるようになります。またその逆も同様です。SmallTimeで深夜を超えると、About Timeの日付も更新されます。",
-  "SMLTME.Hide_From_Players": "Hide from Players",
-  "SMLTME.Hide_From_Players_Hint": "Hide the SmallTime window from all non-GM users.",
-  "SMLTME.Allow_Trusted": "Allow Trusted Player Control",
-  "SMLTME.Allow_Trusted_Hint": "Players with the Trusted role will be able to change the current time."
+  "SMLTME.Hide_From_Players": "プレイヤーから隠す",
+  "SMLTME.Hide_From_Players_Hint": "GM権限を持たないユーザーには、SmallTimeウィンドウが表示されなくなります。",
+  "SMLTME.Allow_Trusted": "信頼されたプレイヤーの操作を許可する",
+  "SMLTME.Allow_Trusted_Hint": "有効にすると、信頼されたプレイヤーが現在の時刻を変更できるようになります。"
 }
