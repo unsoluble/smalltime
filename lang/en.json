@@ -21,11 +21,12 @@
   "SMLTME.Allow_Trusted": "Allow Trusted Player Control",
   "SMLTME.Allow_Trusted_Hint": "Players with the Trusted role will be able to change the current time.",
   "SMLTME.Player_Visibility": "Player Visibility",
-  "SMLTME.Player_Visibility_Hint": "Choose which parts of SmallTime are visible to players in this scene.",
+  "SMLTME.Player_Visibility_Hint": "Choose which parts of SmallTime are visible to players in this scene. Default is set in Module Settings.",
   "SMLTME.Player_Visibility_Default": "Player Visibility Default",
-  "SMLTME.Player_Visibility_Default_Hint": "Default visibility level for new scenes.",
+  "SMLTME.Player_Visibility_Default_Hint": "Default visibility level for scenes.",
   "SMLTME.Player_Vis_0": "Nothing",
   "SMLTME.Player_Vis_1": "Sun/Moon position only",
   "SMLTME.Player_Vis_2": "Sun/Moon position and time of day",
+  "SMLTME.Player_Vis_3": "Use default setting",
   "SMLTME.Darkness_Reset": "Shift-click to reset times to defaults"
 }

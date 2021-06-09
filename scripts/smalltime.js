@@ -301,13 +301,20 @@ Hooks.on('canvasReady', () => {
     game.modules.get('smalltime').clockAuth = true;
     game.modules.get('smalltime').controlAuth = true;
   }
-  // Give basic view auth to players if they're allowed in this scene.
+
+  // If the scene is set to use Default vis level, use it here.
   const thisScene = game.scenes.entities.find((s) => s._view);
-  if (thisScene.getFlag('smalltime', 'player-vis') > 0) {
+  let visLevel = thisScene.getFlag('smalltime', 'player-vis');
+  // visLevel of 3 is "use default".
+  if (visLevel == 3) {
+    visLevel = game.settings.get('smalltime', 'player-visibility-default');
+  }
+  // Give basic view auth to players if they're allowed in this scene.
+  if (visLevel > 0) {
     game.modules.get('smalltime').viewAuth = true;
   }
   // Also give them the clock if the permission level allows.
-  if (thisScene.getFlag('smalltime', 'player-vis') > 1) {
+  if (visLevel > 1) {
     game.modules.get('smalltime').clockAuth = true;
   }
   // If the Allow Trusted Player Control setting is on, give Trusted
@@ -425,13 +432,16 @@ Hooks.on('renderSceneConfig', async (obj) => {
   const vis0text = game.i18n.localize('SMLTME.Player_Vis_0');
   const vis1text = game.i18n.localize('SMLTME.Player_Vis_1');
   const vis2text = game.i18n.localize('SMLTME.Player_Vis_2');
+  const vis3text = game.i18n.localize('SMLTME.Player_Vis_3');
 
   let vis0 = '';
   let vis1 = '';
   let vis2 = '';
+  let vis3 = '';
   if (visChoice === '0') vis0 = 'selected';
   if (visChoice === '1') vis1 = 'selected';
   if (visChoice === '2') vis2 = 'selected';
+  if (visChoice === '3') vis3 = 'selected';
 
   const controlLabel = game.i18n.localize('SMLTME.Darkness_Control');
   const controlHint = game.i18n.localize('SMLTME.Darkness_Control_Hint');
@@ -446,6 +456,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
       <select
         name="flags.smalltime.player-vis"
         data-dtype="number">
+        <option value="3" ${vis3}>${vis3text}</option>
         <option value="2" ${vis2}>${vis2text}</option>
         <option value="1" ${vis1}>${vis1text}</option>
         <option value="0" ${vis0}>${vis0text}</option>
