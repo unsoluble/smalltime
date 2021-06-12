@@ -11,7 +11,7 @@ const SmallTime_MoonPhases = [
 
 // Default offset from the Player List window when pinned,
 // plus custom offsets for game systems that draw extra borders
-// around their windows.
+// around their windows. Also default values for sunrise/set.
 let SmallTime_PinOffset = 83;
 const SmallTime_WFRP4eOffset = 30;
 const SmallTime_DasSchwarzeAugeOffset = 16;
@@ -241,6 +241,9 @@ Hooks.on('ready', () => {
 
   async function doSocket(data) {
     if (data.type === 'changeTime') {
+      if (game.user.isGM) {
+        setWorldTime(data.payload);
+      }
       game.modules.get('smalltime').myApp.handleTimeChange(data);
     }
     if (data.type === 'changeSetting') {
@@ -251,27 +254,6 @@ Hooks.on('ready', () => {
       if (game.user.isGM) {
         const currentScene = game.scenes.get(data.payload.sceneID);
         await currentScene.update({ darkness: data.payload.darkness });
-      }
-    }
-    // Advance the About Time clock.
-    if (data.type === 'ATadvance') {
-      if (game.user.isGM) {
-        await game.Gametime.advanceTime({
-          days: 0,
-          hours: data.payload.hours,
-          minutes: data.payload.minutes,
-          seconds: 0,
-        });
-      }
-    }
-    // Directly set the About Time clock.
-    if (data.type === 'ATset') {
-      if (game.user.isGM) {
-        await game.Gametime.setTime({
-          hours: data.payload.hours,
-          minutes: data.payload.minutes,
-          seconds: 0,
-        });
       }
     }
   }
@@ -373,7 +355,7 @@ Hooks.on('canvasReady', () => {
 
     // Refresh the current scene's Darkness level if it should be linked.
     if (thisScene.getFlag('smalltime', 'darkness-link')) {
-      SmallTimeApp.timeTransition(game.settings.get('smalltime', 'current-time'));
+      SmallTimeApp.timeTransition(getWorldTimeAsDayTime());
     }
 
     // Refresh the current scene BG for the settings dialog.
@@ -632,9 +614,7 @@ Hooks.on('renderPlayerList', () => {
 // Grab updates from About Time. Flash the colon when the
 // realtime clock is running.
 Hooks.on('updateWorldTime', () => {
-  if (game.settings.get('smalltime', 'about-time')) {
-    SmallTimeApp.syncFromAboutTime();
-  }
+  //game.modules.get('smalltime').myApp.timeTransition(getWorldTimeAsDayTime());
 });
 
 // Handle toggling of time separator flash when game is paused/unpaused.
@@ -1002,6 +982,19 @@ function convertDisplayObjToString(displayObj) {
   return displayObj.hours + ':' + displayObj.minutes;
 }
 
+function getWorldTimeAsDayTime() {
+  const currentWorldTime = game.time.worldTime;
+  const dayTime = Math.round((currentWorldTime % 86400) / 60);
+  return dayTime;
+}
+
+async function setWorldTime(newTime) {
+  const currentWorldTime = game.time.worldTime;
+  const dayTime = Math.round((currentWorldTime % 86400) / 60);
+  const delta = newTime - dayTime;
+  game.time.advance(delta * 60);
+}
+
 function grabSceneSlice() {
   // Prefer the full image, but fall back to the thumbnail in the case
   // of tile BGs or animations. Use a generic image for empty scenes.
@@ -1030,7 +1023,7 @@ function convertHexToRGB(hex) {
 class SmallTimeApp extends FormApplication {
   constructor() {
     super();
-    this.currentTime = game.settings.get('smalltime', 'current-time');
+    this.currentTime = getWorldTimeAsDayTime();
   }
 
   // Override close() to prevent Escape presses from closing the SmallTime app.
@@ -1091,7 +1084,7 @@ class SmallTimeApp extends FormApplication {
     const newTime = formData.timeSlider;
     // Save the new time.
     if (game.user.isGM) {
-      await game.settings.set('smalltime', 'current-time', newTime);
+      await setWorldTime(newTime);
     } else {
       SmallTimeApp.handleSocket('changeTime', newTime);
     }
@@ -1223,13 +1216,10 @@ class SmallTimeApp extends FormApplication {
             value: newPhase,
           });
         }
-        SmallTimeApp.handleSocket('changeTime', $(this).val());
-
         if (game.user.isGM) {
-          await game.settings.set('smalltime', 'current-time', $(this).val());
-        } else {
-          SmallTimeApp.handleSocket('changeTime', $(this).val());
+          await setWorldTime($(this).val());
         }
+        SmallTimeApp.handleSocket('changeTime', $(this).val());
       }
     });
 
@@ -1240,45 +1230,6 @@ class SmallTimeApp extends FormApplication {
 
       SmallTimeApp.timeTransition($(this).val());
       SmallTimeApp.handleSocket('changeTime', $(this).val());
-
-      if (game.user.isGM) {
-        await game.settings.set('smalltime', 'current-time', $(this).val());
-      } else {
-        SmallTimeApp.handleSocket('changeSetting', {
-          scope: 'smalltime',
-          key: 'current-time',
-          value: $(this).val(),
-        });
-      }
-    });
-
-    // Send slider time changes to About Time on mouseUp, not live.
-    $(document).on('change', '#timeSlider', function () {
-      $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).hours);
-      $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).minutes);
-
-      SmallTimeApp.timeTransition($(this).val());
-      SmallTimeApp.handleSocket('changeTime', $(this).val());
-
-      if (game.modules.get('about-time')?.active && game.settings.get('smalltime', 'about-time')) {
-        let hours = $(this).val() / 60;
-        let rhours = Math.floor(hours);
-        let minutes = (hours - rhours) * 60;
-        let rminutes = Math.round(minutes);
-
-        if (game.user.isGM) {
-          game.Gametime.setTime({
-            hours: rhours,
-            minutes: rminutes,
-            seconds: 0,
-          });
-        } else {
-          SmallTimeApp.handleSocket('ATset', {
-            hours: rhours,
-            minutes: rminutes,
-          });
-        }
-      }
     });
 
     // Toggle the date display div, if About Time sync is enabled.
@@ -1389,7 +1340,7 @@ class SmallTimeApp extends FormApplication {
 
   // Functionality for increment/decrement buttons.
   async timeRatchet(delta) {
-    let currentTime = game.settings.get('smalltime', 'current-time');
+    let currentTime = getWorldTimeAsDayTime();
     let newTime = currentTime + delta;
 
     if (newTime < 0) {
@@ -1401,43 +1352,15 @@ class SmallTimeApp extends FormApplication {
     }
 
     if (game.user.isGM) {
-      await game.settings.set('smalltime', 'current-time', newTime);
-    } else {
-      SmallTimeApp.handleSocket('changeSetting', {
-        scope: 'smalltime',
-        key: 'current-time',
-        value: newTime,
-      });
+      game.time.advance(delta * 60);
     }
 
     $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay(newTime).hours);
     $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay(newTime).minutes);
 
+    SmallTimeApp.timeTransition(newTime);
     SmallTimeApp.handleSocket('changeTime', newTime);
 
-    SmallTimeApp.timeTransition(newTime);
-
-    // Send the new time to About Time, if it's active.
-    if (game.modules.get('about-time')?.active && game.settings.get('smalltime', 'about-time')) {
-      let hours = delta / 60;
-      let rhours = Math.floor(hours);
-      let minutes = (hours - rhours) * 60;
-      let rminutes = Math.round(minutes);
-
-      if (game.user.isGM) {
-        game.Gametime.advanceTime({
-          days: 0,
-          hours: rhours,
-          minutes: rminutes,
-          seconds: 0,
-        });
-      } else {
-        SmallTimeApp.handleSocket('ATadvance', {
-          hours: rhours,
-          minutes: rminutes,
-        });
-      }
-    }
     // Also move the slider to match.
     $('#timeSlider').val(newTime);
   }
