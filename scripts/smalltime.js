@@ -635,25 +635,20 @@ Hooks.on('updateWorldTime', () => {
 
 // Handle toggling of time separator flash when game is paused/unpaused.
 Hooks.on('pauseGame', () => {
-  handleRealtimeState();
-});
-
-// Sync up with About Time when their initial clock is done setting up.
-Hooks.on('about-time.pseudoclockMaster', () => {
-  if (game.settings.get('smalltime', 'about-time') && game.user.isGM) {
-    SmallTimeApp.syncFromAboutTime();
+  if (game.user.isGM) {
+    handleRealtimeState();
   }
 });
 
 // Listen for changes to the realtime clock state.
 Hooks.on('about-time.clockRunningStatus', () => {
-  if (game.settings.get('smalltime', 'about-time') && game.user.isGM) {
+  if (game.user.isGM) {
     handleRealtimeState();
   }
 });
 
 function handleRealtimeState() {
-  if (game.settings.get('smalltime', 'about-time') && game.modules.get('about-time')?.active) {
+  if (game.modules.get('about-time')?.active) {
     if (game.paused || !game.Gametime.isRunning()) {
       $('#timeSeparator').removeClass('blink');
     } else if (!game.paused && game.Gametime.isRunning()) {
@@ -1270,7 +1265,7 @@ class SmallTimeApp extends FormApplication {
     // The inline CSS overrides are a bit hacky, but were the
     // only way I could get the desired behaviour.
     html.find('#timeDisplay').on('click', async function () {
-      if (game.modules.get('about-time')?.active && game.settings.get('smalltime', 'about-time')) {
+      if (game.modules.get('about-time')?.active) {
         if (event.shiftKey && game.modules.get('smalltime').controlAuth && !game.paused) {
           if (game.Gametime.isRunning()) {
             game.Gametime.stopRunning();
@@ -1568,36 +1563,6 @@ class SmallTimeApp extends FormApplication {
       const myApp = new SmallTimeApp().render(true);
       game.modules.get('smalltime').myApp = myApp;
     }
-  }
-
-  static async syncFromAboutTime() {
-    let ATobject = game.Gametime.DTNow().longDateExtended();
-    let newTime = ATobject.hour * 60 + ATobject.minute;
-
-    // TODO: Handle slider going to 1440
-
-    const newDay = ATobject.dowString;
-    const newMonth = ATobject.monthString;
-    const newDate = ATobject.day;
-    const newYear = ATobject.year;
-
-    const timePackage = {
-      type: 'changeTime',
-      payload: newTime,
-    };
-
-    if (game.settings.get('smalltime', 'visible') === true) {
-      handleTimeChange(timePackage);
-    }
-
-    if (game.user.isGM) await game.settings.set('smalltime', 'current-time', newTime);
-
-    // Arbitrary/opinionated date formatting here, could be a user setting eventually.
-    const displayDate = newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear;
-    $('#dateDisplay').html(displayDate);
-    // Save this string so we can display it on initial load-in,
-    // before About Time is ready.
-    if (game.user.isGM) await game.settings.set('smalltime', 'current-date', displayDate);
   }
 }
 
