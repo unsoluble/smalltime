@@ -13,6 +13,7 @@ const SmallTime_MoonPhases = [
 // plus custom offsets for game systems that draw extra borders
 // around their windows. Also default values for sunrise/set.
 let SmallTime_PinOffset = 83;
+let SmallTime_EpochOffset = 0;
 const SmallTime_WFRP4eOffset = 30;
 const SmallTime_DasSchwarzeAugeOffset = 16;
 const SmallTime_SunriseStartDefault = 180;
@@ -244,7 +245,11 @@ Hooks.on('ready', () => {
       if (game.user.isGM) {
         setWorldTime(data.payload);
       }
-      game.modules.get('smalltime').myApp.handleTimeChange(data);
+      handleTimeChange(data);
+    }
+    if (data.type === 'externalUpdate') {
+      handleTimeChange(getWorldTimeAsDayTime());
+      console.log('ping');
     }
     if (data.type === 'changeSetting') {
       if (game.user.isGM)
@@ -271,6 +276,15 @@ Hooks.on('canvasReady', () => {
   }
   if (game.system.id === 'dsa5') {
     SmallTime_PinOffset += SmallTime_DasSchwarzeAugeOffset;
+  }
+  if (game.system.id === 'pf2e') {
+    const localEpoch = game.pf2e.worldClock.worldCreatedOn.c;
+    let deltaInSeconds =
+      localEpoch.hour * 3600 +
+      localEpoch.minute * 60 +
+      localEpoch.second +
+      localEpoch.millisecond * 0.001;
+    SmallTime_EpochOffset = deltaInSeconds;
   }
 
   // Check and set the correct level of authorization for the current user.
@@ -614,7 +628,9 @@ Hooks.on('renderPlayerList', () => {
 // Grab updates from About Time. Flash the colon when the
 // realtime clock is running.
 Hooks.on('updateWorldTime', () => {
-  //game.modules.get('smalltime').myApp.timeTransition(getWorldTimeAsDayTime());
+  const currentTime = {};
+  currentTime.payload = getWorldTimeAsDayTime();
+  handleTimeChange(currentTime);
 });
 
 // Handle toggling of time separator flash when game is paused/unpaused.
@@ -983,16 +999,25 @@ function convertDisplayObjToString(displayObj) {
 }
 
 function getWorldTimeAsDayTime() {
-  const currentWorldTime = game.time.worldTime;
-  const dayTime = Math.round((currentWorldTime % 86400) / 60);
+  const currentWorldTime = game.time.worldTime + SmallTime_EpochOffset;
+  const dayTime = Math.trunc((currentWorldTime % 86400) / 60);
   return dayTime;
 }
 
 async function setWorldTime(newTime) {
-  const currentWorldTime = game.time.worldTime;
-  const dayTime = Math.round((currentWorldTime % 86400) / 60);
+  const currentWorldTime = game.time.worldTime + SmallTime_EpochOffset;
+  const dayTime = Math.trunc((currentWorldTime % 86400) / 60);
   const delta = newTime - dayTime;
   game.time.advance(delta * 60);
+}
+
+// Helper function for time-changing socket updates.
+function handleTimeChange(data) {
+  SmallTimeApp.timeTransition(data.payload);
+  $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay(data.payload).hours);
+  $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay(data.payload).minutes);
+  $('#timeSlider').val(data.payload);
+  handleRealtimeState();
 }
 
 function grabSceneSlice() {
@@ -1086,7 +1111,7 @@ class SmallTimeApp extends FormApplication {
     if (game.user.isGM) {
       await setWorldTime(newTime);
     } else {
-      SmallTimeApp.handleSocket('changeTime', newTime);
+      SmallTimeApp.emitSocket('changeTime', newTime);
     }
   }
 
@@ -1210,7 +1235,7 @@ class SmallTimeApp extends FormApplication {
         if (game.user.isGM) {
           await game.settings.set('smalltime', 'moon-phase', newPhase);
         } else {
-          SmallTimeApp.handleSocket('changeSetting', {
+          SmallTimeApp.emitSocket('changeSetting', {
             scope: 'smalltime',
             key: 'moon-phase',
             value: newPhase,
@@ -1219,7 +1244,7 @@ class SmallTimeApp extends FormApplication {
         if (game.user.isGM) {
           await setWorldTime($(this).val());
         }
-        SmallTimeApp.handleSocket('changeTime', $(this).val());
+        SmallTimeApp.emitSocket('changeTime', $(this).val());
       }
     });
 
@@ -1229,7 +1254,15 @@ class SmallTimeApp extends FormApplication {
       $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).minutes);
 
       SmallTimeApp.timeTransition($(this).val());
-      SmallTimeApp.handleSocket('changeTime', $(this).val());
+      SmallTimeApp.emitSocket('changeTime', $(this).val());
+    });
+
+    $(document).on('change', '#timeSlider', async function () {
+      if (game.user.isGM) {
+        setWorldTime($(this).val());
+      } else {
+        SmallTimeApp.emitSocket('changeTime', $(this).val());
+      }
     });
 
     // Toggle the date display div, if About Time sync is enabled.
@@ -1244,7 +1277,7 @@ class SmallTimeApp extends FormApplication {
             game.Gametime.startRunning();
           }
           handleRealtimeState();
-          SmallTimeApp.handleSocket('changeTime', game.settings.get('smalltime', 'current-time'));
+          SmallTimeApp.emitSocket('changeTime', game.settings.get('smalltime', 'current-time'));
         } else {
           if (!game.settings.get('smalltime', 'date-showing')) {
             $('#dateDisplay').addClass('active');
@@ -1316,26 +1349,17 @@ class SmallTimeApp extends FormApplication {
         await game.settings.set('smalltime', 'moon-phase', newPhase);
         let currentTime = game.settings.get('smalltime', 'current-time');
         SmallTimeApp.timeTransition(currentTime);
-        SmallTimeApp.handleSocket('changeTime', currentTime);
+        SmallTimeApp.emitSocket('changeTime', currentTime);
       });
     }
   }
 
   // Helper function for handling sockets.
-  static handleSocket(type, payload) {
+  static emitSocket(type, payload) {
     game.socket.emit('module.smalltime', {
       type: type,
       payload: payload,
     });
-  }
-
-  // Helper function for time-changing socket updates.
-  handleTimeChange(data) {
-    SmallTimeApp.timeTransition(data.payload);
-    $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay(data.payload).hours);
-    $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay(data.payload).minutes);
-    $('#timeSlider').val(data.payload);
-    handleRealtimeState();
   }
 
   // Functionality for increment/decrement buttons.
@@ -1353,16 +1377,11 @@ class SmallTimeApp extends FormApplication {
 
     if (game.user.isGM) {
       game.time.advance(delta * 60);
+    } else {
+      SmallTimeApp.emitSocket('changeTime', newTime);
     }
 
-    $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay(newTime).hours);
-    $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay(newTime).minutes);
-
     SmallTimeApp.timeTransition(newTime);
-    SmallTimeApp.handleSocket('changeTime', newTime);
-
-    // Also move the slider to match.
-    $('#timeSlider').val(newTime);
   }
 
   // Render changes to the sun/moon slider, and handle Darkness link.
@@ -1449,7 +1468,7 @@ class SmallTimeApp extends FormApplication {
       if (game.user.isGM) {
         await currentScene.update({ darkness: darknessValue });
       } else {
-        SmallTimeApp.handleSocket('changeDarkness', {
+        SmallTimeApp.emitSocket('changeDarkness', {
           darkness: darknessValue,
           sceneID: currentScene.id,
         });
@@ -1567,7 +1586,7 @@ class SmallTimeApp extends FormApplication {
     };
 
     if (game.settings.get('smalltime', 'visible') === true) {
-      game.modules.get('smalltime').myApp.handleTimeChange(timePackage);
+      handleTimeChange(timePackage);
     }
 
     if (game.user.isGM) await game.settings.set('smalltime', 'current-time', newTime);
