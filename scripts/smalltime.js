@@ -287,6 +287,11 @@ Hooks.on('canvasReady', () => {
     SmallTime_EpochOffset = deltaInSeconds;
   }
 
+  game.modules.get('smalltime').dateAvailable = false;
+  if (game.system.id === 'pf2e' || game.modules.get('about-time')?.active) {
+    game.modules.get('smalltime').dateAvailable = true;
+  }
+
   // Check and set the correct level of authorization for the current user.
   game.modules.get('smalltime').viewAuth = false;
   game.modules.get('smalltime').clockAuth = false;
@@ -327,7 +332,10 @@ Hooks.on('canvasReady', () => {
   if (game.modules.get('smalltime').viewAuth) {
     SmallTimeApp.toggleAppVis('initial');
     if (game.settings.get('smalltime', 'pinned')) {
-      if (game.settings.get('smalltime', 'date-showing')) {
+      if (
+        game.settings.get('smalltime', 'date-showing') &&
+        game.modules.get('smalltime').dateAvailable
+      ) {
         // Sending true here tells the pin to offset to
         // accommodate the date display.
         SmallTimeApp.pinApp(true);
@@ -380,6 +388,7 @@ Hooks.on('canvasReady', () => {
 // Wait for the app to be rendered, then adjust the CSS to
 // account for the date display, if showing.
 Hooks.on('renderSmallTimeApp', () => {
+  SmallTimeApp.getDate();
   // Disable controls for non-GMs.
   if (!game.modules.get('smalltime').controlAuth) {
     $('#timeSlider').addClass('disable-for-players');
@@ -396,7 +405,10 @@ Hooks.on('renderSmallTimeApp', () => {
     $('#timeDisplay').removeClass('hide-for-players');
     $('#smalltime-app').css({ height: '58px' });
   }
-  if (game.settings.get('smalltime', 'date-showing')) {
+  if (
+    game.settings.get('smalltime', 'date-showing') &&
+    game.modules.get('smalltime').dateAvailable
+  ) {
     $('#dateDisplay').addClass('active');
     $('#smalltime-app').css({ height: '79px' });
   }
@@ -1013,6 +1025,7 @@ function handleTimeChange(data) {
   $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay(data.payload).minutes);
   $('#timeSlider').val(data.payload);
   handleRealtimeState();
+  SmallTimeApp.getDate();
 }
 
 function grabSceneSlice() {
@@ -1152,7 +1165,8 @@ class SmallTimeApp extends FormApplication {
       let conditionalOffset = 0;
       if (
         game.settings.get('smalltime', 'date-showing') &&
-        game.settings.get('smalltime', 'pinned')
+        game.settings.get('smalltime', 'pinned') &&
+        game.modules.get('smalltime').dateAvailable
       ) {
         conditionalOffset = 20;
       }
@@ -1194,7 +1208,10 @@ class SmallTimeApp extends FormApplication {
 
       // If the mouseup happens inside the Pin zone, pin the app.
       if (pinZone) {
-        SmallTimeApp.pinApp(game.settings.get('smalltime', 'date-showing'));
+        SmallTimeApp.pinApp(
+          game.settings.get('smalltime', 'date-showing') &&
+            game.modules.get('smalltime').dateAvailable
+        );
         await game.settings.set('smalltime', 'pinned', true);
         this.app.setPosition({
           left: 15,
@@ -1211,9 +1228,10 @@ class SmallTimeApp extends FormApplication {
       $('#smalltime-app').css('animation', '');
     };
 
-    // An initial set of the sun/moon/bg/time display in case it hasn't been
+    // An initial set of the sun/moon/bg/time/date display in case it hasn't been
     // updated since a settings change for some reason.
     SmallTimeApp.timeTransition(this.currentTime);
+    SmallTimeApp.getDate();
 
     // Handle cycling through the moon phases on Shift-clicks.
     $('#timeSlider').on('click', async function () {
@@ -1265,33 +1283,39 @@ class SmallTimeApp extends FormApplication {
     // The inline CSS overrides are a bit hacky, but were the
     // only way I could get the desired behaviour.
     html.find('#timeDisplay').on('click', async function () {
-      if (game.modules.get('about-time')?.active) {
-        if (event.shiftKey && game.modules.get('smalltime').controlAuth && !game.paused) {
-          if (game.Gametime.isRunning()) {
-            game.Gametime.stopRunning();
-          } else {
-            game.Gametime.startRunning();
-          }
-          handleRealtimeState();
-          SmallTimeApp.emitSocket('changeTime', game.settings.get('smalltime', 'current-time'));
+      if (
+        event.shiftKey &&
+        game.modules.get('smalltime').controlAuth &&
+        !game.paused &&
+        game.modules.get('about-time')?.active
+      ) {
+        if (game.Gametime.isRunning()) {
+          game.Gametime.stopRunning();
         } else {
-          if (!game.settings.get('smalltime', 'date-showing')) {
-            $('#dateDisplay').addClass('active');
-            $('#smalltime-app').animate({ height: '79px' }, 80);
-            if (game.settings.get('smalltime', 'pinned')) {
-              SmallTimeApp.unPinApp();
-              SmallTimeApp.pinApp(true);
-            }
-            await game.settings.set('smalltime', 'date-showing', true);
-          } else {
-            $('#dateDisplay').removeClass('active');
-            $('#smalltime-app').animate({ height: '59px' }, 80);
-            if (game.settings.get('smalltime', 'pinned')) {
-              SmallTimeApp.unPinApp();
-              SmallTimeApp.pinApp(false);
-            }
-            await game.settings.set('smalltime', 'date-showing', false);
+          game.Gametime.startRunning();
+        }
+        handleRealtimeState();
+        SmallTimeApp.emitSocket('changeTime', game.settings.get('smalltime', 'current-time'));
+      } else {
+        if (
+          !game.settings.get('smalltime', 'date-showing') &&
+          game.modules.get('smalltime').dateAvailable
+        ) {
+          $('#dateDisplay').addClass('active');
+          $('#smalltime-app').animate({ height: '79px' }, 80);
+          if (game.settings.get('smalltime', 'pinned')) {
+            SmallTimeApp.unPinApp();
+            SmallTimeApp.pinApp(true);
           }
+          await game.settings.set('smalltime', 'date-showing', true);
+        } else {
+          $('#dateDisplay').removeClass('active');
+          $('#smalltime-app').animate({ height: '59px' }, 80);
+          if (game.settings.get('smalltime', 'pinned')) {
+            SmallTimeApp.unPinApp();
+            SmallTimeApp.pinApp(false);
+          }
+          await game.settings.set('smalltime', 'date-showing', false);
         }
       }
     });
@@ -1563,6 +1587,34 @@ class SmallTimeApp extends FormApplication {
       const myApp = new SmallTimeApp().render(true);
       game.modules.get('smalltime').myApp = myApp;
     }
+  }
+
+  static async getDate() {
+    let newTime;
+    let newDay;
+    let newMonth;
+    let newDate;
+    let newYear;
+    let displayDate = '';
+
+    if (game.modules.get('about-time')?.active) {
+      let ATobject = game.Gametime.DTNow().longDateExtended();
+      newTime = ATobject.hour * 60 + ATobject.minute;
+
+      newDay = ATobject.dowString;
+      newMonth = ATobject.monthString;
+      newDate = ATobject.day;
+      newYear = ATobject.year;
+
+      // Arbitrary/opinionated date formatting here, could be a user setting eventually.
+      displayDate = newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear;
+    } else if (game.system.id === 'pf2e') {
+      console.log('Get PF2E date');
+    }
+    $('#dateDisplay').html(displayDate);
+    // Save this string so we can display it on initial load-in,
+    // before the calendar provider is ready.
+    if (game.user.isGM) await game.settings.set('smalltime', 'current-date', displayDate);
   }
 }
 
