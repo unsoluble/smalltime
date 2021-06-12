@@ -1252,9 +1252,10 @@ class SmallTimeApp extends FormApplication {
     $(document).on('input', '#timeSlider', async function () {
       $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).hours);
       $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).minutes);
-
       SmallTimeApp.timeTransition($(this).val());
-      SmallTimeApp.emitSocket('changeTime', $(this).val());
+      if (game.user.isGM) {
+        SmallTimeApp.emitSocket('changeTime', $(this).val());
+      }
     });
 
     $(document).on('change', '#timeSlider', async function () {
