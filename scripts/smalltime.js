@@ -10,6 +10,7 @@ const SmallTime_MoonPhases = [
 ];
 
 // Default offset from the Player List window when pinned,
+// an Epoch offset for game systems that don't start at midnight,
 // plus custom offsets for game systems that draw extra borders
 // around their windows. Also default values for sunrise/set.
 let SmallTime_PinOffset = 83;
@@ -24,14 +25,6 @@ const SmallTime_MaxDarknessDefault = 1;
 const SmallTime_MinDarknessDefault = 0;
 
 Hooks.on('init', () => {
-  game.settings.register('smalltime', 'current-time', {
-    name: 'Current Time',
-    scope: 'world',
-    config: false,
-    type: Number,
-    default: 0,
-  });
-
   game.settings.register('smalltime', 'current-date', {
     name: 'Current Date',
     scope: 'world',
@@ -219,19 +212,6 @@ Hooks.on('init', () => {
     // Default is full moon.
     default: 4,
   });
-
-  game.settings.register('smalltime', 'about-time', {
-    name: game.i18n.localize('SMLTME.AboutTime'),
-    hint: game.i18n.localize('SMLTME.AboutTime_Hint'),
-    scope: 'world',
-    // Only show this toggle if About Time is enabled.
-    config: game.modules.get('about-time')?.active,
-    type: Boolean,
-    default: false,
-    onChange: () => {
-      location.reload();
-    },
-  });
 });
 
 Hooks.on('ready', () => {
@@ -249,7 +229,6 @@ Hooks.on('ready', () => {
     }
     if (data.type === 'externalUpdate') {
       handleTimeChange(getWorldTimeAsDayTime());
-      console.log('ping');
     }
     if (data.type === 'changeSetting') {
       if (game.user.isGM)
@@ -262,7 +241,6 @@ Hooks.on('ready', () => {
       }
     }
   }
-
   // Update the stops on the sunrise/sunset gradient, in case
   // there's been changes to the positions.
   updateGradientStops();
@@ -277,6 +255,7 @@ Hooks.on('canvasReady', () => {
   if (game.system.id === 'dsa5') {
     SmallTime_PinOffset += SmallTime_DasSchwarzeAugeOffset;
   }
+  // Obtain the custom worldTime epoch offset for the current PF2E world.
   if (game.system.id === 'pf2e') {
     const localEpoch = game.pf2e.worldClock.worldCreatedOn.c;
     const deltaInSeconds =
@@ -287,8 +266,14 @@ Hooks.on('canvasReady', () => {
     SmallTime_EpochOffset = deltaInSeconds;
   }
 
+  // Only allow the date display to show if there's a calendar provider available.
   game.modules.get('smalltime').dateAvailable = false;
-  if (game.system.id === 'pf2e' || game.modules.get('about-time')?.active) {
+  if (
+    game.system.id === 'pf2e' ||
+    game.modules.get('about-time')?.active ||
+    game.modules.get('foundryvtt-simple-calendar')?.active ||
+    game.modules.get('calendar-weather')?.active
+  ) {
     game.modules.get('smalltime').dateAvailable = true;
   }
 
@@ -369,17 +354,14 @@ Hooks.on('canvasReady', () => {
     if (!hasProperty(thisScene, 'data.flags.smalltime.darkness-link')) {
       thisScene.setFlag('smalltime', 'darkness-link', darknessDefault);
     }
-
     // Set the Player Vis state to the default choice.
     if (!hasProperty(thisScene, 'data.flags.smalltime.player-vis')) {
       thisScene.setFlag('smalltime', 'player-vis', visDefault);
     }
-
     // Refresh the current scene's Darkness level if it should be linked.
     if (thisScene.getFlag('smalltime', 'darkness-link')) {
       SmallTimeApp.timeTransition(getWorldTimeAsDayTime());
     }
-
     // Refresh the current scene BG for the settings dialog.
     grabSceneSlice();
   }
@@ -637,8 +619,7 @@ Hooks.on('renderPlayerList', () => {
   `);
 });
 
-// Grab updates from About Time. Flash the colon when the
-// realtime clock is running.
+// Listen for changes to the worldTime from elsewhere.
 Hooks.on('updateWorldTime', () => {
   const currentTime = {};
   currentTime.payload = getWorldTimeAsDayTime();
@@ -1005,12 +986,14 @@ function convertDisplayObjToString(displayObj) {
   return displayObj.hours + ':' + displayObj.minutes;
 }
 
+// Convert worldTime (seconds elapsed) into an integer time of day.
 function getWorldTimeAsDayTime() {
   const currentWorldTime = game.time.worldTime + SmallTime_EpochOffset;
   const dayTime = Math.trunc((currentWorldTime % 86400) / 60);
   return dayTime;
 }
 
+// Advance/retreat the elapsed worldTime based on changes made.
 async function setWorldTime(newTime) {
   const currentWorldTime = game.time.worldTime + SmallTime_EpochOffset;
   const dayTime = Math.trunc((currentWorldTime % 86400) / 60);
@@ -1271,6 +1254,7 @@ class SmallTimeApp extends FormApplication {
       }
     });
 
+    // Wait for the actual change event to do the time set.
     $(document).on('change', '#timeSlider', async function () {
       if (game.user.isGM) {
         setWorldTime($(this).val());
@@ -1279,7 +1263,7 @@ class SmallTimeApp extends FormApplication {
       }
     });
 
-    // Toggle the date display div, if About Time sync is enabled.
+    // Toggle the date display div, if a calendar provider is enabled.
     // The inline CSS overrides are a bit hacky, but were the
     // only way I could get the desired behaviour.
     html.find('#timeDisplay').on('click', async function () {
@@ -1295,7 +1279,6 @@ class SmallTimeApp extends FormApplication {
           game.Gametime.startRunning();
         }
         handleRealtimeState();
-        SmallTimeApp.emitSocket('changeTime', game.settings.get('smalltime', 'current-time'));
       } else {
         if (
           !game.settings.get('smalltime', 'date-showing') &&
@@ -1367,9 +1350,8 @@ class SmallTimeApp extends FormApplication {
           return phase === data.moons[0].currentPhase.icon;
         });
         await game.settings.set('smalltime', 'moon-phase', newPhase);
-        let currentTime = game.settings.get('smalltime', 'current-time');
-        SmallTimeApp.timeTransition(currentTime);
-        SmallTimeApp.emitSocket('changeTime', currentTime);
+        SmallTimeApp.timeTransition(getWorldTimeAsDayTime());
+        SmallTimeApp.emitSocket('changeTime', getWorldTimeAsDayTime());
       });
     }
   }
@@ -1423,7 +1405,6 @@ class SmallTimeApp extends FormApplication {
     } else {
       $('#slideContainer').css('background-position', `0px ${bgOffset}px`);
     }
-    //$('#slideContainer').css('background-position', `0px -${bgOffset}px`);
 
     // Swap out the moon for the sun during daytime,
     // changing phase as appropriate.
@@ -1589,6 +1570,7 @@ class SmallTimeApp extends FormApplication {
     }
   }
 
+  // Get the date from various calendar providers.
   static async getDate() {
     let newDay;
     let newMonth;
@@ -1605,7 +1587,16 @@ class SmallTimeApp extends FormApplication {
       newDate = ATobject.day;
       newYear = ATobject.year;
       displayDate = newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear;
-    } else if (game.system.id === 'pf2e') {
+    }
+    if (game.modules.get('foundryvtt-simple-calendar')?.active) {
+      let SCobject = SimpleCalendar.api.timestampToDate(game.time.worldTime);
+      newDay = SCobject.weekdays[SCobject.dayOfTheWeek - 1];
+      newMonth = SCobject.monthName;
+      newDate = SCobject.day;
+      newYear = SCobject.year;
+      displayDate = newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear;
+    }
+    if (game.system.id === 'pf2e') {
       newDay = game.pf2e.worldClock.weekday;
       newMonth = game.pf2e.worldClock.month;
       newDate = game.pf2e.worldClock.worldTime.c.day;
@@ -1614,6 +1605,7 @@ class SmallTimeApp extends FormApplication {
       // newEra = game.pf2e.worldClock.era;
       displayDate = newDay + ', ' + newDate + newSuffix + ' of ' + newMonth + ', ' + newYear + ' '; // + newEra;
     }
+
     $('#dateDisplay').html(displayDate);
 
     // Save this string so we can display it on initial load-in,
