@@ -1592,7 +1592,7 @@ class SmallTimeApp extends FormApplication {
       let SCobject = SimpleCalendar.api.timestampToDate(game.time.worldTime);
       newDay = SCobject.weekdays[SCobject.dayOfTheWeek];
       newMonth = SCobject.monthName;
-      newDate = SCobject.day;
+      newDate = SCobject.day + 1;
       newYear = SCobject.year;
       displayDate = newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear;
     }
