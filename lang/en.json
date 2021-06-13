@@ -14,8 +14,6 @@
   "SMLTME.Darkness_Control_Hint": "Link this scene's Darkness Level to the current time in SmallTime.",
   "SMLTME.Darkness_Config": "Darkness Configuration",
   "SMLTME.Darkness_Config_Hint": "Drag the suns & moons to set sunrise and sunset times. Their heights set the maximum & minimum darkness levels.",
-  "SMLTME.AboutTime": "Sync with About Time",
-  "SMLTME.AboutTime_Hint": "If the About Time clock changes, SmallTime will change, and vice-versa. Advancing SmallTime past midnight will also change the About Time day.",
   "SMLTME.Hide_From_Players": "Hide from Players",
   "SMLTME.Hide_From_Players_Hint": "Hide the SmallTime window from all non-GM users.",
   "SMLTME.Allow_Trusted": "Allow Trusted Player Control",

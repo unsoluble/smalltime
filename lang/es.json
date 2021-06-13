@@ -14,8 +14,6 @@
   "SMLTME.Darkness_Control_Hint": "Vincula el Nivel de Oscuridad de esta escena con la hora actual de SmallTime.",
   "SMLTME.Darkness_Config": "Configuración de Oscuridad",
   "SMLTME.Darkness_Config_Hint": "Arrastra los soles y las lunas para configurar la hora de salida y puesta del sol. Sus alturas configuran los niveles máximos y mínimos de oscuridad.",
-  "SMLTME.AboutTime": "Sincronizar con About Time",
-  "SMLTME.AboutTime_Hint": "Si el reloj de About Time cambia, SmallTime cambiará, y vice-versa. Adelantar SmallTime más allá de medianoche también cambiará el día de About Time.",
   "SMLTME.Hide_From_Players": "Esconder a los Jugadores",
   "SMLTME.Hide_From_Players_Hint": "Esconder la ventana de SmallTime para todos los usuarios no-GM.",
   "SMLTME.Allow_Trusted": "Permitir el control a Jugador de Confianza",

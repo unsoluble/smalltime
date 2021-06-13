@@ -11,7 +11,8 @@ _A small module for displaying and controlling the current time of day._
 - Shift-click the moon to cycle the moon's phase. If you're running Simple Calendar, your phase will be synced from there.
 - Toggle show/hide button is in Journal Notes.
 - Darkness link toggle and Player visibility controls are in Scene Config.
-- With About Time sync enabled, click the time to display the date; Shift-click the time to toggle the realtime clock.
+- With a calendar-providing module enabled, click the time to display the date.
+- If a module or game system provides a realtime clock, Shift-click the time to toggle it.
 
 Video overview: (somewhat out of date now, but it covers the main bits :) [https://www.youtube.com/watch?v=XShiobMvatE](https://www.youtube.com/watch?v=XShiobMvatE)
 
@@ -34,7 +35,7 @@ For each scene, you can choose how much of the display can be seen by Players, a
 ![Scene_Config](doc/Scene_Config.webp)
 ![Darkness_Link](doc/Darkness_Link.gif)
 
-If you have [About Time](https://foundryvtt.com/packages/about-time) enabled, you can choose to sync with its time and date. Clicking on the time will toggle the date display; Shift-clicking the time will toggle the realtime clock (as configured in About Time).
+If you have a calendar-providing module (or game system) enabled, SmallTime will sync with its date. Clicking on the time will toggle the date display; Shift-clicking the time will toggle the realtime clock (if provided by your other modules or game system).
 
 ![About_Time_Integration](doc/About_Time_Integration.gif)
 
