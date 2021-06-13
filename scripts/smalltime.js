@@ -1590,7 +1590,7 @@ class SmallTimeApp extends FormApplication {
     }
     if (game.modules.get('foundryvtt-simple-calendar')?.active) {
       let SCobject = SimpleCalendar.api.timestampToDate(game.time.worldTime);
-      newDay = SCobject.weekdays[SCobject.dayOfTheWeek - 1];
+      newDay = SCobject.weekdays[SCobject.dayOfTheWeek];
       newMonth = SCobject.monthName;
       newDate = SCobject.day;
       newYear = SCobject.year;
