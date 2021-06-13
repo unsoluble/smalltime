@@ -279,7 +279,7 @@ Hooks.on('canvasReady', () => {
   }
   if (game.system.id === 'pf2e') {
     const localEpoch = game.pf2e.worldClock.worldCreatedOn.c;
-    let deltaInSeconds =
+    const deltaInSeconds =
       localEpoch.hour * 3600 +
       localEpoch.minute * 60 +
       localEpoch.second +
@@ -1590,28 +1590,32 @@ class SmallTimeApp extends FormApplication {
   }
 
   static async getDate() {
-    let newTime;
     let newDay;
     let newMonth;
     let newDate;
     let newYear;
+    let newSuffix;
+    // let newEra;
     let displayDate = '';
 
     if (game.modules.get('about-time')?.active) {
       let ATobject = game.Gametime.DTNow().longDateExtended();
-      newTime = ATobject.hour * 60 + ATobject.minute;
-
       newDay = ATobject.dowString;
       newMonth = ATobject.monthString;
       newDate = ATobject.day;
       newYear = ATobject.year;
-
-      // Arbitrary/opinionated date formatting here, could be a user setting eventually.
       displayDate = newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear;
     } else if (game.system.id === 'pf2e') {
-      console.log('Get PF2E date');
+      newDay = game.pf2e.worldClock.weekday;
+      newMonth = game.pf2e.worldClock.month;
+      newDate = game.pf2e.worldClock.worldTime.c.day;
+      newSuffix = game.pf2e.worldClock.ordinalSuffix;
+      newYear = game.pf2e.worldClock.year;
+      // newEra = game.pf2e.worldClock.era;
+      displayDate = newDay + ', ' + newDate + newSuffix + ' of ' + newMonth + ', ' + newYear + ' '; // + newEra;
     }
     $('#dateDisplay').html(displayDate);
+
     // Save this string so we can display it on initial load-in,
     // before the calendar provider is ready.
     if (game.user.isGM) await game.settings.set('smalltime', 'current-date', displayDate);
