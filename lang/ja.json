@@ -15,8 +15,6 @@
   "SMLTME.Darkness_Config": "暗さの設定",
   "SMLTME.Darkness_Reset": "［Shift］＋クリックすると時刻がデフォルトにリセットされます。",
   "SMLTME.Darkness_Config_Hint": "太陽と月をドラッグして日出と日没の時間を決定します。また太陽と月の高さによって、暗さの最大値と最小値が設定できます。",
-  "SMLTME.AboutTime": "About Timeと同期する",
-  "SMLTME.AboutTime_Hint": "About Timeによる時間変化がSmallTimeにも反映されるようになります。またその逆も同様です。SmallTimeで深夜を超えると、About Timeの日付も更新されます。",
   "SMLTME.Hide_From_Players": "プレイヤーから隠す",
   "SMLTME.Hide_From_Players_Hint": "GM権限を持たないユーザーには、SmallTimeウィンドウが表示されなくなります。",
   "SMLTME.Allow_Trusted": "信頼されたプレイヤーの操作を許可する",
