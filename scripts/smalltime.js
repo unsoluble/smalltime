@@ -215,6 +215,17 @@ Hooks.on('init', () => {
 });
 
 Hooks.on('ready', () => {
+  // Obtain the custom worldTime epoch offset for the current PF2E world.
+  if (game.system.id === 'pf2e') {
+    const localEpoch = game.pf2e.worldClock.worldCreatedOn.c;
+    const deltaInSeconds =
+      localEpoch.hour * 3600 +
+      localEpoch.minute * 60 +
+      localEpoch.second +
+      localEpoch.millisecond * 0.001;
+    SmallTime_EpochOffset = deltaInSeconds;
+  }
+  
   // Send incoming socket emissions through the async function.
   game.socket.on(`module.smalltime`, (data) => {
     doSocket(data);
@@ -254,16 +265,6 @@ Hooks.on('canvasReady', () => {
   }
   if (game.system.id === 'dsa5') {
     SmallTime_PinOffset += SmallTime_DasSchwarzeAugeOffset;
-  }
-  // Obtain the custom worldTime epoch offset for the current PF2E world.
-  if (game.system.id === 'pf2e') {
-    const localEpoch = game.pf2e.worldClock.worldCreatedOn.c;
-    const deltaInSeconds =
-      localEpoch.hour * 3600 +
-      localEpoch.minute * 60 +
-      localEpoch.second +
-      localEpoch.millisecond * 0.001;
-    SmallTime_EpochOffset = deltaInSeconds;
   }
 
   // Only allow the date display to show if there's a calendar provider available.
