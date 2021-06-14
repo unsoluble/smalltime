@@ -1588,14 +1588,6 @@ class SmallTimeApp extends FormApplication {
       newYear = ATobject.year;
       displayDate = newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear;
     }
-    if (game.modules.get('foundryvtt-simple-calendar')?.active) {
-      let SCobject = SimpleCalendar.api.timestampToDate(game.time.worldTime);
-      newDay = SCobject.weekdays[SCobject.dayOfTheWeek];
-      newMonth = SCobject.monthName;
-      newDate = SCobject.day + 1;
-      newYear = SCobject.year;
-      displayDate = newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear;
-    }
     if (game.system.id === 'pf2e') {
       newDay = game.pf2e.worldClock.weekday;
       newMonth = game.pf2e.worldClock.month;
@@ -1604,6 +1596,14 @@ class SmallTimeApp extends FormApplication {
       newYear = game.pf2e.worldClock.year;
       // newEra = game.pf2e.worldClock.era;
       displayDate = newDay + ', ' + newDate + newSuffix + ' of ' + newMonth + ', ' + newYear + ' '; // + newEra;
+    }
+    if (game.modules.get('foundryvtt-simple-calendar')?.active) {
+      let SCobject = SimpleCalendar.api.timestampToDate(game.time.worldTime);
+      newDay = SCobject.weekdays[SCobject.dayOfTheWeek];
+      newMonth = SCobject.monthName;
+      newDate = SCobject.day + 1;
+      newYear = SCobject.year;
+      displayDate = newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear;
     }
 
     $('#dateDisplay').html(displayDate);
