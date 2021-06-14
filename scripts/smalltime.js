@@ -214,49 +214,6 @@ Hooks.on('init', () => {
   });
 });
 
-Hooks.on('ready', () => {
-  // Obtain the custom worldTime epoch offset for the current PF2E world.
-  if (game.system.id === 'pf2e') {
-    const localEpoch = game.pf2e.worldClock.worldCreatedOn.c;
-    const deltaInSeconds =
-      localEpoch.hour * 3600 +
-      localEpoch.minute * 60 +
-      localEpoch.second +
-      localEpoch.millisecond * 0.001;
-    SmallTime_EpochOffset = deltaInSeconds;
-  }
-  
-  // Send incoming socket emissions through the async function.
-  game.socket.on(`module.smalltime`, (data) => {
-    doSocket(data);
-  });
-
-  async function doSocket(data) {
-    if (data.type === 'changeTime') {
-      if (game.user.isGM) {
-        setWorldTime(data.payload);
-      }
-      handleTimeChange(data);
-    }
-    if (data.type === 'externalUpdate') {
-      handleTimeChange(getWorldTimeAsDayTime());
-    }
-    if (data.type === 'changeSetting') {
-      if (game.user.isGM)
-        await game.settings.set(data.payload.scope, data.payload.key, data.payload.value);
-    }
-    if (data.type === 'changeDarkness') {
-      if (game.user.isGM) {
-        const currentScene = game.scenes.get(data.payload.sceneID);
-        await currentScene.update({ darkness: data.payload.darkness });
-      }
-    }
-  }
-  // Update the stops on the sunrise/sunset gradient, in case
-  // there's been changes to the positions.
-  updateGradientStops();
-});
-
 // Set the initial state for newly rendered scenes.
 Hooks.on('canvasReady', () => {
   // Account for the extra border art in certain game systems.
@@ -368,10 +325,49 @@ Hooks.on('canvasReady', () => {
   }
 });
 
+Hooks.on('ready', () => {
+  // Send incoming socket emissions through the async function.
+  game.socket.on(`module.smalltime`, (data) => {
+    doSocket(data);
+  });
+
+  async function doSocket(data) {
+    if (data.type === 'changeTime') {
+      if (game.user.isGM) {
+        await setWorldTime(data.payload);
+      }
+      handleTimeChange(data.payload);
+    }
+    if (data.type === 'changeSetting') {
+      if (game.user.isGM)
+        await game.settings.set(data.payload.scope, data.payload.key, data.payload.value);
+    }
+    if (data.type === 'changeDarkness') {
+      if (game.user.isGM) {
+        const currentScene = game.scenes.get(data.payload.sceneID);
+        await currentScene.update({ darkness: data.payload.darkness });
+      }
+    }
+  }
+  // Update the stops on the sunrise/sunset gradient, in case
+  // there's been changes to the positions.
+  updateGradientStops();
+
+  // Obtain the custom worldTime epoch offset for the current PF2E world.
+  if (game.system.id === 'pf2e') {
+    const localEpoch = game.pf2e.worldClock.worldCreatedOn.c;
+    const deltaInSeconds =
+      localEpoch.hour * 3600 +
+      localEpoch.minute * 60 +
+      localEpoch.second +
+      localEpoch.millisecond * 0.001;
+    SmallTime_EpochOffset = deltaInSeconds;
+  }
+});
+
 // Wait for the app to be rendered, then adjust the CSS to
 // account for the date display, if showing.
 Hooks.on('renderSmallTimeApp', () => {
-  SmallTimeApp.getDate();
   // Disable controls for non-GMs.
   if (!game.modules.get('smalltime').controlAuth) {
     $('#timeSlider').addClass('disable-for-players');
@@ -395,6 +391,7 @@ Hooks.on('renderSmallTimeApp', () => {
     $('#dateDisplay').addClass('active');
     $('#smalltime-app').css({ height: '79px' });
   }
+  handleTimeChange(getWorldTimeAsDayTime());
 });
 
 // Handle our changes to the Scene Config screen.
@@ -622,9 +619,7 @@ Hooks.on('renderPlayerList', () => {
 
 // Listen for changes to the worldTime from elsewhere.
 Hooks.on('updateWorldTime', () => {
-  const currentTime = {};
-  currentTime.payload = getWorldTimeAsDayTime();
-  handleTimeChange(currentTime);
+  handleTimeChange(getWorldTimeAsDayTime());
 });
 
 // Handle toggling of time separator flash when game is paused/unpaused.
@@ -1003,11 +998,11 @@ async function setWorldTime(newTime) {
 }
 
 // Helper function for time-changing socket updates.
-function handleTimeChange(data) {
-  SmallTimeApp.timeTransition(data.payload);
-  $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay(data.payload).hours);
-  $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay(data.payload).minutes);
-  $('#timeSlider').val(data.payload);
+function handleTimeChange(timeInteger) {
+  SmallTimeApp.timeTransition(timeInteger);
+  $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay(timeInteger).hours);
+  $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay(timeInteger).minutes);
+  $('#timeSlider').val(timeInteger);
   handleRealtimeState();
   SmallTimeApp.getDate();
 }
@@ -1383,7 +1378,6 @@ class SmallTimeApp extends FormApplication {
     } else {
       SmallTimeApp.emitSocket('changeTime', newTime);
     }
-
     SmallTimeApp.timeTransition(newTime);
   }
 
