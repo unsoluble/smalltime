@@ -985,7 +985,7 @@ function convertDisplayObjToString(displayObj) {
 // Convert worldTime (seconds elapsed) into an integer time of day.
 function getWorldTimeAsDayTime() {
   const currentWorldTime = game.time.worldTime + SmallTime_EpochOffset;
-  const dayTime = Math.trunc((currentWorldTime % 86400) / 60);
+  const dayTime = Math.abs(Math.trunc((currentWorldTime % 86400) / 60));
   return dayTime;
 }
 
