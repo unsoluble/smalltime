@@ -59,6 +59,7 @@ Full support for:
 - Japanese (thanks @BrotherSharp!)
 - German (thanks @kdomke!)
 - Spanish (thanks @masr!)
+- Korean (thanks @jbblily!)
 
 I'm happy to accept and implement more translations!
 
