@@ -1451,10 +1451,10 @@ class SmallTimeApp extends FormApplication {
         }
       } else {
         if (timeNow >= sunriseStart && timeNow <= sunriseEnd) {
-          darknessValue = 1 - ((timeNow - sunriseStart) / (sunriseEnd - sunriseStart)) * multiplier;
+          darknessValue = (1 - ((timeNow - sunriseStart) / (sunriseEnd - sunriseStart))) * multiplier;
         } else if (timeNow >= sunsetStart && timeNow <= sunsetEnd) {
           darknessValue =
-            1 - (1 - (timeNow - sunsetStart) / (sunsetEnd - sunsetStart)) * multiplier;
+            (1 - (1 - (timeNow - sunsetStart) / (sunsetEnd - sunsetStart))) * multiplier;
         }
       }
       // Truncate long decimals.
