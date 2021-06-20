@@ -1445,16 +1445,15 @@ class SmallTimeApp extends FormApplication {
 
       if (minDarkness > maxDarkness) {
         if (timeNow >= sunriseStart && timeNow <= sunriseEnd) {
-          darknessValue = ((timeNow - sunriseStart) / (sunriseEnd - sunriseStart)) * multiplier;
+          darknessValue = maxDarkness + ((timeNow - sunriseStart) / (sunriseEnd - sunriseStart)) * multiplier;
         } else if (timeNow >= sunsetStart && timeNow <= sunsetEnd) {
-          darknessValue = (1 - (timeNow - sunsetStart) / (sunsetEnd - sunsetStart)) * multiplier;
+          darknessValue = maxDarkness + (1 - (timeNow - sunsetStart) / (sunsetEnd - sunsetStart)) * multiplier;
         }
       } else {
         if (timeNow >= sunriseStart && timeNow <= sunriseEnd) {
-          darknessValue = (1 - ((timeNow - sunriseStart) / (sunriseEnd - sunriseStart))) * multiplier;
+          darknessValue = minDarkness + (1 - ((timeNow - sunriseStart) / (sunriseEnd - sunriseStart))) * multiplier;
         } else if (timeNow >= sunsetStart && timeNow <= sunsetEnd) {
-          darknessValue =
-            (1 - (1 - (timeNow - sunsetStart) / (sunsetEnd - sunsetStart))) * multiplier;
+          darknessValue = minDarkness + ((timeNow - sunsetStart) / (sunsetEnd - sunsetStart)) * multiplier;
         }
       }
       // Truncate long decimals.
