@@ -1302,8 +1302,8 @@ class SmallTimeApp extends FormApplication {
     });
 
     // Handle the increment/decrement buttons.
-    let smallStep = game.settings.get('smalltime', 'small-step');
-    let largeStep = game.settings.get('smalltime', 'large-step');
+    let smallStep;
+    let largeStep;
 
     html.find('#decrease-small').on('click', () => {
       smallStep = game.settings.get('smalltime', 'small-step');
