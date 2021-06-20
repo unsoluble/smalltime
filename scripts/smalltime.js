@@ -986,7 +986,9 @@ function convertDisplayObjToString(displayObj) {
 function getWorldTimeAsDayTime() {
   const currentWorldTime = game.time.worldTime + SmallTime_EpochOffset;
   const dayTime = Math.abs(Math.trunc((currentWorldTime % 86400) / 60));
-  return dayTime;
+  if (currentWorldTime < 0) {
+    return 1440 - dayTime;
+  } else return dayTime;
 }
 
 // Advance/retreat the elapsed worldTime based on changes made.
@@ -1445,15 +1447,19 @@ class SmallTimeApp extends FormApplication {
 
       if (minDarkness > maxDarkness) {
         if (timeNow >= sunriseStart && timeNow <= sunriseEnd) {
-          darknessValue = maxDarkness + ((timeNow - sunriseStart) / (sunriseEnd - sunriseStart)) * multiplier;
+          darknessValue =
+            maxDarkness + ((timeNow - sunriseStart) / (sunriseEnd - sunriseStart)) * multiplier;
         } else if (timeNow >= sunsetStart && timeNow <= sunsetEnd) {
-          darknessValue = maxDarkness + (1 - (timeNow - sunsetStart) / (sunsetEnd - sunsetStart)) * multiplier;
+          darknessValue =
+            maxDarkness + (1 - (timeNow - sunsetStart) / (sunsetEnd - sunsetStart)) * multiplier;
         }
       } else {
         if (timeNow >= sunriseStart && timeNow <= sunriseEnd) {
-          darknessValue = minDarkness + (1 - ((timeNow - sunriseStart) / (sunriseEnd - sunriseStart))) * multiplier;
+          darknessValue =
+            minDarkness + (1 - (timeNow - sunriseStart) / (sunriseEnd - sunriseStart)) * multiplier;
         } else if (timeNow >= sunsetStart && timeNow <= sunsetEnd) {
-          darknessValue = minDarkness + ((timeNow - sunsetStart) / (sunsetEnd - sunsetStart)) * multiplier;
+          darknessValue =
+            minDarkness + ((timeNow - sunsetStart) / (sunsetEnd - sunsetStart)) * multiplier;
         }
       }
       // Truncate long decimals.
