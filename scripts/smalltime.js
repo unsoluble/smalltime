@@ -91,12 +91,21 @@ Hooks.on('init', () => {
     default: 12,
   });
 
+  // If there is one or more available source of calendar information,
+  // add them to the list of providers to choose from in Settings.
   let calendarAvailable = false;
-  if (
-    game.system.id === 'pf2e' ||
-    game.modules.get('foundryvtt-simple-calendar')?.active ||
-    game.modules.get('calendar-weather')?.active
-  ) {
+  let calendarProviders = new Object();
+
+  if (game.system.id === 'pf2e') {
+    Object.assign(calendarProviders, { pf2e: 'PF2E' });
+    calendarAvailable = true;
+  }
+  if (game.modules.get('foundryvtt-simple-calendar')?.active) {
+    Object.assign(calendarProviders, { sc: 'Simple Calendar' });
+    calendarAvailable = true;
+  }
+  if (game.modules.get('calendar-weather')?.active) {
+    Object.assign(calendarProviders, { cw: 'Calendar/Weather' });
     calendarAvailable = true;
   }
 
@@ -109,6 +118,16 @@ Hooks.on('init', () => {
       0: '0',
       1: '1',
     },
+    default: 0,
+  });
+
+  game.settings.register('smalltime', 'calendar-provider', {
+    name: game.i18n.localize('SMLTME.Calendar_Provider'),
+    hint: game.i18n.localize('SMLTME.Calendar_Provider_Hint'),
+    scope: 'world',
+    config: calendarAvailable,
+    type: String,
+    choices: calendarProviders,
     default: 0,
   });
 
