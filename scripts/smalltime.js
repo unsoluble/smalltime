@@ -491,7 +491,21 @@ Hooks.on('renderSceneConfig', async (obj) => {
 });
 
 Hooks.on('renderSettingsConfig', () => {
+  // Tweak to accommodate TidyUI's smaller available space.
+  if (game.modules.get('tidy-ui_game-settings')?.active) {
+    $('#smalltime-darkness-config').css('transform', 'scale(0.9, 0.9) translate(-30px, 0px)');
+  }
+
+  // Everything else is GM-only.
   if (!game.user.isGM) return;
+
+  // Pull the current date and format it in various ways for the selection.
+  $('select[name="smalltime.date-format"]')
+    .children('option')
+    .each(function () {
+      this.text = getDate('SC', this.value);
+    });
+
   // Hide the elements for the threshold settings; we'll be changing
   // these elsewhere, but still want them here for the save workflow.
   $('input[name="smalltime.max-darkness"]').parent().parent().css('display', 'none');
@@ -572,11 +586,6 @@ Hooks.on('renderSettingsConfig', () => {
       transition: 'none',
     });
   });
-
-  // Tweak to accommodate TidyUI's smaller available space.
-  if (game.modules.get('tidy-ui_game-settings')?.active) {
-    $('#smalltime-darkness-config').css('transform', 'scale(0.9, 0.9) translate(-30px, 0px)');
-  }
 });
 
 // Undo the opacity preview settings.
@@ -1036,7 +1045,7 @@ function getDate(provider, variant) {
   let newYear;
   let newSuffix;
   // let newEra;
-  let displayDate;
+  let displayDate = [];
 
   if (game.modules.get('foundryvtt-simple-calendar')?.active) {
     let SCobject = SimpleCalendar.api.timestampToDate(game.time.worldTime);
