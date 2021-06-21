@@ -93,21 +93,8 @@ Hooks.on('init', () => {
 
   // If there is one or more available source of calendar information,
   // add them to the list of providers to choose from in Settings.
-  let calendarAvailable = false;
-  let calendarProviders = new Object();
-
-  if (game.system.id === 'pf2e') {
-    Object.assign(calendarProviders, { pf2e: 'PF2E' });
-    calendarAvailable = true;
-  }
-  if (game.modules.get('foundryvtt-simple-calendar')?.active) {
-    Object.assign(calendarProviders, { sc: 'Simple Calendar' });
-    calendarAvailable = true;
-  }
-  if (game.modules.get('calendar-weather')?.active) {
-    Object.assign(calendarProviders, { cw: 'Calendar/Weather' });
-    calendarAvailable = true;
-  }
+  const calendarProviders = getCalendarProviders();
+  const calendarAvailable = Object.keys(calendarProviders).length > 0 ? true : false;
 
   game.settings.register('smalltime', 'date-format', {
     name: game.i18n.localize('SMLTME.Date_Format'),
@@ -1045,6 +1032,22 @@ async function setWorldTime(newTime) {
   const dayTime = Math.trunc((currentWorldTime % 86400) / 60);
   const delta = newTime - dayTime;
   game.time.advance(delta * 60);
+}
+
+function getCalendarProviders() {
+  let calendarProviders = new Object();
+
+  if (game.system.id === 'pf2e') {
+    Object.assign(calendarProviders, { pf2e: 'PF2E' });
+  }
+  if (game.modules.get('foundryvtt-simple-calendar')?.active) {
+    Object.assign(calendarProviders, { sc: 'Simple Calendar' });
+  }
+  if (game.modules.get('calendar-weather')?.active) {
+    Object.assign(calendarProviders, { cw: 'Calendar/Weather' });
+  }
+
+  return calendarProviders;
 }
 
 // Helper function for time-changing socket updates.
