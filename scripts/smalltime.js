@@ -84,12 +84,32 @@ Hooks.on('init', () => {
     scope: 'world',
     config: true,
     type: Number,
-    default: 12,
     choices: {
       12: game.i18n.localize('SMLTME.12hr'),
       24: game.i18n.localize('SMLTME.24hr'),
     },
     default: 12,
+  });
+
+  let calendarAvailable = false;
+  if (
+    game.system.id === 'pf2e' ||
+    game.modules.get('foundryvtt-simple-calendar')?.active ||
+    game.modules.get('calendar-weather')?.active
+  ) {
+    calendarAvailable = true;
+  }
+
+  game.settings.register('smalltime', 'date-format', {
+    name: game.i18n.localize('SMLTME.Date_Format'),
+    scope: 'world',
+    config: calendarAvailable,
+    type: Number,
+    choices: {
+      0: '0',
+      1: '1',
+    },
+    default: 0,
   });
 
   game.settings.register('smalltime', 'small-step', {
@@ -1006,7 +1026,29 @@ function handleTimeChange(timeInteger) {
   $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay(timeInteger).minutes);
   $('#timeSlider').val(timeInteger);
   handleRealtimeState();
-  SmallTimeApp.getDate();
+  SmallTimeApp.updateDate();
+}
+
+function getDate(provider, variant) {
+  let newDay;
+  let newMonth;
+  let newDate;
+  let newYear;
+  let newSuffix;
+  // let newEra;
+  let displayDate;
+
+  if (game.modules.get('foundryvtt-simple-calendar')?.active) {
+    let SCobject = SimpleCalendar.api.timestampToDate(game.time.worldTime);
+    newDay = SCobject.weekdays[SCobject.dayOfTheWeek];
+    newMonth = SCobject.monthName;
+    // SCobject.day is zero-indexed, so add one to get the display date.
+    newDate = SCobject.day + 1;
+    newYear = SCobject.year;
+    displayDate.push(newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear);
+    displayDate.push(newDay + ', ' + newDate + ' ' + newMonth + ', ' + newYear);
+  }
+  return displayDate[variant];
 }
 
 function grabSceneSlice() {
@@ -1212,7 +1254,7 @@ class SmallTimeApp extends FormApplication {
     // An initial set of the sun/moon/bg/time/date display in case it hasn't been
     // updated since a settings change for some reason.
     SmallTimeApp.timeTransition(this.currentTime);
-    SmallTimeApp.getDate();
+    SmallTimeApp.updateDate();
 
     // Handle cycling through the moon phases on Shift-clicks.
     $('#timeSlider').on('click', async function () {
@@ -1571,7 +1613,7 @@ class SmallTimeApp extends FormApplication {
   }
 
   // Get the date from various calendar providers.
-  static async getDate() {
+  static async updateDate() {
     let newDay;
     let newMonth;
     let newDate;

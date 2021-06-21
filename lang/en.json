@@ -2,6 +2,7 @@
   "SMLTME.Time_Format": "Time Format",
   "SMLTME.12hr": "12hr",
   "SMLTME.24hr": "24hr",
+  "SMLTME.Date_Format": "Date Format",
   "SMLTME.Small_Step": "Small Step Amount",
   "SMLTME.Small_Step_Hint": "Number of minutes to add/remove from the time with the < and > buttons. Hold Shift to double.",
   "SMLTME.Large_Step": "Large Step Amount",
