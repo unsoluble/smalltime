@@ -1043,14 +1043,14 @@ async function setWorldTime(newTime) {
 function getCalendarProviders() {
   let calendarProviders = new Object();
 
-  if (game.system.id === 'pf2e') {
-    Object.assign(calendarProviders, { pf2e: 'PF2E' });
-  }
   if (game.modules.get('foundryvtt-simple-calendar')?.active) {
     Object.assign(calendarProviders, { sc: 'Simple Calendar' });
   }
   if (game.modules.get('calendar-weather')?.active) {
     Object.assign(calendarProviders, { cw: 'Calendar/Weather' });
+  }
+  if (game.system.id === 'pf2e') {
+    Object.assign(calendarProviders, { pf2e: 'PF2' });
   }
 
   return calendarProviders;
