@@ -101,9 +101,15 @@ Hooks.on('init', () => {
     scope: 'world',
     config: calendarAvailable,
     type: Number,
+    // These strings are replaced dynamically later.
     choices: {
       0: '0',
       1: '1',
+      2: '2',
+      3: '3',
+      4: '4',
+      5: '5',
+      6: '6',
     },
     default: 0,
   });
@@ -115,7 +121,7 @@ Hooks.on('init', () => {
     config: calendarAvailable,
     type: String,
     choices: calendarProviders,
-    default: 0,
+    default: 'sc',
   });
 
   game.settings.register('smalltime', 'small-step', {
@@ -509,7 +515,7 @@ Hooks.on('renderSettingsConfig', () => {
   $('select[name="smalltime.date-format"]')
     .children('option')
     .each(function () {
-      this.text = getDate('SC', this.value);
+      this.text = getDate(game.settings.get('smalltime', 'calendar-provider'), this.value);
     });
 
   // Hide the elements for the threshold settings; we'll be changing
@@ -1061,24 +1067,42 @@ function handleTimeChange(timeInteger) {
 }
 
 function getDate(provider, variant) {
-  let newDay;
-  let newMonth;
-  let newDate;
-  let newYear;
-  let newSuffix;
-  // let newEra;
+  let day;
+  let monthName;
+  let month;
+  let date;
+  let year;
+  let suffix;
   let displayDate = [];
 
-  if (game.modules.get('foundryvtt-simple-calendar')?.active) {
+  if (game.modules.get('foundryvtt-simple-calendar')?.active && provider === 'sc') {
     let SCobject = SimpleCalendar.api.timestampToDate(game.time.worldTime);
-    newDay = SCobject.weekdays[SCobject.dayOfTheWeek];
-    newMonth = SCobject.monthName;
-    // SCobject.day is zero-indexed, so add one to get the display date.
-    newDate = SCobject.day + 1;
-    newYear = SCobject.year;
-    displayDate.push(newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear);
-    displayDate.push(newDay + ', ' + newDate + ' ' + newMonth + ', ' + newYear);
+    day = SCobject.weekdays[SCobject.dayOfTheWeek];
+    monthName = SCobject.monthName;
+    // SCobject.month and .day are zero-indexed, so add one to get the display date.
+    month = SCobject.month + 1;
+    date = SCobject.day + 1;
+    year = SCobject.year;
   }
+
+  if (game.system.id === 'pf2e' && provider === 'pf2e') {
+    day = game.pf2e.worldClock.weekday;
+    monthName = game.pf2e.worldClock.month;
+    month = 0;
+    date = game.pf2e.worldClock.worldTime.c.day;
+    year = game.pf2e.worldClock.year;
+    // suffix = game.pf2e.worldClock.ordinalSuffix;
+    // era = game.pf2e.worldClock.era;
+  }
+
+  displayDate.push(day + ', ' + date + ' of ' + monthName + ', ' + year);
+  displayDate.push(day + ', ' + monthName + ' ' + date + ', ' + year);
+  displayDate.push(day + ', ' + date + ' ' + monthName + ', ' + year);
+  displayDate.push(day + ' ' + monthName + ', ' + year);
+  displayDate.push(date + ' / ' + month + ' / ' + year);
+  displayDate.push(month + ' / ' + date + ' / ' + year);
+  displayDate.push(year + ' / ' + month + ' / ' + date);
+
   return displayDate[variant];
 }
 
@@ -1645,40 +1669,10 @@ class SmallTimeApp extends FormApplication {
 
   // Get the date from various calendar providers.
   static async updateDate() {
-    let newDay;
-    let newMonth;
-    let newDate;
-    let newYear;
-    let newSuffix;
-    // let newEra;
-    let displayDate = '';
-
-    if (game.modules.get('about-time')?.active) {
-      let ATobject = game.Gametime.DTNow().longDateExtended();
-      newDay = ATobject.dowString;
-      newMonth = ATobject.monthString;
-      newDate = ATobject.day;
-      newYear = ATobject.year;
-      displayDate = newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear;
-    }
-    if (game.system.id === 'pf2e') {
-      newDay = game.pf2e.worldClock.weekday;
-      newMonth = game.pf2e.worldClock.month;
-      newDate = game.pf2e.worldClock.worldTime.c.day;
-      newSuffix = game.pf2e.worldClock.ordinalSuffix;
-      newYear = game.pf2e.worldClock.year;
-      // newEra = game.pf2e.worldClock.era;
-      displayDate = newDay + ', ' + newDate + newSuffix + ' of ' + newMonth + ', ' + newYear + ' '; // + newEra;
-    }
-    if (game.modules.get('foundryvtt-simple-calendar')?.active) {
-      let SCobject = SimpleCalendar.api.timestampToDate(game.time.worldTime);
-      newDay = SCobject.weekdays[SCobject.dayOfTheWeek];
-      newMonth = SCobject.monthName;
-      // SCobject.day is zero-indexed, so add one to get the display date.
-      newDate = SCobject.day + 1;
-      newYear = SCobject.year;
-      displayDate = newDay + ', ' + newMonth + ' ' + newDate + ', ' + newYear;
-    }
+    let displayDate = getDate(
+      game.settings.get('smalltime', 'calendar-provider'),
+      game.settings.get('smalltime', 'date-format')
+    );
 
     $('#dateDisplay').html(displayDate);
 
