@@ -1050,7 +1050,7 @@ function getCalendarProviders() {
     Object.assign(calendarProviders, { cw: 'Calendar/Weather' });
   }
   if (game.system.id === 'pf2e') {
-    Object.assign(calendarProviders, { pf2e: 'PF2' });
+    Object.assign(calendarProviders, { pf2e: 'PF2E ' });
   }
 
   return calendarProviders;
