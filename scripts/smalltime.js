@@ -1072,17 +1072,26 @@ function getDate(provider, variant) {
   let month;
   let date;
   let year;
-  let suffix;
   let displayDate = [];
 
   if (game.modules.get('foundryvtt-simple-calendar')?.active && provider === 'sc') {
     let SCobject = SimpleCalendar.api.timestampToDate(game.time.worldTime);
     day = SCobject.weekdays[SCobject.dayOfTheWeek];
     monthName = SCobject.monthName;
-    // SCobject.month and .day are zero-indexed, so add one to get the display date.
+    // SC .month and .day are zero-indexed, so add one to get the display date.
     month = SCobject.month + 1;
     date = SCobject.day + 1;
     year = SCobject.year;
+  }
+
+  if (game.modules.get('calendar-weather')?.active && provider === 'cw') {
+    let CWobject = game.settings.get('calendar-weather', 'dateTime');
+    day = CWobject.daysOfTheWeek[CWobject.numDayOfTheWeek];
+    monthName = CWobject.months[CWobject.currentMonth].name;
+    // CW .currentMonth and .day are zero-indexed, so add one to get the display date.
+    month = CWobject.currentMonth + 1;
+    date = CWobject.day + 1;
+    year = CWobject.year;
   }
 
   if (game.system.id === 'pf2e' && provider === 'pf2e') {
@@ -1095,8 +1104,8 @@ function getDate(provider, variant) {
     // era = game.pf2e.worldClock.era;
   }
 
-  displayDate.push(day + ', ' + date + ' of ' + monthName + ', ' + year);
   displayDate.push(day + ', ' + monthName + ' ' + date + ', ' + year);
+  displayDate.push(day + ', ' + date + ' of ' + monthName + ', ' + year);
   displayDate.push(day + ', ' + date + ' ' + monthName + ', ' + year);
   displayDate.push(day + ' ' + monthName + ', ' + year);
   displayDate.push(date + ' / ' + month + ' / ' + year);
