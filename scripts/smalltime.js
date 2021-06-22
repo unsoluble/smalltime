@@ -1049,6 +1049,9 @@ function getCalendarProviders() {
   if (game.modules.get('calendar-weather')?.active) {
     Object.assign(calendarProviders, { cw: 'Calendar/Weather' });
   }
+  if (game.modules.get('about-time')?.active) {
+    Object.assign(calendarProviders, { at: 'About Time' });
+  }
   if (game.system.id === 'pf2e') {
     Object.assign(calendarProviders, { pf2e: 'PF2E ' });
   }
@@ -1097,11 +1100,20 @@ function getDate(provider, variant) {
   if (game.system.id === 'pf2e' && provider === 'pf2e') {
     day = game.pf2e.worldClock.weekday;
     monthName = game.pf2e.worldClock.month;
-    month = 0;
+    month = game.pf2e.worldClock.worldTime.c.month;
     date = game.pf2e.worldClock.worldTime.c.day;
     year = game.pf2e.worldClock.year;
     // suffix = game.pf2e.worldClock.ordinalSuffix;
     // era = game.pf2e.worldClock.era;
+  }
+
+  if (game.modules.get('about-time')?.active && provider === 'at') {
+    let ATobject = game.Gametime.DTNow().longDateExtended();
+    day = ATobject.dowString;
+    monthName = ATobject.monthString;
+    month = ATobject.month;
+    date = ATobject.day;
+    year = ATobject.year;
   }
 
   displayDate.push(day + ', ' + monthName + ' ' + date + ', ' + year);
