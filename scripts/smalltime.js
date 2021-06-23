@@ -1061,13 +1061,16 @@ function getCalendarProviders() {
   return calendarProviders;
 }
 
+// If the calendar provider is set to a module that isn't currently enabled,
+// fall back to using PF2E's calendar.
 function setCalendarFallback() {
   const providerSetting = game.settings.get('smalltime', 'calendar-provider');
-  let fallback;
-
-  if (providerSetting === 'sc' && !game.modules.get('foundryvtt-simple-calendar')?.active) {
-    fallback = 'pf2e';
-    game.settings.set('smalltime', 'calendar-provider', fallback);
+  if (
+    (providerSetting === 'sc' && !game.modules.get('foundryvtt-simple-calendar')?.active) ||
+    (providerSetting === 'cw' && !game.modules.get('calendar-weather')?.active) ||
+    (providerSetting === 'at' && !game.modules.get('about-time')?.active)
+  ) {
+    game.settings.set('smalltime', 'calendar-provider', 'pf2e');
   }
 }
 
