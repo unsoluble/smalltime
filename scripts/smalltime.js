@@ -385,6 +385,8 @@ Hooks.on('ready', () => {
   // there's been changes to the positions.
   updateGradientStops();
 
+  setCalendarFallback();
+
   // Obtain the custom worldTime epoch offset for the current PF2E world.
   if (game.system.id === 'pf2e') {
     const localEpoch = game.pf2e.worldClock.worldCreatedOn.c;
@@ -1057,6 +1059,16 @@ function getCalendarProviders() {
   }
 
   return calendarProviders;
+}
+
+function setCalendarFallback() {
+  const providerSetting = game.settings.get('smalltime', 'calendar-provider');
+  let fallback;
+
+  if (providerSetting === 'sc' && !game.modules.get('foundryvtt-simple-calendar')?.active) {
+    fallback = 'pf2e';
+    game.settings.set('smalltime', 'calendar-provider', fallback);
+  }
 }
 
 // Helper function for time-changing socket updates.
