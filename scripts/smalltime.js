@@ -1066,9 +1066,10 @@ function getCalendarProviders() {
 function setCalendarFallback() {
   const providerSetting = game.settings.get('smalltime', 'calendar-provider');
   if (
-    (providerSetting === 'sc' && !game.modules.get('foundryvtt-simple-calendar')?.active) ||
-    (providerSetting === 'cw' && !game.modules.get('calendar-weather')?.active) ||
-    (providerSetting === 'at' && !game.modules.get('about-time')?.active)
+    ((providerSetting === 'sc' && !game.modules.get('foundryvtt-simple-calendar')?.active) ||
+      (providerSetting === 'cw' && !game.modules.get('calendar-weather')?.active) ||
+      (providerSetting === 'at' && !game.modules.get('about-time')?.active)) &&
+    game.system.id === 'pf2e'
   ) {
     game.settings.set('smalltime', 'calendar-provider', 'pf2e');
   }
@@ -1477,6 +1478,9 @@ class SmallTimeApp extends FormApplication {
     // Listen for moon phase changes from Simple Calendar.
     if (game.modules.get('foundryvtt-simple-calendar')?.active) {
       Hooks.on(SimpleCalendar.Hooks.DateTimeChange, async function (data) {
+        if (typeof data.moons[0] === 'undefined') {
+          return;
+        }
         const newPhase = SmallTime_MoonPhases.findIndex(function (phase) {
           return phase === data.moons[0].currentPhase.icon;
         });
