@@ -1062,7 +1062,7 @@ function getCalendarProviders() {
 }
 
 // If the calendar provider is set to a module that isn't currently enabled,
-// fall back to using PF2E's calendar.
+// fall back to using PF2E's calendar, if in PF2E.
 function setCalendarFallback() {
   const providerSetting = game.settings.get('smalltime', 'calendar-provider');
   if (
