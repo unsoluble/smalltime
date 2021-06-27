@@ -1065,13 +1065,16 @@ function getCalendarProviders() {
 // fall back to using PF2E's calendar, if in PF2E.
 function setCalendarFallback() {
   const providerSetting = game.settings.get('smalltime', 'calendar-provider');
+
+  // If the provider is set to a module or system that isn't available, use the
+  // first available provider by default.
   if (
-    ((providerSetting === 'sc' && !game.modules.get('foundryvtt-simple-calendar')?.active) ||
-      (providerSetting === 'cw' && !game.modules.get('calendar-weather')?.active) ||
-      (providerSetting === 'at' && !game.modules.get('about-time')?.active)) &&
-    game.system.id === 'pf2e'
+    (providerSetting === 'sc' && !game.modules.get('foundryvtt-simple-calendar')?.active) ||
+    (providerSetting === 'cw' && !game.modules.get('calendar-weather')?.active) ||
+    (providerSetting === 'at' && !game.modules.get('about-time')?.active) ||
+    (providerSetting === 'pf2e' && !(game.system.id === 'pf2e'))
   ) {
-    game.settings.set('smalltime', 'calendar-provider', 'pf2e');
+    game.settings.set('smalltime', 'calendar-provider', getCalendarProviders()[0]);
   }
 }
 
@@ -1099,7 +1102,7 @@ function getDate(provider, variant) {
     monthName = SCobject.monthName;
     // SC .month and .day are zero-indexed, so add one to get the display date.
     month = SCobject.month + 1;
-    date = SCobject.day + 1;
+    date = SCobject.dayDisplay;
     year = SCobject.year;
   }
 
