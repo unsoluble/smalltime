@@ -1102,7 +1102,11 @@ function getDate(provider, variant) {
     monthName = SCobject.monthName;
     // SC .month and .day are zero-indexed, so add one to get the display date.
     month = SCobject.month + 1;
-    date = SCobject.dayDisplay;
+    if (typeof SCobject.dayDisplay !== 'undefined') {
+      date = SCobject.dayDisplay;
+    } else {
+      date = SCobject.day + 1;
+    }
     year = SCobject.year;
   }
 
