@@ -1438,6 +1438,15 @@ class SmallTimeApp extends FormApplication {
       }
     });
 
+    // Open the Simple Calendar interface on date clicks.
+    html.find('#dateDisplay').on('click', async function () {
+      if (
+        game.settings.get('smalltime', 'calendar-provider') === 'sc' &&
+        game.modules.get('foundryvtt-simple-calendar')?.active
+      )
+        SimpleCalendar.api.showCalendar();
+    });
+
     // Handle the increment/decrement buttons.
     let smallStep;
     let largeStep;
