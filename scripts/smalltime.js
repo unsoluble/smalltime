@@ -1066,6 +1066,8 @@ function getCalendarProviders() {
 function setCalendarFallback() {
   const providerSetting = game.settings.get('smalltime', 'calendar-provider');
 
+  if (!game.user.isGM) return;
+
   // If the provider is set to a module or system that isn't available, use the
   // first available provider by default.
   if (
