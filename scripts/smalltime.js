@@ -1096,11 +1096,13 @@ function getDate(provider, variant) {
   let month;
   let date;
   let year;
+  let yearPostfix;
+  let yearPrefix;
   let displayDate = [];
 
   if (game.modules.get('foundryvtt-simple-calendar')?.active && provider === 'sc') {
     let SCobject = SimpleCalendar.api.timestampToDate(game.time.worldTime);
-    day = SCobject.weekdays[SCobject.dayOfTheWeek];
+    day = SCobject.showWeekdayHeadings ? SCobject.weekdays[SCobject.dayOfTheWeek] : undefined;
     monthName = SCobject.monthName;
     // SC .month and .day are zero-indexed, so add one to get the display date.
     month = SCobject.month + 1;
@@ -1111,6 +1113,8 @@ function getDate(provider, variant) {
       date = SCobject.day + 1;
     }
     year = SCobject.year;
+    yearPrefix = SCobject.yearPrefix || undefined;
+    yearPostfix = SCobject.yearPostfix || undefined;
   }
 
   if (game.modules.get('calendar-weather')?.active && provider === 'cw') {
@@ -1142,15 +1146,23 @@ function getDate(provider, variant) {
     year = ATobject.year;
   }
 
-  displayDate.push(day + ', ' + monthName + ' ' + date + ', ' + year);
-  displayDate.push(day + ', ' + date + ' of ' + monthName + ', ' + year);
-  displayDate.push(day + ', ' + date + ' ' + monthName + ', ' + year);
-  displayDate.push(day + ' ' + monthName + ', ' + year);
-  displayDate.push(date + ' / ' + month + ' / ' + year);
-  displayDate.push(month + ' / ' + date + ' / ' + year);
-  displayDate.push(year + ' / ' + month + ' / ' + date);
+  displayDate.push(stringAfter(day, ', ') + stringAfter(monthName) + stringAfter(date, ', ') + stringAfter(yearPrefix) + year + stringBefore(yearPostfix));
+  displayDate.push(stringAfter(day, ', ') + stringAfter(date, ' of ') + stringAfter(monthName, ', ') + stringAfter(yearPrefix) + year + stringBefore(yearPostfix));
+  displayDate.push(stringAfter(day, ', ') + stringAfter(date) + stringAfter(monthName, ', ') + stringAfter(yearPrefix) + year + stringBefore(yearPostfix));
+  displayDate.push(stringAfter(day) + stringAfter(monthName, ', ') + stringAfter(yearPrefix) + year + stringBefore(yearPostfix));
+  displayDate.push(stringAfter(date, ' / ') + stringAfter(month, ' / ') + stringAfter(yearPrefix) +  year + stringBefore(yearPostfix));
+  displayDate.push(stringAfter(month, ' / ') + stringAfter(date, ' / ') + stringAfter(yearPrefix) + year + stringBefore(yearPostfix));
+  displayDate.push(stringAfter(yearPrefix) + stringAfter(year + stringBefore(yearPostfix), ' / ') + stringAfter(month, ' / ') + date);
 
   return displayDate[variant];
+}
+
+function stringAfter(stringText, afterString = ' ') {
+  return stringText ? stringText + afterString : '';
+}
+
+function stringBefore(stringText, beforeString = ' ') {
+  return stringText ? beforeString + stringText : '';
 }
 
 function grabSceneSlice() {
