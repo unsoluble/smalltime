@@ -29,5 +29,6 @@
   "SMLTME.Player_Vis_1": "Position du soleil / lune seulement",
   "SMLTME.Player_Vis_2": "Position du soleil / lune et heure du jour",
   "SMLTME.Player_Vis_3": "Utiliser les paramètres par défaut",
-  "SMLTME.Darkness_Reset": "Maj-clic pour réinitialiser aux valeurs par défaut"
+  "SMLTME.Darkness_Reset": "Maj-clic pour réinitialiser aux valeurs par défaut",
+  "SMLTME.Date_Separator": "du"
 }

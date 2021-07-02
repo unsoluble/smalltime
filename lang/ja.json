@@ -18,5 +18,6 @@
   "SMLTME.Hide_From_Players": "プレイヤーから隠す",
   "SMLTME.Hide_From_Players_Hint": "GM権限を持たないユーザーには、SmallTimeウィンドウが表示されなくなります。",
   "SMLTME.Allow_Trusted": "信頼されたプレイヤーの操作を許可する",
-  "SMLTME.Allow_Trusted_Hint": "有効にすると、信頼されたプレイヤーが現在の時刻を変更できるようになります。"
+  "SMLTME.Allow_Trusted_Hint": "有効にすると、信頼されたプレイヤーが現在の時刻を変更できるようになります。",
+  "SMLTME.Date_Separator": "of"
 }

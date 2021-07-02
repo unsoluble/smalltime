@@ -1147,7 +1147,7 @@ function getDate(provider, variant) {
   }
 
   displayDate.push(stringAfter(day, ', ') + stringAfter(monthName) + stringAfter(date, ', ') + stringAfter(yearPrefix) + year + stringBefore(yearPostfix));
-  displayDate.push(stringAfter(day, ', ') + stringAfter(date, ' of ') + stringAfter(monthName, ', ') + stringAfter(yearPrefix) + year + stringBefore(yearPostfix));
+  displayDate.push(stringAfter(day, ', ') + stringAfter(date, ` ${game.i18n.localize('SMLTME.Date_Separator')} `) + stringAfter(monthName, ', ') + stringAfter(yearPrefix) + year + stringBefore(yearPostfix));
   displayDate.push(stringAfter(day, ', ') + stringAfter(date) + stringAfter(monthName, ', ') + stringAfter(yearPrefix) + year + stringBefore(yearPostfix));
   displayDate.push(stringAfter(day) + stringAfter(monthName, ', ') + stringAfter(yearPrefix) + year + stringBefore(yearPostfix));
   displayDate.push(stringAfter(date, ' / ') + stringAfter(month, ' / ') + stringAfter(yearPrefix) +  year + stringBefore(yearPostfix));
