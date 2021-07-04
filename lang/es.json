@@ -25,6 +25,5 @@
   "SMLTME.Player_Vis_0": "Nada",
   "SMLTME.Player_Vis_1": "Sólo posición de sol/luna",
   "SMLTME.Player_Vis_2": "Posición de sol/luna y hora del día",
-  "SMLTME.Darkness_Reset": "Shift-click para resetear a horas por defecto",
-  "SMLTME.Date_Separator": "of"
+  "SMLTME.Darkness_Reset": "Shift-click para resetear a horas por defecto"
 }
