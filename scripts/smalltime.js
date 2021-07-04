@@ -109,7 +109,6 @@ Hooks.on('init', () => {
       3: '3',
       4: '4',
       5: '5',
-      6: '6',
     },
     default: 0,
   });
@@ -1096,22 +1095,36 @@ function getDate(provider, variant) {
   let month;
   let date;
   let year;
+  let yearPostfix;
+  let yearPrefix;
+  let ordinalSuffix;
   let displayDate = [];
 
   if (game.modules.get('foundryvtt-simple-calendar')?.active && provider === 'sc') {
-    let SCobject = SimpleCalendar.api.timestampToDate(game.time.worldTime);
-    day = SCobject.weekdays[SCobject.dayOfTheWeek];
+    let SCobject = SimpleCalendar.api.timestampToDate(game.time.worldTime).display;
+    day = SCobject.weekday;
     monthName = SCobject.monthName;
-    // SC .month and .day are zero-indexed, so add one to get the display date.
-    month = SCobject.month + 1;
-    // Fallback for older versions of SC.
-    if (typeof SCobject.dayDisplay !== 'undefined') {
-      date = SCobject.dayDisplay;
-    } else {
-      date = SCobject.day + 1;
-    }
+    month = SCobject.month;
+    date = SCobject.day;
+    ordinalSuffix = SCobject.daySuffix;
     year = SCobject.year;
+    yearPrefix = SCobject.yearPrefix || undefined;
+    yearPostfix = SCobject.yearPostfix || undefined;
   }
+
+  if (game.system.id === 'pf2e' && provider === 'pf2e') {
+    let PFobject = game.pf2e.worldClock;
+    day = PFobject.weekday;
+    monthName = PFobject.month;
+    month = PFobject.worldTime.c.month;
+    date = PFobject.worldTime.c.day;
+    year = PFobject.year;
+    ordinalSuffix = PFobject.ordinalSuffix || undefined;
+    yearPostfix = PFobject.era;
+  }
+
+  // Support for C/W and AT calendars will be dropped soon, but
+  // leaving these in for now.
 
   if (game.modules.get('calendar-weather')?.active && provider === 'cw') {
     let CWobject = game.settings.get('calendar-weather', 'dateTime');
@@ -1123,16 +1136,6 @@ function getDate(provider, variant) {
     year = CWobject.year;
   }
 
-  if (game.system.id === 'pf2e' && provider === 'pf2e') {
-    day = game.pf2e.worldClock.weekday;
-    monthName = game.pf2e.worldClock.month;
-    month = game.pf2e.worldClock.worldTime.c.month;
-    date = game.pf2e.worldClock.worldTime.c.day;
-    year = game.pf2e.worldClock.year;
-    // suffix = game.pf2e.worldClock.ordinalSuffix;
-    // era = game.pf2e.worldClock.era;
-  }
-
   if (game.modules.get('about-time')?.active && provider === 'at') {
     let ATobject = game.Gametime.DTNow().longDateExtended();
     day = ATobject.dowString;
@@ -1142,15 +1145,36 @@ function getDate(provider, variant) {
     year = ATobject.year;
   }
 
-  displayDate.push(day + ', ' + monthName + ' ' + date + ', ' + year);
-  displayDate.push(day + ', ' + date + ' of ' + monthName + ', ' + year);
-  displayDate.push(day + ', ' + date + ' ' + monthName + ', ' + year);
-  displayDate.push(day + ' ' + monthName + ', ' + year);
-  displayDate.push(date + ' / ' + month + ' / ' + year);
-  displayDate.push(month + ' / ' + date + ' / ' + year);
-  displayDate.push(year + ' / ' + month + ' / ' + date);
+  displayDate.push(
+    stringAfter(day, ', ') +
+      stringAfter(monthName) +
+      stringAfter(date + (ordinalSuffix ? ordinalSuffix : ''), ', ') +
+      stringAfter(yearPrefix) +
+      year +
+      stringBefore(yearPostfix)
+  );
+  displayDate.push(
+    stringAfter(day, ', ') +
+      stringAfter(date) +
+      stringAfter(monthName, ', ') +
+      stringAfter(yearPrefix) +
+      year +
+      stringBefore(yearPostfix)
+  );
+  displayDate.push(stringAfter(date) + stringAfter(monthName, ', ') + year);
+  displayDate.push(stringAfter(date, ' / ') + stringAfter(month, ' / ') + year);
+  displayDate.push(stringAfter(month, ' / ') + stringAfter(date, ' / ') + year);
+  displayDate.push(stringAfter(year, ' / ') + stringAfter(month, ' / ') + date);
 
   return displayDate[variant];
+}
+
+function stringAfter(stringText, afterString = ' ') {
+  return stringText ? stringText + afterString : '';
+}
+
+function stringBefore(stringText, beforeString = ' ') {
+  return stringText ? beforeString + stringText : '';
 }
 
 function grabSceneSlice() {
