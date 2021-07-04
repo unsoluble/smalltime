@@ -1102,7 +1102,7 @@ function getDate(provider, variant) {
 
   if (game.modules.get('foundryvtt-simple-calendar')?.active && provider === 'sc') {
     let SCobject = SimpleCalendar.api.timestampToDate(game.time.worldTime).display;
-    day = SCobject.weekday;
+    day = SCobject.showWeekdayHeadings ? SCobject.weekday : undefined;
     monthName = SCobject.monthName;
     month = SCobject.month;
     date = SCobject.day;
