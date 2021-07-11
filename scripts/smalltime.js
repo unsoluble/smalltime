@@ -1607,7 +1607,10 @@ class SmallTimeApp extends FormApplication {
     // based on the custom threshold settings are kind of gross,
     // but they get the job done.
     const currentScene = canvas.scene;
-    if (currentScene.getFlag('smalltime', 'darkness-link')) {
+    if (
+      currentScene.getFlag('smalltime', 'darkness-link') &&
+      game.modules.get('smalltime').controlAuth
+    ) {
       let darknessValue = canvas.lighting.darknessLevel;
       const maxD = game.settings.get('smalltime', 'max-darkness');
       const minD = game.settings.get('smalltime', 'min-darkness');
