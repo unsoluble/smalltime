@@ -49,6 +49,11 @@
       "lang": "ko",
       "name": "Korean",
       "path": "lang/ko.json"
+    },
+    {
+      "lang": "pt-BR",
+      "name": "Português (Brasil)",
+      "path": "lang/pt-BR.json"
     }
   ],
   "socket": true,
