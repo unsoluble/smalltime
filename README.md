@@ -39,7 +39,7 @@ If you have a calendar-providing module (or game system) enabled, SmallTime will
 
 ![About_Time_Integration](doc/About_Time_Integration.gif)
 
-If you have [Simple Calendar](https://foundryvtt.com/packages/foundryvtt-simple-calendar) enabled, make sure its sync setting is on "Mixed", and also click its "Export to About Time" button to start the sync. Calendar and time info from there should now sync up with SmallTime, though I don't currently support nonstandard time divisions.
+If you have [Simple Calendar](https://foundryvtt.com/packages/foundryvtt-simple-calendar) enabled, make sure its sync setting is on "Mixed". Calendar and time info from there should now sync up with SmallTime, though I can't currently support nonstandard time divisions.
 
 ### Settings
 
