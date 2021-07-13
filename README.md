@@ -60,6 +60,8 @@ Full support for:
 - German (thanks @kdomke!)
 - Spanish (thanks @masr!)
 - Korean (thanks @jbblily!)
+- French (thanks @DarKDinDoN!)
+- Portuguese (thanks @Castanho!)
 
 I'm happy to accept and implement more translations!
 
