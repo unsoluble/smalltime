@@ -2,6 +2,9 @@
   "SMLTME.Time_Format": "Formato horario",
   "SMLTME.12hr": "12hr",
   "SMLTME.24hr": "24hr",
+  "SMLTME.Date_Format": "Date Format",
+  "SMLTME.Calendar_Provider": "Calendar Provider",
+  "SMLTME.Calendar_Provider_Hint": "The source of your world's calendar information.",
   "SMLTME.Small_Step": "Cantidad en Salto Pequeño",
   "SMLTME.Small_Step_Hint": "Número de minutos a añadir/sustraer de la hora con los botones < y > . Mantén Shift para doblarlo.",
   "SMLTME.Large_Step": "Cantidad en Salto Grande",
@@ -25,5 +28,6 @@
   "SMLTME.Player_Vis_0": "Nada",
   "SMLTME.Player_Vis_1": "Sólo posición de sol/luna",
   "SMLTME.Player_Vis_2": "Posición de sol/luna y hora del día",
+  "SMLTME.Player_Vis_3": "Use default setting",
   "SMLTME.Darkness_Reset": "Shift-click para resetear a horas por defecto"
 }
