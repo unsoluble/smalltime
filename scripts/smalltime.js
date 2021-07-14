@@ -281,7 +281,7 @@ Hooks.on('canvasReady', () => {
   const thisScene = game.scenes.entities.find((s) => s._view);
   let visLevel = thisScene.getFlag('smalltime', 'player-vis');
   // visLevel of 3 is "use default".
-  if (visLevel == 3) {
+  if (visLevel == 3 || visLevel == undefined) {
     visLevel = game.settings.get('smalltime', 'player-visibility-default');
   }
   // Give basic view auth to players if they're allowed in this scene.
