@@ -3,6 +3,9 @@
   "title": "SmallTime",
   "description": "A small module for displaying and controlling the current time of day.",
   "version": "1.0.0",
+  "readme": "https://github.com/unsoluble/smalltime/blob/main/README.md",
+  "bugs": "https://github.com/unsoluble/smalltime/issues",
+  "changelog": "https://github.com/unsoluble/smalltime/releases",
   "author": "unsoluble",
   "authors": [
     {
