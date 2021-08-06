@@ -1204,35 +1204,40 @@ function convertHexToRGB(hex) {
     : null;
 }
 
+// Override the Escape key to prevent it from closing SmallTime.
+KeyboardManager.prototype._onEscape = function _onEscape(event, up, modifiers) {
+  if (up || modifiers.hasFocus) return;
+  this._handled.add(modifiers.key);
+
+  // Save fog of war if there are pending changes
+  if (canvas.ready) canvas.sight.saveFog();
+
+  // Case 1 - dismiss an open context menu
+  if (ui.context && ui.context.menu.length) return ui.context.close();
+
+  // Case 2 - close open UI windows
+  if (Object.keys(ui.windows).length > 1) {
+    Object.values(ui.windows).forEach((app) => {
+      if (app.title === 'SmallTime') return;
+      app.close();
+    });
+  }
+
+  // Case 3 (GM) - release controlled objects (if not in a preview)
+  if (game.user.isGM && canvas.activeLayer && Object.keys(canvas.activeLayer._controlled).length) {
+    event.preventDefault();
+    if (!canvas.activeLayer.preview?.children.length) canvas.activeLayer.releaseAll();
+    return;
+  }
+
+  // Case 4 - toggle the main menu
+  ui.menu.toggle();
+};
+
 class SmallTimeApp extends FormApplication {
   constructor() {
     super();
     this.currentTime = getWorldTimeAsDayTime();
-  }
-
-  // Override close() to prevent Escape presses from closing the SmallTime app.
-  async close(options = {}) {
-    // If called by SmallTime, use original method to handle app closure.
-    if (options.smallTime) return super.close();
-
-    // Case 1: Close other open UI windows.
-    if (Object.keys(ui.windows).length > 1) {
-      Object.values(ui.windows).forEach((app) => {
-        if (app.title === 'SmallTime') return;
-        app.close();
-      });
-    }
-    // Case 2 (GM only): Release controlled objects.
-    else if (
-      canvas?.ready &&
-      game.user.isGM &&
-      Object.keys(canvas.activeLayer._controlled).length
-    ) {
-      event.preventDefault();
-      canvas.activeLayer.releaseAll();
-    }
-    // Case 3: Toggle the main menu.
-    else ui.menu.toggle();
   }
 
   static get defaultOptions() {
