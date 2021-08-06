@@ -1205,7 +1205,8 @@ function convertHexToRGB(hex) {
 }
 
 // Override the Escape key to prevent it from closing SmallTime.
-KeyboardManager.prototype._onEscape = function escapeOverride(event, up, modifiers) {
+// Yes this is a little janky. Yes I should probably be using LibWrapper.
+KeyboardManager.prototype._onEscape = function _onEscape(event, up, modifiers) {
   if (up || modifiers.hasFocus) return;
   this._handled.add(modifiers.key);
 
