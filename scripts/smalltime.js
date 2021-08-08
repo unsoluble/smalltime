@@ -503,12 +503,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
 });
 
 Hooks.on('renderSettingsConfig', () => {
-  // Tweak to accommodate TidyUI's smaller available space.
-  if (game.modules.get('tidy-ui_game-settings')?.active) {
-    $('#smalltime-darkness-config').css('transform', 'scale(0.9, 0.9) translate(-30px, 0px)');
-  }
-
-  // Everything else is GM-only.
+  // Everything here is GM-only.
   if (!game.user.isGM) return;
 
   // Pull the current date and format it in various ways for the selection.
@@ -526,17 +521,38 @@ Hooks.on('renderSettingsConfig', () => {
   $('input[name="smalltime.sunrise-end"]').parent().parent().css('display', 'none');
   $('input[name="smalltime.sunset-start"]').parent().parent().css('display', 'none');
 
-  // Add the reset-to-defaults popup to the setting title.
-  const titleElement = $('label:contains(' + game.i18n.localize('SMLTME.Darkness_Config') + ')');
+  // Add a reset-position popup to the setting title.
+  const opacityTitleElement = $(
+    'label:contains(' + game.i18n.localize('SMLTME.Resting_Opacity') + ')'
+  );
   let popupDirection = 'right';
   if (game.modules.get('tidy-ui_game-settings')?.active) popupDirection = 'up';
-  titleElement.attr({
+  opacityTitleElement.attr({
+    'aria-label': game.i18n.localize('SMLTME.Position_Reset'),
+    'data-balloon-pos': popupDirection,
+  });
+
+  // Reset to pinned position on Shift-click, and refresh the page.
+  $(opacityTitleElement).on('click', function () {
+    if (event.shiftKey) {
+      game.settings.set('smalltime', 'pinned', true);
+      window.location.reload(false);
+    }
+  });
+
+  // Add a reset-to-defaults popup to the setting title.
+  const darknessTitleElement = $(
+    'label:contains(' + game.i18n.localize('SMLTME.Darkness_Config') + ')'
+  );
+  popupDirection = 'right';
+  if (game.modules.get('tidy-ui_game-settings')?.active) popupDirection = 'up';
+  darknessTitleElement.attr({
     'aria-label': game.i18n.localize('SMLTME.Darkness_Reset'),
     'data-balloon-pos': popupDirection,
   });
 
   // Reset to defaults on Shift-click, and close the window.
-  $(titleElement).on('click', function () {
+  $(darknessTitleElement).on('click', function () {
     if (event.shiftKey) {
       game.settings.set('smalltime', 'sunrise-start', SmallTime_SunriseStartDefault);
       game.settings.set('smalltime', 'sunrise-end', SmallTime_SunriseEndDefault);
@@ -576,6 +592,11 @@ Hooks.on('renderSettingsConfig', () => {
   // Only inject if it isn't already there.
   if (!$('#smalltime-darkness-config').length) {
     notesElement.after(injection);
+  }
+
+  // Tweak to accommodate TidyUI's smaller available space.
+  if (game.modules.get('tidy-ui_game-settings')?.active) {
+    $('#smalltime-darkness-config').css('transform', 'scale(0.9, 0.9) translate(-30px, 0px)');
   }
 
   // Get the current Darkness overlay color.

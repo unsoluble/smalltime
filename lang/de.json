@@ -29,5 +29,6 @@
   "SMLTME.Player_Vis_1": "Nur Position von Sonne/Mond ",
   "SMLTME.Player_Vis_2": "Position von Sonne/Mond und Tageszeit",
   "SMLTME.Player_Vis_3": "Use default setting",
-  "SMLTME.Darkness_Reset": "Umschalttaste+Klick für Standardeinstellungen"
+  "SMLTME.Darkness_Reset": "Umschalttaste+Klick für Standardeinstellungen",
+  "SMLTME.Position_Reset": "Shift-click to reset the SmallTime window postion"
 }
