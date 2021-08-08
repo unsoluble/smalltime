@@ -259,7 +259,6 @@ Hooks.on('canvasReady', () => {
   game.modules.get('smalltime').dateAvailable = false;
   if (
     game.system.id === 'pf2e' ||
-    game.modules.get('about-time')?.active ||
     game.modules.get('foundryvtt-simple-calendar')?.active ||
     game.modules.get('calendar-weather')?.active
   ) {
@@ -672,17 +671,17 @@ Hooks.on('pauseGame', () => {
 });
 
 // Listen for changes to the realtime clock state.
-Hooks.on('about-time.clockRunningStatus', () => {
+Hooks.on('simple-calendar-clock-start-stop', () => {
   if (game.user.isGM) {
     handleRealtimeState();
   }
 });
 
 function handleRealtimeState() {
-  if (game.modules.get('about-time')?.active) {
-    if (game.paused || !game.Gametime.isRunning()) {
+  if (game.modules.get('foundryvtt-simple-calendar')?.active) {
+    if (game.paused || !SimpleCalendar.api.clockStatus().started) {
       $('#timeSeparator').removeClass('blink');
-    } else if (!game.paused && game.Gametime.isRunning()) {
+    } else if (!game.paused && SimpleCalendar.api.clockStatus().started) {
       $('#timeSeparator').addClass('blink');
     }
   }
@@ -1050,9 +1049,6 @@ function getCalendarProviders() {
   if (game.modules.get('calendar-weather')?.active) {
     Object.assign(calendarProviders, { cw: 'Calendar/Weather' });
   }
-  if (game.modules.get('about-time')?.active) {
-    Object.assign(calendarProviders, { at: 'About Time' });
-  }
   if (game.system.id === 'pf2e') {
     Object.assign(calendarProviders, { pf2e: 'PF2E ' });
   }
@@ -1072,7 +1068,6 @@ function setCalendarFallback() {
   if (
     (providerSetting === 'sc' && !game.modules.get('foundryvtt-simple-calendar')?.active) ||
     (providerSetting === 'cw' && !game.modules.get('calendar-weather')?.active) ||
-    (providerSetting === 'at' && !game.modules.get('about-time')?.active) ||
     (providerSetting === 'pf2e' && !(game.system.id === 'pf2e'))
   ) {
     game.settings.set('smalltime', 'calendar-provider', getCalendarProviders()[0]);
@@ -1136,15 +1131,6 @@ function getDate(provider, variant) {
     month = CWobject.currentMonth + 1;
     date = CWobject.day + 1;
     year = CWobject.year;
-  }
-
-  if (game.modules.get('about-time')?.active && provider === 'at') {
-    let ATobject = game.Gametime.DTNow().longDateExtended();
-    day = ATobject.dowString;
-    monthName = ATobject.monthString;
-    month = ATobject.month;
-    date = ATobject.day;
-    year = ATobject.year;
   }
 
   displayDate.push(
@@ -1445,12 +1431,12 @@ class SmallTimeApp extends FormApplication {
         event.shiftKey &&
         game.modules.get('smalltime').controlAuth &&
         !game.paused &&
-        game.modules.get('about-time')?.active
+        game.modules.get('foundryvtt-simple-calendar')?.active
       ) {
-        if (game.Gametime.isRunning()) {
-          game.Gametime.stopRunning();
+        if (SimpleCalendar.api.clockStatus().started) {
+          SimpleCalendar.api.stopClock();
         } else {
-          game.Gametime.startRunning();
+          SimpleCalendar.api.startClock();
         }
         handleRealtimeState();
       } else {
