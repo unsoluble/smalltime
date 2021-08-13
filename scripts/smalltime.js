@@ -383,6 +383,9 @@ Hooks.on('ready', () => {
         await currentScene.update({ darkness: data.payload.darkness });
       }
     }
+    if (data.type === 'handleRealtime') {
+      if (!game.user.isGM) handleRealtimeState();
+    }
   }
   // Update the stops on the sunrise/sunset gradient, in case
   // there's been changes to the positions.
@@ -691,25 +694,25 @@ Hooks.on('updateWorldTime', () => {
 
 // Handle toggling of time separator flash when game is paused/unpaused.
 Hooks.on('pauseGame', () => {
-  if (game.user.isGM) {
-    handleRealtimeState();
-  }
+  handleRealtimeState();
 });
 
 // Listen for changes to the realtime clock state.
 Hooks.on('simple-calendar-clock-start-stop', () => {
-  if (game.user.isGM) {
-    handleRealtimeState();
-  }
+  SmallTimeApp.emitSocket('handleRealtime');
 });
 
 function handleRealtimeState() {
   if (game.modules.get('foundryvtt-simple-calendar')?.active) {
-    if (game.paused || !SimpleCalendar.api.clockStatus().started) {
-      $('#timeSeparator').removeClass('blink');
-    } else if (!game.paused && SimpleCalendar.api.clockStatus().started) {
-      $('#timeSeparator').addClass('blink');
-    }
+    // Need to insert a small delay here, to wait for Simple Calendar to finish
+    // setting its clockStatus.
+    setTimeout(function () {
+      if (game.paused || !SimpleCalendar.api.clockStatus().started) {
+        $('#timeSeparator').removeClass('blink');
+      } else if (!game.paused && SimpleCalendar.api.clockStatus().started) {
+        $('#timeSeparator').addClass('blink');
+      }
+    }, 500);
   }
 }
 
@@ -1501,7 +1504,10 @@ class SmallTimeApp extends FormApplication {
         } else {
           SimpleCalendar.api.startClock();
         }
-        handleRealtimeState();
+        if (game.user.isGM) {
+          handleRealtimeState();
+        }
+        SmallTimeApp.emitSocket('handleRealtime');
       } else {
         if (
           !game.settings.get('smalltime', 'date-showing') &&
@@ -1586,7 +1592,6 @@ class SmallTimeApp extends FormApplication {
         });
         await game.settings.set('smalltime', 'moon-phase', newPhase);
         SmallTimeApp.timeTransition(getWorldTimeAsDayTime());
-        SmallTimeApp.emitSocket('changeTime', getWorldTimeAsDayTime());
       });
     }
   }
