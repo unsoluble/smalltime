@@ -109,6 +109,11 @@ Hooks.on('init', () => {
       3: '3',
       4: '4',
       5: '5',
+      6: '6',
+      7: '7',
+      8: '8',
+      9: '9',
+      10: '10',
     },
     default: 0,
   });
@@ -1154,6 +1159,7 @@ function getDate(provider, variant) {
     year = CWobject.year;
   }
 
+  // Thursday, August 12th, 2021 C.E.
   displayDate.push(
     stringAfter(day, ', ') +
       stringAfter(monthName) +
@@ -1162,6 +1168,28 @@ function getDate(provider, variant) {
       year +
       stringBefore(yearPostfix)
   );
+
+  // Thursday, August 12th
+  displayDate.push(
+    stringAfter(day, ', ') +
+      stringAfter(monthName) +
+      stringAfter(date + (ordinalSuffix ? ordinalSuffix : ''))
+  );
+
+  // August 12th, 2021
+  displayDate.push(
+    stringAfter(monthName) +
+      stringAfter(date + (ordinalSuffix ? ordinalSuffix : ''), ', ') +
+      stringAfter(yearPrefix) +
+      year
+  );
+
+  // August 12th
+  displayDate.push(
+    stringAfter(monthName) + stringAfter(date + (ordinalSuffix ? ordinalSuffix : ''))
+  );
+
+  // Thursday, 12 August, 2021 C.E.
   displayDate.push(
     stringAfter(day, ', ') +
       stringAfter(date) +
@@ -1170,9 +1198,23 @@ function getDate(provider, variant) {
       year +
       stringBefore(yearPostfix)
   );
+
+  // Thursday, 12 August
+  displayDate.push(stringAfter(day, ', ') + stringAfter(date) + stringAfter(monthName));
+
+  // 12 August, 2021
   displayDate.push(stringAfter(date) + stringAfter(monthName, ', ') + year);
+
+  // 12 August
+  displayDate.push(stringAfter(date) + stringAfter(monthName));
+
+  // 12 / 8 / 2021
   displayDate.push(stringAfter(date, ' / ') + stringAfter(month, ' / ') + year);
+
+  // 8 / 12 / 2021
   displayDate.push(stringAfter(month, ' / ') + stringAfter(date, ' / ') + year);
+
+  // 2021 / 8 / 12
   displayDate.push(stringAfter(year, ' / ') + stringAfter(month, ' / ') + date);
 
   return displayDate[variant];
