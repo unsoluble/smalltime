@@ -1313,6 +1313,7 @@ class SmallTimeApp extends FormApplication {
       popOut: true,
       submitOnChange: true,
       closeOnSubmit: false,
+      minimizable: false,
       template: 'modules/smalltime/templates/smalltime.html',
       id: 'smalltime-app',
       title: 'SmallTime',
