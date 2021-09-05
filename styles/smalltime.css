@@ -30,7 +30,7 @@
   animation: fadeOut 3s ease-out;
   transition: opacity 1s;
   transition-delay: 2s;
-  z-index: 1 !important;
+  z-index: 100 !important;
 }
 
 #smalltime-app:hover {
