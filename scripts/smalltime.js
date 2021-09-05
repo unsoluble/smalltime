@@ -1064,7 +1064,7 @@ function getWorldTimeAsDayTime() {
 // Advance/retreat the elapsed worldTime based on changes made.
 async function setWorldTime(newTime) {
   const currentWorldTime = game.time.worldTime + SmallTime_EpochOffset;
-  const dayTime = Math.trunc((currentWorldTime % 86400) / 60);
+  const dayTime = getWorldTimeAsDayTime(currentWorldTime);
   const delta = newTime - dayTime;
   game.time.advance(delta * 60);
 }
