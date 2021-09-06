@@ -282,7 +282,7 @@ Hooks.on('canvasReady', () => {
   }
 
   // If the scene is set to use Default vis level, use it here.
-  const thisScene = game.scenes.entities.find((s) => s._view);
+  const thisScene = game.scenes.viewed;
   let visLevel = thisScene.getFlag('smalltime', 'player-vis');
   // visLevel of 3 is "use default".
   if (visLevel == 3 || visLevel == undefined) {
