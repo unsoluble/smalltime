@@ -17,6 +17,7 @@ let SmallTime_PinOffset = 83;
 let SmallTime_EpochOffset = 0;
 const SmallTime_WFRP4eOffset = 30;
 const SmallTime_DasSchwarzeAugeOffset = 16;
+const SmallTime_TaskbarOffset = 50;
 const SmallTime_SunriseStartDefault = 180;
 const SmallTime_SunriseEndDefault = 420;
 const SmallTime_SunsetStartDefault = 1050;
@@ -258,6 +259,9 @@ Hooks.on('canvasReady', () => {
   }
   if (game.system.id === 'dsa5') {
     SmallTime_PinOffset += SmallTime_DasSchwarzeAugeOffset;
+  }
+  if (game.modules.get('foundry-taskbar')?.active) {
+    SmallTime_PinOffset += SmallTime_TaskbarOffset;
   }
 
   // Only allow the date display to show if there's a calendar provider available.
