@@ -223,6 +223,15 @@ Hooks.on('init', () => {
     default: SmallTime_SunsetEndDefault,
   });
 
+  game.settings.register('smalltime', 'sun-sync', {
+    name: game.i18n.localize('SMLTME.Sun_Sync'),
+    hint: game.i18n.localize('SMLTME.Sun_Sync_Hint'),
+    scope: 'world',
+    config: game.modules.get('foundryvtt-simple-calendar')?.active,
+    type: Boolean,
+    default: false,
+  });
+
   game.settings.register('smalltime', 'darkness-default', {
     name: game.i18n.localize('SMLTME.Darkness_Default'),
     hint: game.i18n.localize('SMLTME.Darkness_Default_Hint'),
@@ -393,6 +402,7 @@ Hooks.on('ready', () => {
   }
   // Update the stops on the sunrise/sunset gradient, in case
   // there's been changes to the positions.
+  updateSunriseSunsetTimes();
   updateGradientStops();
 
   setCalendarFallback();
@@ -642,8 +652,9 @@ Hooks.on('closeSettingsConfig', () => {
   });
 
   // Update the stops on the sunrise/sunset gradient, in case
-  // there's been changes to the positions.
-  updateGradientStops();
+  // there's been changes to the positions. Also update the
+  // rise/set times in case of a change to sync toggle.
+  updateSunriseSunsetTimes();
 });
 
 // Add a toggle button inside the Jounral Notes tool layer.
@@ -706,6 +717,21 @@ Hooks.on('simple-calendar-clock-start-stop', () => {
   SmallTimeApp.emitSocket('handleRealtime');
 });
 
+function updateSunriseSunsetTimes() {
+  if (game.settings.get('smalltime', 'sun-sync')) {
+    const spread = 120;
+    const riseEnd = SimpleCalendar.api.getCurrentSeason().sunriseTime / 60;
+    const riseStart = riseEnd - spread;
+    const setStart = SimpleCalendar.api.getCurrentSeason().sunsetTime / 60;
+    const setEnd = setStart + spread;
+
+    game.settings.set('smalltime', 'sunrise-start', riseStart);
+    game.settings.set('smalltime', 'sunrise-end', riseEnd);
+    game.settings.set('smalltime', 'sunset-start', setStart);
+    game.settings.set('smalltime', 'sunset-end', setEnd);
+  }
+}
+
 function handleRealtimeState() {
   if (game.modules.get('foundryvtt-simple-calendar')?.active) {
     // Need to insert a small delay here, to wait for Simple Calendar to finish
@@ -746,7 +772,7 @@ function updateGradientStops() {
   // Set the initial gradient transition points.
   document.documentElement.style.setProperty(
     '--SMLTME-sunrise-start',
-    convertTimeIntegerToPercentage(convertPositionToTimeInteger(initialPositions.sunriseStart))
+    convertTimeIntegerToPercentage(game.settings.get('smalltime', 'sunrise-start'))
   );
   document.documentElement.style.setProperty(
     '--SMLTME-sunrise-middle-1',
@@ -758,11 +784,11 @@ function updateGradientStops() {
   );
   document.documentElement.style.setProperty(
     '--SMLTME-sunrise-end',
-    convertTimeIntegerToPercentage(convertPositionToTimeInteger(initialPositions.sunriseEnd))
+    convertTimeIntegerToPercentage(game.settings.get('smalltime', 'sunrise-end'))
   );
   document.documentElement.style.setProperty(
     '--SMLTME-sunset-start',
-    convertTimeIntegerToPercentage(convertPositionToTimeInteger(initialPositions.sunsetStart))
+    convertTimeIntegerToPercentage(game.settings.get('smalltime', 'sunset-start'))
   );
   document.documentElement.style.setProperty(
     '--SMLTME-sunset-middle-1',
@@ -774,7 +800,7 @@ function updateGradientStops() {
   );
   document.documentElement.style.setProperty(
     '--SMLTME-sunset-end',
-    convertTimeIntegerToPercentage(convertPositionToTimeInteger(initialPositions.sunsetEnd))
+    convertTimeIntegerToPercentage(game.settings.get('smalltime', 'sunset-end'))
   );
 }
 
@@ -796,6 +822,10 @@ async function saveNewDarknessConfig(positions, max, min) {
 }
 
 function setupDragHandles() {
+  // If sunrise/sunset are being synced from Simple Calendar, we'll lock
+  // the drag handles on the X axis.
+  const sunSync = game.settings.get('smalltime', 'sun-sync');
+
   // Build the sun/moon drag handles for the darkness config UI.
   const maxDarkness = game.settings.get('smalltime', 'max-darkness');
   const minDarkness = game.settings.get('smalltime', 'min-darkness');
@@ -816,6 +846,12 @@ function setupDragHandles() {
     sunsetStart: convertPositionToDisplayTime(initialPositions.sunsetStart),
     sunsetEnd: convertPositionToDisplayTime(initialPositions.sunsetEnd),
   };
+
+  // If syncing, append a note to the tooltips.
+  const syncString = ' (Simple Calendar)';
+  if (sunSync) {
+    Object.keys(initialTimes).forEach((key) => (initialTimes[key] += syncString));
+  }
 
   const snapX = 10;
   const snapY = 4;
@@ -844,18 +880,23 @@ function setupDragHandles() {
   const sunriseStartDrag = new Draggabilly('.sunrise-start', {
     containment: '.sunrise-start-bounds',
     grid: [snapX, snapY],
+    // Lock off the X axis if we're syncing the sunrise/sunset times.
+    axis: sunSync ? 'y' : null,
   });
   const sunriseEndDrag = new Draggabilly('.sunrise-end', {
     containment: '.sunrise-end-bounds',
     grid: [snapX, snapY],
+    axis: sunSync ? 'y' : null,
   });
   const sunsetStartDrag = new Draggabilly('.sunset-start', {
     containment: '.sunset-start-bounds',
     grid: [snapX, snapY],
+    axis: sunSync ? 'y' : null,
   });
   const sunsetEndDrag = new Draggabilly('.sunset-end', {
     containment: '.sunset-end-bounds',
     grid: [snapX, snapY],
+    axis: sunSync ? 'y' : null,
   });
 
   let shovedPos = '';
@@ -864,8 +905,9 @@ function setupDragHandles() {
   sunriseStartDrag.on('dragMove', function () {
     // Match the paired handle.
     $('.sunset-end').css('top', this.position.y + 'px');
-    // Update the tooltip.
-    const displayTime = convertPositionToDisplayTime(this.position.x);
+    // Update the tooltip. Append sync note if syncing.
+    let displayTime = convertPositionToDisplayTime(this.position.x);
+    sunSync ? (displayTime += syncString) : null;
     $('.sunrise-start').attr('aria-label', displayTime);
 
     // Live update the darkness maximum.
@@ -892,8 +934,9 @@ function setupDragHandles() {
   sunriseEndDrag.on('dragMove', function () {
     // Match the paired handle.
     $('.sunset-start').css('top', this.position.y + 'px');
-    // Update the tooltip.
-    const displayTime = convertPositionToDisplayTime(this.position.x);
+    // Update the tooltip. Append sync note if syncing.
+    let displayTime = convertPositionToDisplayTime(this.position.x);
+    sunSync ? (displayTime += syncString) : null;
     $('.sunrise-end').attr('aria-label', displayTime);
 
     // Live update the darkness minimum.
@@ -920,8 +963,9 @@ function setupDragHandles() {
   sunsetStartDrag.on('dragMove', function () {
     // Match the paired handle.
     $('.sunrise-end').css('top', this.position.y + 'px');
-    // Update the tooltip.
-    const displayTime = convertPositionToDisplayTime(this.position.x);
+    // Update the tooltip. Append sync note if syncing.
+    let displayTime = convertPositionToDisplayTime(this.position.x);
+    sunSync ? (displayTime += syncString) : null;
     $('.sunset-start').attr('aria-label', displayTime);
 
     // Live update the darkness minimum.
@@ -948,8 +992,9 @@ function setupDragHandles() {
   sunsetEndDrag.on('dragMove', function () {
     // Match the paired handle.
     $('.sunrise-start').css('top', this.position.y + 'px');
-    // Update the tooltip.
-    const displayTime = convertPositionToDisplayTime(this.position.x);
+    // Update the tooltip. Append sync note if syncing.
+    let displayTime = convertPositionToDisplayTime(this.position.x);
+    sunSync ? (displayTime += syncString) : null;
     $('.sunset-end').attr('aria-label', displayTime);
 
     // Live update the darkness maximum.
@@ -1632,10 +1677,11 @@ class SmallTimeApp extends FormApplication {
 
   // Render changes to the sun/moon slider, and handle Darkness link.
   static async timeTransition(timeNow) {
-    const sunriseStart = game.settings.get('smalltime', 'sunrise-start');
-    const sunriseEnd = game.settings.get('smalltime', 'sunrise-end');
-    const sunsetStart = game.settings.get('smalltime', 'sunset-start');
-    const sunsetEnd = game.settings.get('smalltime', 'sunset-end');
+    let sunriseStart = game.settings.get('smalltime', 'sunrise-start');
+    let sunriseEnd = game.settings.get('smalltime', 'sunrise-end');
+    let sunsetStart = game.settings.get('smalltime', 'sunset-start');
+    let sunsetEnd = game.settings.get('smalltime', 'sunset-end');
+
     const midnight = 1440;
 
     // Handles the range slider's sun/moon icons, and the BG color changes.
