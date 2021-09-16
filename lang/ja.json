@@ -30,5 +30,7 @@
   "SMLTME.Player_Vis_2": "太陽と月の位置と時刻",
   "SMLTME.Player_Vis_3": "デフォルト設定を使用する",
   "SMLTME.Darkness_Reset": "［Shift］＋クリックすると時刻がデフォルトにリセットされます。",
-  "SMLTME.Position_Reset": "Shift-click to reset the SmallTime window postion"
+  "SMLTME.Position_Reset": "Shift-click to reset the SmallTime window postion",
+  "SMLTME.Sun_Sync": "Synchronize Sunrise/Sunset",
+  "SMLTME.Sun_Sync_Hint": "Acquire sunrise & sunset times from Simple Calendar."
 }

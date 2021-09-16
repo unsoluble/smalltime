@@ -30,5 +30,7 @@
   "SMLTME.Player_Vis_2": "Posición de sol/luna y hora del día",
   "SMLTME.Player_Vis_3": "Usar los ajustes por defecto",
   "SMLTME.Darkness_Reset": "Shift-click para resetear a horas por defecto",
-  "SMLTME.Position_Reset": "Shift-click para resetear la posición de la ventana de SmallTime"
+  "SMLTME.Position_Reset": "Shift-click para resetear la posición de la ventana de SmallTime",
+  "SMLTME.Sun_Sync": "Synchronize Sunrise/Sunset",
+  "SMLTME.Sun_Sync_Hint": "Acquire sunrise & sunset times from Simple Calendar."
 }

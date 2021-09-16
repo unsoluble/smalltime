@@ -30,5 +30,7 @@
   "SMLTME.Player_Vis_2": "해/달 위치와 시간",
   "SMLTME.Player_Vis_3": "기본값 사용",
   "SMLTME.Darkness_Reset": "시간을 기본값으로 되돌리려면 시프트 키를 누른 채로 클릭하세요.",
-  "SMLTME.Position_Reset": "Shift-click to reset the SmallTime window postion"
+  "SMLTME.Position_Reset": "Shift-click to reset the SmallTime window postion",
+  "SMLTME.Sun_Sync": "Synchronize Sunrise/Sunset",
+  "SMLTME.Sun_Sync_Hint": "Acquire sunrise & sunset times from Simple Calendar."
 }
