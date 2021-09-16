@@ -39,7 +39,7 @@ If you have a calendar-providing module (or game system) enabled, SmallTime will
 
 ![About_Time_Integration](doc/About_Time_Integration.gif)
 
-If you have [Simple Calendar](https://foundryvtt.com/packages/foundryvtt-simple-calendar) enabled, make sure its Game World Time Integration setting is on "Mixed". Calendar and time info from there should now sync up, though SmallTime doesn't currently support nonstandard time divisions.
+If you have [Simple Calendar](https://foundryvtt.com/packages/foundryvtt-simple-calendar) enabled, make sure its Game World Time Integration setting is on "Mixed". Calendar and time info from there should now sync up, though SmallTime doesn't currently support nonstandard time divisions. You can enable Sunrise/Sunset sync from Simple Calendar in the SmallTime settings screen.
 
 ### Settings
 
