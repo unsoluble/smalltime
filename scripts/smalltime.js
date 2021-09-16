@@ -18,10 +18,13 @@ let SmallTime_EpochOffset = 0;
 const SmallTime_WFRP4eOffset = 30;
 const SmallTime_DasSchwarzeAugeOffset = 16;
 const SmallTime_TaskbarOffset = 50;
+
 const SmallTime_SunriseStartDefault = 180;
 const SmallTime_SunriseEndDefault = 420;
 const SmallTime_SunsetStartDefault = 1050;
 const SmallTime_SunsetEndDefault = 1320;
+const SmallTime_DawnDuskSpread = 120;
+
 const SmallTime_MaxDarknessDefault = 1;
 const SmallTime_MinDarknessDefault = 0;
 
@@ -717,18 +720,30 @@ Hooks.on('simple-calendar-clock-start-stop', () => {
   SmallTimeApp.emitSocket('handleRealtime');
 });
 
+Hooks.on('simple-calendar-date-time-change', () => {
+  updateSunriseSunsetTimes();
+  updateGradientStops();
+});
+
 function updateSunriseSunsetTimes() {
   if (game.settings.get('smalltime', 'sun-sync')) {
-    const spread = 120;
-    const riseEnd = SimpleCalendar.api.getCurrentSeason().sunriseTime / 60;
-    const riseStart = riseEnd - spread;
-    const setStart = SimpleCalendar.api.getCurrentSeason().sunsetTime / 60;
-    const setEnd = setStart + spread;
+    // Use defaults if no seasons have been set up.
+    if (SimpleCalendar.api.getAllSeasons().length == 0) {
+      game.settings.set('smalltime', 'sunrise-start', SmallTime_SunriseStartDefault);
+      game.settings.set('smalltime', 'sunrise-end', SmallTime_SunriseEndDefault);
+      game.settings.set('smalltime', 'sunset-start', SmallTime_SunsetStartDefault);
+      game.settings.set('smalltime', 'sunset-end', SmallTime_SunsetEndDefault);
+    } else {
+      const riseEnd = SimpleCalendar.api.getCurrentSeason().sunriseTime / 60;
+      const riseStart = riseEnd - SmallTime_DawnDuskSpread;
+      const setStart = SimpleCalendar.api.getCurrentSeason().sunsetTime / 60;
+      const setEnd = setStart + SmallTime_DawnDuskSpread;
 
-    game.settings.set('smalltime', 'sunrise-start', riseStart);
-    game.settings.set('smalltime', 'sunrise-end', riseEnd);
-    game.settings.set('smalltime', 'sunset-start', setStart);
-    game.settings.set('smalltime', 'sunset-end', setEnd);
+      game.settings.set('smalltime', 'sunrise-start', riseStart);
+      game.settings.set('smalltime', 'sunrise-end', riseEnd);
+      game.settings.set('smalltime', 'sunset-start', setStart);
+      game.settings.set('smalltime', 'sunset-end', setEnd);
+    }
   }
 }
 
@@ -1068,9 +1083,8 @@ function setupDragHandles() {
 }
 
 function convertTimeIntegerToPercentage(time) {
-  // Arbitrary/gross values here to make the transition points line
-  // up with the drag handles nicely.
-  return Math.round(((time / 3 + 32) / 550) * 100) + 1 + '%';
+  // Percentage is a proportion of the current time out of the 1440-minute day.
+  return Math.round((time / 1440) * 100) + '%';
 }
 
 function convertPositionToTimeInteger(position) {
@@ -1685,22 +1699,16 @@ class SmallTimeApp extends FormApplication {
     const midnight = 1440;
 
     // Handles the range slider's sun/moon icons, and the BG color changes.
-    // The 450 here is the height of the CSS gradient.
+    // The 2000 here is the height of the CSS gradient.
     let bgOffset = Math.round((timeNow / midnight) * 2000);
 
-    // Reverse the offset direction for the BG color shift for each
-    // half of the day.
-    if (timeNow <= midnight / 2) {
-      $('#slideContainer').css('background-position', `0px -${bgOffset}px`);
-    } else {
-      $('#slideContainer').css('background-position', `0px ${bgOffset}px`);
-    }
+    // Set the offset accordingly.
+    $('#slideContainer').css('background-position', `0px -${bgOffset}px`);
 
     // Swap out the moon for the sun during daytime,
     // changing phase as appropriate.
     const currentPhase = game.settings.get('smalltime', 'moon-phase');
 
-    // TODO: Figure out why this is multi-triggering on the transitions.
     if (timeNow >= sunriseEnd && timeNow < sunsetStart) {
       $('#timeSlider').removeClass('moon');
       $('#timeSlider').addClass('sun');
