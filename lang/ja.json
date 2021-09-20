@@ -2,6 +2,7 @@
   "SMLTME.Time_Format": "時間表記",
   "SMLTME.12hr": "12時間表記",
   "SMLTME.24hr": "24時間表記",
+  "SMLTME.Show_Seconds": "Show Seconds",
   "SMLTME.Date_Format": "データ形式",
   "SMLTME.Calendar_Provider": "カレンダーの提供元",
   "SMLTME.Calendar_Provider_Hint": "この世界のカレンダーの情報源を指定します。",

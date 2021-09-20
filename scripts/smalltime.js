@@ -95,6 +95,14 @@ Hooks.on('init', () => {
     default: 12,
   });
 
+  game.settings.register('smalltime', 'show-seconds', {
+    name: game.i18n.localize('SMLTME.Show_Seconds'),
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: false,
+  });
+
   // If there is one or more available source of calendar information,
   // add them to the list of providers to choose from in Settings.
   const calendarProviders = getCalendarProviders();
@@ -531,6 +539,29 @@ Hooks.on('renderSettingsConfig', () => {
   // Everything here is GM-only.
   if (!game.user.isGM) return;
 
+  // Hide the Show Seconds setting if we're not using 24hr time.
+  if (game.settings.get('smalltime', 'time-format') == 12) {
+    $('input[name="smalltime.show-seconds"]').parent().parent().css('display', 'none');
+  }
+
+  // Toggle the Show Seconds setting with changes to the time format.
+  $('select[name="smalltime.time-format"]').on('change', function () {
+    if (this.value == 24) {
+      $('input[name="smalltime.show-seconds"]').parent().parent().css('display', 'flex');
+    } else {
+      $('input[name="smalltime.show-seconds"]').parent().parent().css('display', 'none');
+    }
+  });
+
+  // Live toggle the seconds display.
+  $('input[name="smalltime.show-seconds"]').on('change', function () {
+    if (this.checked) {
+      $('#secondsSpan').css('display', 'inline');
+    } else {
+      $('#secondsSpan').css('display', 'none');
+    }
+  });
+
   // Pull the current date and format it in various ways for the selection.
   $('select[name="smalltime.date-format"]')
     .children('option')
@@ -753,9 +784,9 @@ function handleRealtimeState() {
     // setting its clockStatus.
     setTimeout(function () {
       if (game.paused || !SimpleCalendar.api.clockStatus().started) {
-        $('#timeSeparator').removeClass('blink');
+        $('.timeSeparator').removeClass('blink');
       } else if (!game.paused && SimpleCalendar.api.clockStatus().started) {
-        $('#timeSeparator').addClass('blink');
+        $('.timeSeparator').addClass('blink');
       }
     }, 500);
   }
@@ -1171,6 +1202,21 @@ function handleTimeChange(timeInteger) {
   SmallTimeApp.timeTransition(timeInteger);
   $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay(timeInteger).hours);
   $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay(timeInteger).minutes);
+
+  // Calculate and show the current seconds if required.
+  if (
+    game.settings.get('smalltime', 'time-format') == 24 &&
+    game.settings.get('smalltime', 'show-seconds') == true
+  ) {
+    const currentWorldTime = game.time.worldTime + SmallTime_EpochOffset;
+    let seconds = Math.abs(Math.trunc(((currentWorldTime % 86400) % 3600) % 60));
+    if (seconds < 10) seconds = '0' + seconds;
+    $('#secondString').html(seconds);
+    $('#secondsSpan').css('display', 'inline');
+  } else {
+    $('#secondsSpan').css('display', 'none');
+  }
+
   $('#timeSlider').val(timeInteger);
   handleRealtimeState();
   SmallTimeApp.updateDate();
@@ -1805,6 +1851,7 @@ class SmallTimeApp extends FormApplication {
       }
       if (theHours === 0) theHours = 12;
     }
+
     const timeObj = { hours: theHours, minutes: theMinutes };
 
     return timeObj;
