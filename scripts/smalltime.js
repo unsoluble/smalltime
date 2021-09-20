@@ -553,6 +553,15 @@ Hooks.on('renderSettingsConfig', () => {
     }
   });
 
+  // Live toggle the seconds display.
+  $('input[name="smalltime.show-seconds"]').on('change', function () {
+    if (this.checked) {
+      $('#secondsSpan').css('display', 'inline');
+    } else {
+      $('#secondsSpan').css('display', 'none');
+    }
+  });
+
   // Pull the current date and format it in various ways for the selection.
   $('select[name="smalltime.date-format"]')
     .children('option')
@@ -775,9 +784,9 @@ function handleRealtimeState() {
     // setting its clockStatus.
     setTimeout(function () {
       if (game.paused || !SimpleCalendar.api.clockStatus().started) {
-        $('#timeSeparator').removeClass('blink');
+        $('.timeSeparator').removeClass('blink');
       } else if (!game.paused && SimpleCalendar.api.clockStatus().started) {
-        $('#timeSeparator').addClass('blink');
+        $('.timeSeparator').addClass('blink');
       }
     }, 500);
   }
@@ -1193,6 +1202,21 @@ function handleTimeChange(timeInteger) {
   SmallTimeApp.timeTransition(timeInteger);
   $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay(timeInteger).hours);
   $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay(timeInteger).minutes);
+
+  // Calculate and show the current seconds if required.
+  if (
+    game.settings.get('smalltime', 'time-format') == 24 &&
+    game.settings.get('smalltime', 'show-seconds') == true
+  ) {
+    const currentWorldTime = game.time.worldTime + SmallTime_EpochOffset;
+    let seconds = Math.abs(Math.trunc(((currentWorldTime % 86400) % 3600) % 60));
+    if (seconds < 10) seconds = '0' + seconds;
+    $('#secondString').html(seconds);
+    $('#secondsSpan').css('display', 'inline');
+  } else {
+    $('#secondsSpan').css('display', 'none');
+  }
+
   $('#timeSlider').val(timeInteger);
   handleRealtimeState();
   SmallTimeApp.updateDate();
@@ -1827,6 +1851,7 @@ class SmallTimeApp extends FormApplication {
       }
       if (theHours === 0) theHours = 12;
     }
+
     const timeObj = { hours: theHours, minutes: theMinutes };
 
     return timeObj;

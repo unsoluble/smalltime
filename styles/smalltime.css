@@ -388,7 +388,7 @@
   width: 100%;
 }
 
-#smalltime-app #timeSeparator {
+#smalltime-app .timeSeparator {
   position: relative;
   top: -1px;
   margin: 0 -2px 0 -2px;
