@@ -2,6 +2,7 @@
   "SMLTME.Time_Format": "시간 표시 형식",
   "SMLTME.12hr": "12시 기준",
   "SMLTME.24hr": "24시 기준",
+  "SMLTME.Show_Seconds": "Show Seconds",
   "SMLTME.Date_Format": "Date Format",
   "SMLTME.Calendar_Provider": "Calendar Provider",
   "SMLTME.Calendar_Provider_Hint": "The source of your world's calendar information.",

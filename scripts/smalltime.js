@@ -95,6 +95,14 @@ Hooks.on('init', () => {
     default: 12,
   });
 
+  game.settings.register('smalltime', 'show-seconds', {
+    name: game.i18n.localize('SMLTME.Show_Seconds'),
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: false,
+  });
+
   // If there is one or more available source of calendar information,
   // add them to the list of providers to choose from in Settings.
   const calendarProviders = getCalendarProviders();
@@ -530,6 +538,20 @@ Hooks.on('renderSceneConfig', async (obj) => {
 Hooks.on('renderSettingsConfig', () => {
   // Everything here is GM-only.
   if (!game.user.isGM) return;
+
+  // Hide the Show Seconds setting if we're not using 24hr time.
+  if (game.settings.get('smalltime', 'time-format') == 12) {
+    $('input[name="smalltime.show-seconds"]').parent().parent().css('display', 'none');
+  }
+
+  // Toggle the Show Seconds setting with changes to the time format.
+  $('select[name="smalltime.time-format"]').on('change', function () {
+    if (this.value == 24) {
+      $('input[name="smalltime.show-seconds"]').parent().parent().css('display', 'flex');
+    } else {
+      $('input[name="smalltime.show-seconds"]').parent().parent().css('display', 'none');
+    }
+  });
 
   // Pull the current date and format it in various ways for the selection.
   $('select[name="smalltime.date-format"]')

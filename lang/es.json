@@ -2,6 +2,7 @@
   "SMLTME.Time_Format": "Formato horario",
   "SMLTME.12hr": "12hr",
   "SMLTME.24hr": "24hr",
+  "SMLTME.Show_Seconds": "Show Seconds",
   "SMLTME.Date_Format": "Formato de fecha",
   "SMLTME.Calendar_Provider": "Proveedor de calendario",
   "SMLTME.Calendar_Provider_Hint": "La fuente de información del calendario de tu mundo.",
