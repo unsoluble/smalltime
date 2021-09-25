@@ -757,7 +757,10 @@ Hooks.on('simple-calendar-date-time-change', () => {
 });
 
 function updateSunriseSunsetTimes() {
-  if (game.settings.get('smalltime', 'sun-sync')) {
+  if (
+    game.settings.get('smalltime', 'sun-sync') &&
+    game.modules.get('foundryvtt-simple-calendar')?.active
+  ) {
     // Use defaults if no seasons have been set up.
     if (SimpleCalendar.api.getAllSeasons().length == 0) {
       game.settings.set('smalltime', 'sunrise-start', SmallTime_SunriseStartDefault);
@@ -870,7 +873,9 @@ async function saveNewDarknessConfig(positions, max, min) {
 function setupDragHandles() {
   // If sunrise/sunset are being synced from Simple Calendar, we'll lock
   // the drag handles on the X axis.
-  const sunSync = game.settings.get('smalltime', 'sun-sync');
+  const sunSync =
+    game.settings.get('smalltime', 'sun-sync') &&
+    game.modules.get('foundryvtt-simple-calendar')?.active;
 
   // Build the sun/moon drag handles for the darkness config UI.
   const maxDarkness = game.settings.get('smalltime', 'max-darkness');
