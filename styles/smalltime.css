@@ -30,6 +30,9 @@
   animation: fadeOut 3s ease-out;
   transition: opacity 1s;
   transition-delay: 2s;
+  border: 0;
+  border-image-source: '';
+  border-image-width: 0;
   z-index: 100 !important;
 }
 
