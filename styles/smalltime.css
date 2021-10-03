@@ -224,6 +224,7 @@
   background-size: 200px 2000px;
   background-position: 0px 0px;
   z-index: 0;
+  pointer-events: none;
 }
 
 #smalltime-app .slider::-webkit-slider-runnable-track {
@@ -273,6 +274,7 @@
   -webkit-filter: drop-shadow(0px 0px 8px rgba(255, 203, 93, 0.9));
   filter: drop-shadow(0px 0px 8px rgba(255, 203, 93, 0.9));
   z-index: 10;
+  pointer-events: auto;
 }
 
 #smalltime-app .sun::-moz-range-thumb {
@@ -288,6 +290,7 @@
   box-shadow: none;
   filter: drop-shadow(0px 0px 8px rgba(255, 203, 93, 0.9));
   z-index: 10;
+  pointer-events: auto;
 }
 
 #smalltime-app .moon::-webkit-slider-thumb {
@@ -305,6 +308,7 @@
   -webkit-filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.9));
   filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.9));
   z-index: 10;
+  pointer-events: auto;
 }
 
 #smalltime-app .moon::-moz-range-thumb {
@@ -320,6 +324,7 @@
   box-shadow: none;
   filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.9));
   z-index: 10;
+  pointer-events: auto;
 }
 
 #smalltime-app #displayContainer {
