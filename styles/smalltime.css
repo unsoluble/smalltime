@@ -19,6 +19,7 @@
   --SMLTME-darkness-g: 36;
   --SMLTME-darkness-b: 72;
   --SMLTME-display-vis: flex;
+  --SMLTME-pointer-events: auto;
 }
 
 #smalltime-app {
@@ -274,7 +275,7 @@
   -webkit-filter: drop-shadow(0px 0px 8px rgba(255, 203, 93, 0.9));
   filter: drop-shadow(0px 0px 8px rgba(255, 203, 93, 0.9));
   z-index: 10;
-  pointer-events: auto;
+  pointer-events: var(--SMLTME-pointer-events);
 }
 
 #smalltime-app .sun::-moz-range-thumb {
@@ -290,7 +291,7 @@
   box-shadow: none;
   filter: drop-shadow(0px 0px 8px rgba(255, 203, 93, 0.9));
   z-index: 10;
-  pointer-events: auto;
+  pointer-events: var(--SMLTME-pointer-events);
 }
 
 #smalltime-app .moon::-webkit-slider-thumb {
@@ -308,7 +309,7 @@
   -webkit-filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.9));
   filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.9));
   z-index: 10;
-  pointer-events: auto;
+  pointer-events: var(--SMLTME-pointer-events);
 }
 
 #smalltime-app .moon::-moz-range-thumb {
@@ -324,7 +325,7 @@
   box-shadow: none;
   filter: drop-shadow(0px 0px 8px rgba(255, 255, 255, 0.9));
   z-index: 10;
-  pointer-events: auto;
+  pointer-events: var(--SMLTME-pointer-events);
 }
 
 #smalltime-app #displayContainer {
@@ -450,10 +451,6 @@
   border: none;
   width: 20px;
   height: 20px;
-}
-
-#smalltime-app .disable-for-players {
-  pointer-events: none;
 }
 
 #smalltime-app .hide-for-players {

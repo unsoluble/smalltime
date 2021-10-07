@@ -435,7 +435,7 @@ Hooks.on('ready', () => {
 Hooks.on('renderSmallTimeApp', () => {
   // Disable controls for non-GMs.
   if (!game.modules.get('smalltime').controlAuth) {
-    $('#timeSlider').addClass('disable-for-players');
+    document.documentElement.style.setProperty('--SMLTME-pointer-events', 'none');
     $('#decrease-large').addClass('hide-for-players');
     $('#decrease-small').addClass('hide-for-players');
     $('#increase-large').addClass('hide-for-players');
