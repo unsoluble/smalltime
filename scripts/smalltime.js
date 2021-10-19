@@ -126,6 +126,7 @@ Hooks.on('init', () => {
       8: '8',
       9: '9',
       10: '10',
+      11: '11',
     },
     default: 0,
   });
@@ -1292,6 +1293,9 @@ function getDate(provider, variant) {
       stringAfter(monthName) +
       stringAfter(date + (ordinalSuffix ? ordinalSuffix : ''))
   );
+
+  // Thursday August, 2021
+  displayDate.push(stringAfter(day, ' ') + stringAfter(monthName, ', ') + year);
 
   // August 12th, 2021
   displayDate.push(
