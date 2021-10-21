@@ -1701,7 +1701,7 @@ class SmallTimeApp extends FormApplication {
     });
 
     // Listen for moon phase changes from Simple Calendar.
-    if (game.modules.get('foundryvtt-simple-calendar')?.active) {
+    if (game.modules.get('foundryvtt-simple-calendar')?.active && game.user.isGM) {
       Hooks.on(SimpleCalendar.Hooks.DateTimeChange, async function (data) {
         if (typeof data.moons[0] === 'undefined') {
           return;
