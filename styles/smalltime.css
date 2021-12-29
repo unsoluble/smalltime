@@ -481,6 +481,15 @@
   }
 }
 
+@keyframes close {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 /* Darkness config tooltip styles. */
 
 div[aria-label][data-balloon-pos] {

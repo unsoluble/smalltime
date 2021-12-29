@@ -486,16 +486,13 @@ Hooks.on('renderSceneConfig', async (obj) => {
   const vis0text = game.i18n.localize('SMLTME.Player_Vis_0');
   const vis1text = game.i18n.localize('SMLTME.Player_Vis_1');
   const vis2text = game.i18n.localize('SMLTME.Player_Vis_2');
-  const vis3text = game.i18n.localize('SMLTME.Player_Vis_3');
 
   let vis0 = '';
   let vis1 = '';
   let vis2 = '';
-  let vis3 = '';
   if (visChoice === '0') vis0 = 'selected';
   if (visChoice === '1') vis1 = 'selected';
   if (visChoice === '2') vis2 = 'selected';
-  if (visChoice === '3') vis3 = 'selected';
 
   const controlLabel = game.i18n.localize('SMLTME.Darkness_Control');
   const controlHint = game.i18n.localize('SMLTME.Darkness_Control_Hint');
@@ -510,7 +507,6 @@ Hooks.on('renderSceneConfig', async (obj) => {
       <select
         name="flags.smalltime.player-vis"
         data-dtype="number">
-        <option value="3" ${vis3}>${vis3text}</option>
         <option value="2" ${vis2}>${vis2text}</option>
         <option value="1" ${vis1}>${vis1text}</option>
         <option value="0" ${vis0}>${vis0text}</option>
@@ -1374,37 +1370,6 @@ function convertHexToRGB(hex) {
     : null;
 }
 
-// Override the Escape key to prevent it from closing SmallTime.
-// Yes this is a little janky. Yes I should probably be using LibWrapper.
-KeyboardManager.prototype._onEscape = function _onEscape(event, up, modifiers) {
-  if (up || modifiers.hasFocus) return;
-  this._handled.add(modifiers.key);
-
-  // Save fog of war if there are pending changes
-  if (canvas.ready) canvas.sight.saveFog();
-
-  // Case 1 - dismiss an open context menu
-  if (ui.context && ui.context.menu.length) return ui.context.close();
-
-  // Case 2 - close open UI windows
-  if (Object.keys(ui.windows).length > 1) {
-    Object.values(ui.windows).forEach((app) => {
-      if (app.title === 'SmallTime') return;
-      app.close();
-    });
-  }
-
-  // Case 3 (GM) - release controlled objects (if not in a preview)
-  if (game.user.isGM && canvas.activeLayer && Object.keys(canvas.activeLayer._controlled).length) {
-    event.preventDefault();
-    if (!canvas.activeLayer.preview?.children.length) canvas.activeLayer.releaseAll();
-    return;
-  }
-
-  // Case 4 - toggle the main menu
-  ui.menu.toggle();
-};
-
 class SmallTimeApp extends FormApplication {
   constructor() {
     super();
@@ -1901,6 +1866,38 @@ class SmallTimeApp extends FormApplication {
     $('#pin-lock').remove();
   }
 
+  // Override original #close method inherited from parent class (FormApplication)
+  async close(options = {}) {
+    // If called by SmallTime, use original method to handle app closure
+    if (options.smallTime) {
+      game.settings.set('smalltime', 'visible', false);
+      return super.close();
+    }
+
+    // Case 1 - Close OTHER open UI windows
+    if (Object.keys(ui.windows).length > 1) {
+      // If there is ANOTHER app open
+      Object.values(ui.windows).forEach((app) => {
+        // Loop through each app
+        if (app.title === 'SmallTime') return; // If the current app is SmallTime, skip it
+        app.close(); // Close the current app
+      });
+    }
+
+    // Case 2 (GM) - Release controlled objects
+    else if (
+      canvas?.ready &&
+      game.user.isGM &&
+      Object.keys(canvas.activeLayer._controlled).length
+    ) {
+      event.preventDefault();
+      canvas.activeLayer.releaseAll();
+    }
+
+    // Case 3 - Toggle the main menu
+    else ui.menu.toggle();
+  }
+
   // Toggle visibility of the main window.
   static async toggleAppVis(mode) {
     if (!game.modules.get('smalltime').viewAuth) return;
@@ -1915,18 +1912,16 @@ class SmallTimeApp extends FormApplication {
           // and not from an Escape keypress.
           game.modules.get('smalltime').myApp.close({ smallTime: true });
         }, 200);
-        game.settings.set('smalltime', 'visible', false);
       } else {
         // Make sure there isn't already an instance of the app rendered.
-        if (!Object.values(ui.windows).find((w) => w.constructor.name === 'SmallTimeApp')) {
-          const myApp = new SmallTimeApp().render(true);
-          game.modules.get('smalltime').myApp = myApp;
-          game.settings.set('smalltime', 'visible', true);
+        if (Object.values(ui.windows).find((w) => w.constructor.name === 'SmallTimeApp')) {
+          game.modules.get('smalltime').myApp.close({ smallTime: true });
         }
+        game.modules.get('smalltime').myApp = await new SmallTimeApp().render(true);
+        game.settings.set('smalltime', 'visible', true);
       }
     } else if (game.settings.get('smalltime', 'visible') === true) {
-      const myApp = new SmallTimeApp().render(true);
-      game.modules.get('smalltime').myApp = myApp;
+      game.modules.get('smalltime').myApp = await new SmallTimeApp().render(true);
     }
   }
 

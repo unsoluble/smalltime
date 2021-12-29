@@ -29,7 +29,6 @@
   "SMLTME.Player_Vis_0": "Nothing",
   "SMLTME.Player_Vis_1": "Sun/Moon position only",
   "SMLTME.Player_Vis_2": "Sun/Moon position and time of day",
-  "SMLTME.Player_Vis_3": "Use default setting",
   "SMLTME.Darkness_Reset": "Shift-click to reset times to defaults",
   "SMLTME.Position_Reset": "Shift-click to reset the SmallTime window postion",
   "SMLTME.Sun_Sync": "Synchronize Sunrise/Sunset",
