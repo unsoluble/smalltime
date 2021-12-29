@@ -356,6 +356,7 @@ Hooks.on('canvasReady', () => {
   }
   // Collapse the display if the user isn't allowed to see the clock.
   if (!game.modules.get('smalltime').clockAuth) {
+    game.settings.set('smalltime', 'date-showing', false);
     document.documentElement.style.setProperty('--SMLTME-display-vis', 'none');
   } else {
     document.documentElement.style.setProperty('--SMLTME-display-vis', 'flex');
