@@ -349,8 +349,7 @@ Hooks.on('canvasReady', () => {
   } else if (
     // If the SmallTime app was visible, but we're now in a scene where
     // the player doesn't have permission to view it, close the app.
-    Object.values(ui.windows).find((w) => w.constructor.name === 'SmallTimeApp') &&
-    !game.modules.get('smalltime').controlAuth
+    SmallTimeApp._isOpen && !game.modules.get('smalltime').controlAuth
   ) {
     game.modules.get('smalltime').myApp.close({ smallTime: true });
   }
@@ -1372,6 +1371,8 @@ function convertHexToRGB(hex) {
 }
 
 class SmallTimeApp extends FormApplication {
+  static _isOpen = false;
+
   constructor() {
     super();
     this.currentTime = getWorldTimeAsDayTime();
@@ -1867,36 +1868,22 @@ class SmallTimeApp extends FormApplication {
     $('#pin-lock').remove();
   }
 
+  /** @override */
+  async _render(force=false, options={}) {
+    await super._render(force, options);
+    SmallTimeApp._isOpen = true;
+    // Hack to remove the window from candidates for closing via `Escape`.
+    delete ui.windows[this.appId];
+  }
+
   // Override original #close method inherited from parent class (FormApplication)
   async close(options = {}) {
-    // If called by SmallTime, use original method to handle app closure
+    SmallTimeApp._isOpen = false;
+    // If called by SmallTime, record that it is not longer visible
     if (options.smallTime) {
       game.settings.set('smalltime', 'visible', false);
-      return super.close();
     }
-
-    // Case 1 - Close OTHER open UI windows
-    if (Object.keys(ui.windows).length > 1) {
-      // If there is ANOTHER app open
-      Object.values(ui.windows).forEach((app) => {
-        // Loop through each app
-        if (app.title === 'SmallTime') return; // If the current app is SmallTime, skip it
-        app.close(); // Close the current app
-      });
-    }
-
-    // Case 2 (GM) - Release controlled objects
-    else if (
-      canvas?.ready &&
-      game.user.isGM &&
-      Object.keys(canvas.activeLayer._controlled).length
-    ) {
-      event.preventDefault();
-      canvas.activeLayer.releaseAll();
-    }
-
-    // Case 3 - Toggle the main menu
-    else ui.menu.toggle();
+    return super.close(options);
   }
 
   // Toggle visibility of the main window.
@@ -1915,7 +1902,7 @@ class SmallTimeApp extends FormApplication {
         }, 200);
       } else {
         // Make sure there isn't already an instance of the app rendered.
-        if (Object.values(ui.windows).find((w) => w.constructor.name === 'SmallTimeApp')) {
+        if (SmallTimeApp._isOpen) {
           game.modules.get('smalltime').myApp.close({ smallTime: true });
         }
         game.modules.get('smalltime').myApp = await new SmallTimeApp().render(true);
