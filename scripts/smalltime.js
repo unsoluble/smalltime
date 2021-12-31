@@ -346,11 +346,9 @@ Hooks.on('canvasReady', () => {
         SmallTimeApp.pinApp();
       }
     }
-  } else if (
+  } else if (SmallTimeApp._isOpen && !game.modules.get('smalltime').controlAuth) {
     // If the SmallTime app was visible, but we're now in a scene where
     // the player doesn't have permission to view it, close the app.
-    SmallTimeApp._isOpen && !game.modules.get('smalltime').controlAuth
-  ) {
     game.modules.get('smalltime').myApp.close({ smallTime: true });
   }
   // Collapse the display if the user isn't allowed to see the clock.
@@ -1373,6 +1371,23 @@ function convertHexToRGB(hex) {
 class SmallTimeApp extends FormApplication {
   static _isOpen = false;
 
+  async _render(force = false, options = {}) {
+    await super._render(force, options);
+    SmallTimeApp._isOpen = true;
+    // Remove the window from candidates for closing via Escape.
+    delete ui.windows[this.appId];
+  }
+
+  // Override original #close method inherited from parent class.
+  async close(options = {}) {
+    // If called by SmallTime, record that it is not longer visible.
+    if (options.smallTime) {
+      SmallTimeApp._isOpen = false;
+      game.settings.set('smalltime', 'visible', false);
+    }
+    return super.close(options);
+  }
+
   constructor() {
     super();
     this.currentTime = getWorldTimeAsDayTime();
@@ -1868,24 +1883,6 @@ class SmallTimeApp extends FormApplication {
     $('#pin-lock').remove();
   }
 
-  /** @override */
-  async _render(force=false, options={}) {
-    await super._render(force, options);
-    SmallTimeApp._isOpen = true;
-    // Hack to remove the window from candidates for closing via `Escape`.
-    delete ui.windows[this.appId];
-  }
-
-  // Override original #close method inherited from parent class (FormApplication)
-  async close(options = {}) {
-    SmallTimeApp._isOpen = false;
-    // If called by SmallTime, record that it is not longer visible
-    if (options.smallTime) {
-      game.settings.set('smalltime', 'visible', false);
-    }
-    return super.close(options);
-  }
-
   // Toggle visibility of the main window.
   static async toggleAppVis(mode) {
     if (!game.modules.get('smalltime').viewAuth) return;
@@ -1902,6 +1899,7 @@ class SmallTimeApp extends FormApplication {
         }, 200);
       } else {
         // Make sure there isn't already an instance of the app rendered.
+        // Fire off a close() just in case, clears up some stuck states.
         if (SmallTimeApp._isOpen) {
           game.modules.get('smalltime').myApp.close({ smallTime: true });
         }
