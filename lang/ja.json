@@ -1,4 +1,5 @@
 {
+  "Localization Provided By": "touge",
   "SMLTME.Time_Format": "時間表記",
   "SMLTME.12hr": "12時間表記",
   "SMLTME.24hr": "24時間表記",
@@ -31,7 +32,7 @@
   "SMLTME.Player_Vis_2": "太陽と月の位置と時刻",
   "SMLTME.Player_Vis_3": "デフォルト設定を使用する",
   "SMLTME.Darkness_Reset": "［Shift］＋クリックすると時刻がデフォルトにリセットされます。",
-  "SMLTME.Position_Reset": "Shift-click to reset the SmallTime window postion",
-  "SMLTME.Sun_Sync": "Synchronize Sunrise/Sunset",
-  "SMLTME.Sun_Sync_Hint": "Acquire sunrise & sunset times from Simple Calendar."
+  "SMLTME.Position_Reset": "Shift-clickでSmallTimeのウィンドウをリセットします。",
+  "SMLTME.Sun_Sync": "日出と日没を同期",
+  "SMLTME.Sun_Sync_Hint": "Simple Calendarから日出と日没の時間を取得します。"
 }
