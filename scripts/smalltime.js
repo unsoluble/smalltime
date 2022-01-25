@@ -281,7 +281,10 @@ Hooks.on('canvasReady', () => {
   if (game.system.id === 'dsa5') {
     SmallTime_PinOffset += SmallTime_DasSchwarzeAugeOffset;
   }
-  if (game.modules.get('foundry-taskbar')?.active) {
+  if (
+    game.modules.get('foundry-taskbar')?.active &&
+    game.settings.get('foundry-taskbar', 'moveplayersmacro')
+  ) {
     SmallTime_PinOffset += SmallTime_TaskbarOffset;
   }
 
