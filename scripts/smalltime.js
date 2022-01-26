@@ -455,7 +455,7 @@ Hooks.on('renderSmallTimeApp', () => {
     game.settings.get('smalltime', 'date-showing') &&
     game.modules.get('smalltime').dateAvailable
   ) {
-    $('#dateDisplay').addClass('active');
+    $('#smalltime-app').addClass('show-date');
     $('#smalltime-app').css({ height: '79px' });
   }
   handleTimeChange(getWorldTimeAsDayTime());
@@ -1617,7 +1617,7 @@ class SmallTimeApp extends FormApplication {
           !game.settings.get('smalltime', 'date-showing') &&
           game.modules.get('smalltime').dateAvailable
         ) {
-          $('#dateDisplay').addClass('active');
+          $('#smalltime-app').addClass('show-date');
           $('#smalltime-app').animate({ height: '79px' }, 80);
           if (game.settings.get('smalltime', 'pinned')) {
             SmallTimeApp.unPinApp();
@@ -1625,7 +1625,7 @@ class SmallTimeApp extends FormApplication {
           }
           await game.settings.set('smalltime', 'date-showing', true);
         } else {
-          $('#dateDisplay').removeClass('active');
+          $('#smalltime-app').removeClass('show-date');
           $('#smalltime-app').animate({ height: '59px' }, 80);
           if (game.settings.get('smalltime', 'pinned')) {
             SmallTimeApp.unPinApp();
