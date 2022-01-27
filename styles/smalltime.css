@@ -429,7 +429,7 @@
   transform-origin: top;
 }
 
-#smalltime-app #dateDisplay.active {
+#smalltime-app.show-date #dateDisplay {
   visibility: visible;
   transform: scaleY(1);
   transition: transform 0.1s ease-out;
