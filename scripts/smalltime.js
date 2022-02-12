@@ -723,6 +723,12 @@ Hooks.on('renderPlayerList', () => {
   if (!game.modules.get('smalltime').clockAuth) {
     myOffset -= 23;
   }
+
+  // Custom offset for Item Piles, which adds a button into the Players app.
+  if (game.modules.get('item-piles')?.active) {
+    myOffset += 30;
+  }
+
   // This would be better done with a class add, but injecting
   // it here was the only way I could get it to enforce the
   // absolute positioning.
