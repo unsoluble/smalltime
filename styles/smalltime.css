@@ -34,7 +34,7 @@
   border: 0;
   border-image-source: '';
   border-image-width: 0;
-  z-index: 100 !important;
+  z-index: 20 !important;
 }
 
 #smalltime-app:hover {

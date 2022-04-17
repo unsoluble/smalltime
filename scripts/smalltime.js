@@ -1218,8 +1218,14 @@ function handleTimeChange(timeInteger) {
     game.settings.get('smalltime', 'show-seconds') == true
   ) {
     const currentWorldTime = game.time.worldTime + SmallTime_EpochOffset;
-    let seconds = Math.abs(Math.trunc(((currentWorldTime % 86400) % 3600) % 60));
+    let seconds;
+    if (currentWorldTime < 0) {
+      seconds = 60 - Math.abs(Math.trunc(((currentWorldTime % 86400) % 3600) % 60));
+    } else {
+      seconds = Math.abs(Math.trunc(((currentWorldTime % 86400) % 3600) % 60));
+    }
     if (seconds < 10) seconds = '0' + seconds;
+    if (seconds == 60) seconds = '00';
     $('#secondString').html(seconds);
     $('#secondsSpan').css('display', 'inline');
   } else {
@@ -1581,14 +1587,18 @@ class SmallTimeApp extends FormApplication {
     });
 
     // Handle live feedback while dragging the sun/moon slider.
-    $(document).on('input', '#timeSlider', async function () {
-      $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).hours);
-      $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).minutes);
-      SmallTimeApp.timeTransition($(this).val());
-      if (game.user.isGM) {
-        SmallTimeApp.emitSocket('changeTime', $(this).val());
-      }
-    });
+    $(document).on(
+      'input',
+      '#timeSlider',
+      debounce(async function () {
+        $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).hours);
+        $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).minutes);
+        SmallTimeApp.timeTransition($(this).val());
+        if (game.user.isGM) {
+          SmallTimeApp.emitSocket('changeTime', $(this).val());
+        }
+      }, 100)
+    );
 
     // Wait for the actual change event to do the time set.
     $(document).on('change', '#timeSlider', async function () {
