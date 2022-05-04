@@ -698,7 +698,7 @@ Hooks.on('getSceneControlButtons', (buttons) => {
       button: true,
       icon: 'fas fa-adjust',
       name: 'smalltime',
-      title: 'SmallTime',
+      title: 'Toggle SmallTime',
       onClick: () => {
         SmallTimeApp.toggleAppVis('toggle');
       },
