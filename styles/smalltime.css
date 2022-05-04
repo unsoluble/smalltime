@@ -471,11 +471,13 @@
 
 @keyframes jiggle {
   0% {
+    transform-origin: center;
     transform: rotate(-0.5deg);
     animation-timing-function: ease-in;
   }
 
   50% {
+    transform-origin: center;
     transform: rotate(1deg);
     animation-timing-function: ease-out;
   }
