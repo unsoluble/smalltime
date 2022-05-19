@@ -479,7 +479,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
   // Set the Player Vis dropdown as appropriate.
   const visChoice = obj.object.getFlag('smalltime', 'player-vis');
   // Set the Darkness checkbox as appropriate.
-  const checkStatus = obj.object.getFlag('smalltime', 'darkness-link') ? 'checked' : '';
+  const darknessCheckStatus = obj.object.getFlag('smalltime', 'darkness-link') ? 'checked' : '';
 
   // Build our new options.
   const visibilityLabel = game.i18n.localize('SMLTME.Player_Visibility');
@@ -497,29 +497,46 @@ Hooks.on('renderSceneConfig', async (obj) => {
 
   const controlLabel = game.i18n.localize('SMLTME.Darkness_Control');
   const controlHint = game.i18n.localize('SMLTME.Darkness_Control_Hint');
-  const injection = `
+
+  const moonlightLabel = game.i18n.localize('SMLTME.Moonlight_Adjust');
+  const moonlightHint = game.i18n.localize('SMLTME.Moonlight_Adjust_Hint');
+  const moonlightCheckStatus = obj.object.getFlag('smalltime', 'moonlight') ? 'checked' : '';
+
+  let injection = `
     <fieldset class="st-scene-config">
       <legend>
         <img id="smalltime-config-icon" src="modules/smalltime/images/smalltime-icon.webp">
         <span>SmallTime</span>
       </legend>
       <div class="form-group">
-      <label>${visibilityLabel}</label>
-      <select
-        name="flags.smalltime.player-vis"
-        data-dtype="number">
-        <option value="2" ${vis2}>${vis2text}</option>
-        <option value="1" ${vis1}>${vis1text}</option>
-        <option value="0" ${vis0}>${vis0text}</option>
-      </select>
-      <p class="notes">${visibilityHint}</p>
+        <label>${visibilityLabel}</label>
+        <select
+          name="flags.smalltime.player-vis"
+          data-dtype="number">
+          <option value="2" ${vis2}>${vis2text}</option>
+          <option value="1" ${vis1}>${vis1text}</option>
+          <option value="0" ${vis0}>${vis0text}</option>
+        </select>
+        <p class="notes">${visibilityHint}</p>
         <label>${controlLabel}</label>
         <input
           type="checkbox"
           name="flags.smalltime.darkness-link"
-          ${checkStatus}>
-        <p class="notes">${controlHint}</p>
-      </div>
+          ${darknessCheckStatus}>
+        <p class="notes">${controlHint}</p>`;
+
+  if (game.modules.get('foundryvtt-simple-calendar')?.active) {
+    injection += `
+        <label>${moonlightLabel}</label>
+        <input
+          type="checkbox"
+          name="flags.smalltime.moonlight"
+          ${moonlightCheckStatus}>
+        <p class="notes">${moonlightHint}</p>`;
+  }
+
+  injection += `
+    </div>
     </fieldset>`;
 
   // Inject the SmallTime controls, but only into the config window
@@ -530,6 +547,18 @@ Hooks.on('renderSceneConfig', async (obj) => {
       .find('p:contains("' + game.i18n.localize('SCENES.GlobalLightThresholdHint') + '")')
       .parent()
       .after(injection);
+  }
+
+  if (
+    obj.object.getFlag('smalltime', 'moonlight') &&
+    game.modules.get('foundryvtt-simple-calendar')?.active
+  ) {
+    const coreThresholdSlider = $('input[name="globalLightThreshold"]');
+    coreThresholdSlider.attr({
+      class: 'smalltime-threshold-override',
+      'aria-label': game.i18n.localize('SMLTME.Threshold_Override_Tooltip'),
+      'data-balloon-pos': 'up',
+    });
   }
 });
 
