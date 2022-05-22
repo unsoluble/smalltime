@@ -585,7 +585,7 @@ Hooks.on('renderSettingsConfig', () => {
   $('input[name="smalltime.sunset-start"]').parent().parent().css('display', 'none');
 
   // Hide the default offset input field.
-  $('input[name="smalltime.offset"]').css('display', 'none');
+  $('input[name="smalltime.offset"]').parent().css('display', 'none');
 
   // Add our own offset input.
   const offsetInputElement = $(
@@ -595,42 +595,29 @@ Hooks.on('renderSettingsConfig', () => {
   const offsetInjection = `
     <div class="smalltime-offset-input">
       <input type="number" min="1" max="9" step="1" value="1">
+      <div class="smalltime-offset-input-nav">
+        <div class="smalltime-offset-input-button smalltime-offset-input-up"><i class='fa fa-caret-up'></i></div>
+        <div class="smalltime-offset-input-button smalltime-offset-input-down"><i class='fa fa-caret-down'></i></div>
+      </div>
     </div>
-    <div class="smalltime-offset-input-nav">
-      <div class="smalltime-offset-input-button smalltime-offset-input-up">&#xf106;</div>
-      <div class="smalltime-offset-input-button smalltime-offset-input-down">&#xf107;</div>
-    </div>
+    
   `;
 
   offsetInputElement.after(offsetInjection);
 
-  jQuery('.smalltime-offset-input').each(function () {
-    var spinner = jQuery(this),
+  $('.smalltime-offset-input').each(function () {
+    var spinner = $(this),
       input = spinner.find('input[type="number"]'),
       btnUp = spinner.find('.smalltime-offset-input-up'),
-      btnDown = spinner.find('.smalltime-offset-input-down'),
-      min = input.attr('min'),
-      max = input.attr('max');
+      btnDown = spinner.find('.smalltime-offset-input-down');
 
     btnUp.click(function () {
-      var oldValue = parseFloat(input.val());
-      if (oldValue >= max) {
-        var newVal = oldValue;
-      } else {
-        var newVal = oldValue + 1;
-      }
-      spinner.find('input').val(newVal);
+      spinner.find('input').val(parseFloat(input.val()) + 1);
       spinner.find('input').trigger('change');
     });
 
     btnDown.click(function () {
-      var oldValue = parseFloat(input.val());
-      if (oldValue <= min) {
-        var newVal = oldValue;
-      } else {
-        var newVal = oldValue - 1;
-      }
-      spinner.find('input').val(newVal);
+      spinner.find('input').val(parseFloat(input.val()) - 1);
       spinner.find('input').trigger('change');
     });
   });

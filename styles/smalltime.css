@@ -100,18 +100,17 @@
 }
 
 .smalltime-offset-input input {
-  width: 45px;
-  height: 42px;
-  line-height: 1.65;
   float: left;
+  width: 60px;
+  height: calc(var(--form-field-height) + 1px);
+  line-height: 1.65;
   display: block;
   padding: 0;
   margin: 0;
-  padding-left: 20px;
-  border: none;
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
-  font-size: 1rem;
-  border-radius: 4px;
+  padding-left: 10px;
+  border: 1px solid var(--color-border-light-tertiary);
+  font-size: 1em;
+  border-radius: 3px;
 }
 
 .smalltime-offset-input input:focus {
@@ -121,7 +120,7 @@
 .smalltime-offset-input-nav {
   float: left;
   position: relative;
-  height: 42px;
+  height: calc(var(--form-field-height) + 1px);
 }
 
 .smalltime-offset-input-button {
@@ -131,12 +130,9 @@
   border-left: 1px solid rgba(0, 0, 0, 0.08);
   width: 21px;
   text-align: center;
-  color: #333;
   font-size: 13px;
-  font-family: 'FontAwesome' !important;
-  line-height: 1.5;
   padding: 0;
-  background: #fafafa;
+  margin: 0;
   -webkit-transform: translateX(-100%);
   transform: translateX(-100%);
   -webkit-user-select: none;
@@ -155,17 +151,14 @@
   height: 50%;
   top: 0;
   border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  font-family: 'FontAwesome';
-  border-radius: 0 4px 0 0;
-  line-height: 1.6;
+  border-radius: 0 3px 0 0;
 }
 
 .smalltime-offset-input-button.smalltime-offset-input-down {
   position: absolute;
   bottom: 0;
   height: 50%;
-  font-family: 'FontAwesome';
-  border-radius: 0 0 4px 0;
+  border-radius: 0 0 3px 0;
 }
 
 #smalltime-darkness-config {
