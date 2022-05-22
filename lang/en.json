@@ -12,6 +12,8 @@
   "SMLTME.Large_Step_Hint": "Number of minutes to add/remove from the time with the << and >> buttons. Hold Shift to double.",
   "SMLTME.Resting_Opacity": "Resting Opacity",
   "SMLTME.Resting_Opacity_Hint": "Opacity of the SmallTime window when you're not interacting with it.",
+  "SMLTME.Offset_Adjust": "Offset Adjust",
+  "SMLTME.Offset_Adjust_Hint": "Offset adjust hint",
   "SMLTME.Darkness_Default": "Affect Darkness by Default",
   "SMLTME.Darkness_Default_Hint": "Default setting for the SmallTime Darkness Control setting in Scene Config.",
   "SMLTME.Darkness_Control": "Darkness Control",

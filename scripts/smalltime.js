@@ -173,6 +173,15 @@ Hooks.on('init', () => {
     default: 60,
   });
 
+  game.settings.register('smalltime', 'offset', {
+    name: game.i18n.localize('SMLTME.Offset_Adjust'),
+    hint: game.i18n.localize('SMLTME.Offset_Adjust_Hint'),
+    scope: 'world',
+    config: true,
+    type: Number,
+    default: SmallTime_PinOffset,
+  });
+
   game.settings.register('smalltime', 'opacity', {
     name: game.i18n.localize('SMLTME.Resting_Opacity'),
     hint: game.i18n.localize('SMLTME.Resting_Opacity_Hint'),
@@ -574,6 +583,57 @@ Hooks.on('renderSettingsConfig', () => {
   $('input[name="smalltime.sunrise-start"]').parent().parent().css('display', 'none');
   $('input[name="smalltime.sunrise-end"]').parent().parent().css('display', 'none');
   $('input[name="smalltime.sunset-start"]').parent().parent().css('display', 'none');
+
+  // Hide the default offset input field.
+  $('input[name="smalltime.offset"]').css('display', 'none');
+
+  // Add our own offset input.
+  const offsetInputElement = $(
+    'label:contains(' + game.i18n.localize('SMLTME.Offset_Adjust') + ')'
+  );
+
+  const offsetInjection = `
+    <div class="smalltime-offset-input">
+      <input type="number" min="1" max="9" step="1" value="1">
+    </div>
+    <div class="smalltime-offset-input-nav">
+      <div class="smalltime-offset-input-button smalltime-offset-input-up">&#xf106;</div>
+      <div class="smalltime-offset-input-button smalltime-offset-input-down">&#xf107;</div>
+    </div>
+  `;
+
+  offsetInputElement.after(offsetInjection);
+
+  jQuery('.smalltime-offset-input').each(function () {
+    var spinner = jQuery(this),
+      input = spinner.find('input[type="number"]'),
+      btnUp = spinner.find('.smalltime-offset-input-up'),
+      btnDown = spinner.find('.smalltime-offset-input-down'),
+      min = input.attr('min'),
+      max = input.attr('max');
+
+    btnUp.click(function () {
+      var oldValue = parseFloat(input.val());
+      if (oldValue >= max) {
+        var newVal = oldValue;
+      } else {
+        var newVal = oldValue + 1;
+      }
+      spinner.find('input').val(newVal);
+      spinner.find('input').trigger('change');
+    });
+
+    btnDown.click(function () {
+      var oldValue = parseFloat(input.val());
+      if (oldValue <= min) {
+        var newVal = oldValue;
+      } else {
+        var newVal = oldValue - 1;
+      }
+      spinner.find('input').val(newVal);
+      spinner.find('input').trigger('change');
+    });
+  });
 
   // Add a reset-position popup to the setting title.
   const opacityTitleElement = $(
