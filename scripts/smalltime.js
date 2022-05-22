@@ -558,7 +558,6 @@ Hooks.on('renderSceneConfig', async (obj) => {
       class: 'smalltime-threshold-override',
       'aria-label': game.i18n.localize('SMLTME.Threshold_Override_Tooltip'),
       'data-balloon-pos': 'up',
-      disabled: '',
     });
   }
 });
@@ -1413,36 +1412,6 @@ function convertHexToRGB(hex) {
     : null;
 }
 
-// Overriding the Vision Limitation Threshold value for the scene if requested.
-// Values span from 0.0 to 1.0 to mimic brightness levels of the various phases.
-async function adjustMoonlight(phase) {
-  let newThreshold;
-  switch (phase) {
-    case 'new':
-      newThreshold = 0;
-      break;
-    case 'waxing-crescent':
-    case 'waning-crescent':
-      newThreshold = 0.25;
-      break;
-    case 'first-quarter':
-    case 'last-quarter':
-      newThreshold = 0.5;
-      break;
-    case 'waxing-gibbous':
-    case 'waning-gibbous':
-      newThreshold = 0.75;
-      break;
-    case 'full':
-      newThreshold = 1;
-      break;
-  }
-  if (newThreshold === game.scenes.viewed.data.globalLightThreshold) {
-    return true;
-  }
-  await canvas.scene.update({ globalLightThreshold: newThreshold });
-}
-
 class SmallTimeApp extends FormApplication {
   static _isOpen = false;
 
@@ -1770,11 +1739,7 @@ class SmallTimeApp extends FormApplication {
         const newPhase = SmallTime_MoonPhases.findIndex(function (phase) {
           return phase === data.moons[0].currentPhase.icon;
         });
-        if (newPhase === game.settings.get('smalltime', 'moon-phase')) {
-          return;
-        }
         await game.settings.set('smalltime', 'moon-phase', newPhase);
-        await adjustMoonlight(newPhase);
         SmallTimeApp.timeTransition(getWorldTimeAsDayTime());
       });
     }
