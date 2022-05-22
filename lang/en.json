@@ -23,7 +23,7 @@
   "SMLTME.Allow_Trusted": "Allow Trusted Player Control",
   "SMLTME.Allow_Trusted_Hint": "Players with the Trusted role will be able to change the current time.",
   "SMLTME.Player_Visibility": "Player Visibility",
-  "SMLTME.Player_Visibility_Hint": "Choose which parts of SmallTime are visible to players in this scene. Default for new scenes is set in Module Settings.",
+  "SMLTME.Player_Visibility_Hint": "Choose which parts of SmallTime are visible to players in this scene. Default is set in Module Settings.",
   "SMLTME.Player_Visibility_Default": "Player Visibility Default",
   "SMLTME.Player_Visibility_Default_Hint": "Default visibility level for scenes.",
   "SMLTME.Player_Vis_0": "Nothing",
@@ -32,8 +32,5 @@
   "SMLTME.Darkness_Reset": "Shift-click to reset times to defaults",
   "SMLTME.Position_Reset": "Shift-click to reset the SmallTime window postion",
   "SMLTME.Sun_Sync": "Synchronize Sunrise/Sunset",
-  "SMLTME.Sun_Sync_Hint": "Acquire sunrise & sunset times from Simple Calendar.",
-  "SMLTME.Threshold_Override_Tooltip": "SmallTime is adjusting this based on the moon's phase",
-  "SMLTME.Moonlight_Adjust": "Moonlight Adjustment",
-  "SMLTME.Moonlight_Adjust_Hint": "Adjust the Vision Limitation Threshold based on the current phase of the moon."
+  "SMLTME.Sun_Sync_Hint": "Acquire sunrise & sunset times from Simple Calendar."
 }
