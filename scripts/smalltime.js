@@ -10,14 +10,10 @@ const SmallTime_MoonPhases = [
 ];
 
 // Default offset from the Player List window when pinned,
-// an Epoch offset for game systems that don't start at midnight,
-// plus custom offsets for game systems that draw extra borders
-// around their windows. Also default values for sunrise/set.
+// an Epoch offset for game systems that don't start at midnight.
+// Also default values for sunrise/set and Darkness extremes.
 let SmallTime_PinOffset = 83;
 let SmallTime_EpochOffset = 0;
-const SmallTime_WFRP4eOffset = 30;
-const SmallTime_DasSchwarzeAugeOffset = 16;
-const SmallTime_TaskbarOffset = 50;
 
 const SmallTime_SunriseStartDefault = 180;
 const SmallTime_SunriseEndDefault = 420;
@@ -283,20 +279,6 @@ Hooks.on('init', () => {
 
 // Set the initial state for newly rendered scenes.
 Hooks.on('canvasReady', () => {
-  // Account for the extra border art in certain game systems.
-  if (game.system.id === 'wfrp4e') {
-    SmallTime_PinOffset += SmallTime_WFRP4eOffset;
-  }
-  if (game.system.id === 'dsa5') {
-    SmallTime_PinOffset += SmallTime_DasSchwarzeAugeOffset;
-  }
-  if (
-    game.modules.get('foundry-taskbar')?.active &&
-    game.settings.get('foundry-taskbar', 'moveplayersmacro')
-  ) {
-    SmallTime_PinOffset += SmallTime_TaskbarOffset;
-  }
-
   // Only allow the date display to show if there's a calendar provider available.
   game.modules.get('smalltime').dateAvailable = false;
   if (
@@ -592,35 +574,49 @@ Hooks.on('renderSettingsConfig', () => {
     'label:contains(' + game.i18n.localize('SMLTME.Offset_Adjust') + ')'
   );
 
+  const offsetStartingValue = game.settings.get('smalltime', 'offset');
+
   const offsetInjection = `
     <div class="smalltime-offset-input">
-      <input type="number" min="1" max="9" step="1" value="1">
+      <input disabled type="number" step="1" value="${offsetStartingValue}">
       <div class="smalltime-offset-input-nav">
         <div class="smalltime-offset-input-button smalltime-offset-input-up"><i class='fa fa-caret-up'></i></div>
         <div class="smalltime-offset-input-button smalltime-offset-input-down"><i class='fa fa-caret-down'></i></div>
       </div>
     </div>
-    
   `;
 
   offsetInputElement.after(offsetInjection);
 
-  $('.smalltime-offset-input').each(function () {
-    var spinner = $(this),
-      input = spinner.find('input[type="number"]'),
-      btnUp = spinner.find('.smalltime-offset-input-up'),
-      btnDown = spinner.find('.smalltime-offset-input-down');
+  const controls = $('.smalltime-offset-input'),
+    input = controls.find('input[type="number"]'),
+    upButton = controls.find('.smalltime-offset-input-up'),
+    downButton = controls.find('.smalltime-offset-input-down');
 
-    btnUp.click(function () {
-      spinner.find('input').val(parseFloat(input.val()) + 1);
-      spinner.find('input').trigger('change');
+  function buttonClick(amount) {
+    const theSmallTimeApp = game.modules.get('smalltime').myApp;
+    input.val(parseFloat(input.val()) + amount);
+    $('input[name="smalltime.offset"]').val($(input).val());
+    theSmallTimeApp.setPosition({ top: theSmallTimeApp.position.top - amount });
+  }
+
+  let timeoutId;
+
+  upButton
+    .on('mousedown', () => {
+      timeoutId = setTimeout(buttonClick(1), 200);
+    })
+    .on('mouseup mouseleave', () => {
+      clearTimeout(timeoutId);
     });
 
-    btnDown.click(function () {
-      spinner.find('input').val(parseFloat(input.val()) - 1);
-      spinner.find('input').trigger('change');
+  downButton
+    .on('mousedown', () => {
+      timeoutId = setTimeout(buttonClick(-1), 200);
+    })
+    .on('mouseup mouseleave', () => {
+      clearTimeout(timeoutId);
     });
-  });
 
   // Add a reset-position popup to the setting title.
   const opacityTitleElement = $(
@@ -758,11 +754,11 @@ Hooks.on('renderPlayerList', () => {
   const element = document.getElementById('players');
   const playerAppPos = element.getBoundingClientRect();
 
-  // The SmallTime_PinOffset here is the ideal distance between the top of the
+  // The offset here is the ideal distance between the top of the
   // Players list and the top of SmallTime. The +21 accounts
   // for the date dropdown if enabled; the -23 accounts for the clock row
   // being disabled in some cases.
-  let myOffset = playerAppPos.height + SmallTime_PinOffset;
+  let myOffset = playerAppPos.height + game.settings.get('smalltime', 'offset');
 
   if (game.settings.get('smalltime', 'date-showing')) {
     myOffset += 21;
@@ -1576,7 +1572,7 @@ class SmallTimeApp extends FormApplication {
 
       const playerApp = document.getElementById('players');
       const playerAppPos = playerApp.getBoundingClientRect();
-      let myOffset = playerAppPos.height + SmallTime_PinOffset;
+      let myOffset = playerAppPos.height + game.settings.get('smalltime', 'offset');
 
       // If the mouseup happens inside the Pin zone, pin the app.
       if (pinZone) {
@@ -1920,7 +1916,7 @@ class SmallTimeApp extends FormApplication {
     if (!$('#pin-lock').length) {
       const playerApp = document.getElementById('players');
       const playerAppPos = playerApp.getBoundingClientRect();
-      let myOffset = playerAppPos.height + SmallTime_PinOffset;
+      let myOffset = playerAppPos.height + game.settings.get('smalltime', 'offset');
 
       if (expanded) {
         myOffset += 21;
