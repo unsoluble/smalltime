@@ -528,6 +528,8 @@ Hooks.on('renderSettingsConfig', () => {
   // Everything here is GM-only.
   if (!game.user.isGM) return;
 
+  const myApp = game.modules.get('smalltime').myApp;
+
   // Hide the Show Seconds setting if we're not using 24hr time.
   if (game.settings.get('smalltime', 'time-format') == 12) {
     $('input[name="smalltime.show-seconds"]').parent().parent().css('display', 'none');
@@ -594,10 +596,12 @@ Hooks.on('renderSettingsConfig', () => {
     downButton = controls.find('.smalltime-offset-input-down');
 
   function buttonClick(amount) {
-    const theSmallTimeApp = game.modules.get('smalltime').myApp;
+    if ($('#pin-lock').length) $('#pin-lock').remove();
+    const actualTop = document.getElementById('smalltime-app').getBoundingClientRect().top - 3;
+    myApp.setPosition({ top: actualTop - amount });
+
     input.val(parseFloat(input.val()) + amount);
     $('input[name="smalltime.offset"]').val($(input).val());
-    theSmallTimeApp.setPosition({ top: theSmallTimeApp.position.top - amount });
   }
 
   let timeoutId;
@@ -1544,7 +1548,7 @@ class SmallTimeApp extends FormApplication {
 
       this.app.setPosition({
         left: this.position.left + (event.clientX - this._initial.x),
-        top: this.position.top + (event.clientY - this._initial.y - conditionalOffset),
+        top: this.position.top + (event.clientY - this._initial.y - 0),
       });
 
       // Defining a region above the PlayerList that will trigger the jiggle.
@@ -1583,7 +1587,7 @@ class SmallTimeApp extends FormApplication {
         await game.settings.set('smalltime', 'pinned', true);
         this.app.setPosition({
           left: 15,
-          top: window.innerHeight - myOffset,
+          top: document.getElementById('smalltime-app').getBoundingClientRect().top,
         });
       } else {
         let windowPos = $('#smalltime-app').position();
