@@ -596,8 +596,16 @@ Hooks.on('renderSettingsConfig', () => {
     downButton = controls.find('.smalltime-offset-input-down');
 
   function buttonClick(amount) {
-    if ($('#pin-lock').length) $('#pin-lock').remove();
-    const actualTop = document.getElementById('smalltime-app').getBoundingClientRect().top - 3;
+    let tempOffset = 0;
+    if ($('#pin-lock').length) {
+      $('#pin-lock').remove();
+      if (
+        game.settings.get('smalltime', 'date-showing') &&
+        game.modules.get('smalltime').dateAvailable
+      )
+        tempOffset = 15;
+    }
+    const actualTop = Math.round($('#smalltime-app').position().top - tempOffset);
     myApp.setPosition({ top: actualTop - amount });
 
     input.val(parseFloat(input.val()) + amount);
