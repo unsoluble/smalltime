@@ -12,7 +12,7 @@ const SmallTime_MoonPhases = [
 // Default offset from the Player List window when pinned,
 // an Epoch offset for game systems that don't start at midnight.
 // Also default values for sunrise/set and Darkness extremes.
-let SmallTime_PinOffset = 83;
+let SmallTime_PinOffset = 21;
 let SmallTime_EpochOffset = 0;
 
 const SmallTime_SunriseStartDefault = 180;
@@ -329,22 +329,14 @@ Hooks.on('canvasReady', () => {
   if (game.modules.get('smalltime').viewAuth) {
     SmallTimeApp.toggleAppVis('initial');
     if (game.settings.get('smalltime', 'pinned')) {
-      if (
-        game.settings.get('smalltime', 'date-showing') &&
-        game.modules.get('smalltime').dateAvailable
-      ) {
-        // Sending true here tells the pin to offset to
-        // accommodate the date display.
-        SmallTimeApp.pinApp(true);
-      } else {
-        SmallTimeApp.pinApp();
-      }
+      SmallTimeApp.pinApp();
     }
   } else if (SmallTimeApp._isOpen && !game.modules.get('smalltime').controlAuth) {
     // If the SmallTime app was visible, but we're now in a scene where
     // the player doesn't have permission to view it, close the app.
     game.modules.get('smalltime').myApp.close({ smallTime: true });
   }
+
   // Collapse the display if the user isn't allowed to see the clock.
   if (!game.modules.get('smalltime').clockAuth) {
     game.settings.set('smalltime', 'date-showing', false);
@@ -596,17 +588,9 @@ Hooks.on('renderSettingsConfig', () => {
     downButton = controls.find('.smalltime-offset-input-down');
 
   function buttonClick(amount) {
-    let tempOffset = 0;
-    if ($('#pin-lock').length) {
-      $('#pin-lock').remove();
-      if (
-        game.settings.get('smalltime', 'date-showing') &&
-        game.modules.get('smalltime').dateAvailable
-      )
-        tempOffset = 15;
-    }
-    const actualTop = Math.round($('#smalltime-app').position().top - tempOffset);
-    myApp.setPosition({ top: actualTop - amount });
+    SmallTimeApp.unPinApp();
+    const actualTop = document.getElementById('smalltime-app').getBoundingClientRect().top;
+    myApp.setPosition({ top: actualTop - amount, left: 15 });
 
     input.val(parseFloat(input.val()) + amount);
     $('input[name="smalltime.offset"]').val($(input).val());
@@ -1582,21 +1566,10 @@ class SmallTimeApp extends FormApplication {
       window.removeEventListener(...this.handlers.dragMove);
       window.removeEventListener(...this.handlers.dragUp);
 
-      const playerApp = document.getElementById('players');
-      const playerAppPos = playerApp.getBoundingClientRect();
-      let myOffset = playerAppPos.height + game.settings.get('smalltime', 'offset');
-
       // If the mouseup happens inside the Pin zone, pin the app.
       if (pinZone) {
-        SmallTimeApp.pinApp(
-          game.settings.get('smalltime', 'date-showing') &&
-            game.modules.get('smalltime').dateAvailable
-        );
+        SmallTimeApp.pinApp();
         await game.settings.set('smalltime', 'pinned', true);
-        this.app.setPosition({
-          left: 15,
-          top: document.getElementById('smalltime-app').getBoundingClientRect().top,
-        });
       } else {
         let windowPos = $('#smalltime-app').position();
         let newPos = { top: windowPos.top, left: windowPos.left };
@@ -1692,7 +1665,7 @@ class SmallTimeApp extends FormApplication {
           $('#smalltime-app').animate({ height: '79px' }, 80);
           if (game.settings.get('smalltime', 'pinned')) {
             SmallTimeApp.unPinApp();
-            SmallTimeApp.pinApp(true);
+            SmallTimeApp.pinApp();
           }
           await game.settings.set('smalltime', 'date-showing', true);
         } else {
@@ -1700,7 +1673,7 @@ class SmallTimeApp extends FormApplication {
           $('#smalltime-app').animate({ height: '59px' }, 80);
           if (game.settings.get('smalltime', 'pinned')) {
             SmallTimeApp.unPinApp();
-            SmallTimeApp.pinApp(false);
+            SmallTimeApp.pinApp();
           }
           await game.settings.set('smalltime', 'date-showing', false);
         }
@@ -1923,38 +1896,41 @@ class SmallTimeApp extends FormApplication {
   }
 
   // Pin the app above the Players list.
-  static async pinApp(expanded) {
+  static async pinApp() {
     // Only do this if a pin lock isn't already in place.
     if (!$('#pin-lock').length) {
-      const playerApp = document.getElementById('players');
-      const playerAppPos = playerApp.getBoundingClientRect();
-      let myOffset = playerAppPos.height + game.settings.get('smalltime', 'offset');
+      const playersWindow = document.getElementById('players');
+      const smalltimeWindow = document.getElementById('smalltime-app');
+      const userOffset = game.settings.get('smalltime', 'offset');
 
-      if (expanded) {
-        myOffset += 21;
-      }
-      if (!game.modules.get('smalltime').clockAuth) {
-        myOffset -= 23;
-      }
+      const topOfSmalltime =
+        playersWindow.getBoundingClientRect().top -
+        userOffset -
+        smalltimeWindow.getBoundingClientRect().height;
+
+      const pinOffset = game.canvas.screenDimensions[1] - topOfSmalltime;
 
       // Dropping this into the DOM with an !important was the only way
       // I could get it to enable the locking behaviour.
       $('body').append(`
         <style id="pin-lock">
           #smalltime-app {
-            top: calc(100vh - ${myOffset}px) !important;
+            top: calc(100vh - ${pinOffset}px) !important;
             left: 15px !important;
           }
         </style>
       `);
       await game.settings.set('smalltime', 'pinned', true);
+      //game.modules.get('smalltime').myApp.setPosition({ top: topOfSmalltime });
     }
   }
 
   // Un-pin the app.
   static unPinApp() {
     // Remove the style tag that's pinning the window.
-    $('#pin-lock').remove();
+    if ($('#pin-lock').length) {
+      $('#pin-lock').remove();
+    }
   }
 
   // Toggle visibility of the main window.
