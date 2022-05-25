@@ -278,7 +278,7 @@ Hooks.on('init', () => {
 });
 
 // Set the initial state for newly rendered scenes.
-Hooks.on('canvasReady', () => {
+Hooks.on('canvasReady', async () => {
   // Only allow the date display to show if there's a calendar provider available.
   game.modules.get('smalltime').dateAvailable = false;
   if (
@@ -327,7 +327,7 @@ Hooks.on('canvasReady', () => {
   }
 
   if (game.modules.get('smalltime').viewAuth) {
-    SmallTimeApp.toggleAppVis('initial');
+    await SmallTimeApp.toggleAppVis('initial');
     if (game.settings.get('smalltime', 'pinned')) {
       SmallTimeApp.pinApp();
     }
@@ -369,7 +369,7 @@ Hooks.on('canvasReady', () => {
   }
 });
 
-Hooks.on('ready', () => {
+Hooks.on('ready', async () => {
   // Send incoming socket emissions through the async function.
   game.socket.on(`module.smalltime`, (data) => {
     doSocket(data);
@@ -520,8 +520,6 @@ Hooks.on('renderSettingsConfig', () => {
   // Everything here is GM-only.
   if (!game.user.isGM) return;
 
-  const myApp = game.modules.get('smalltime').myApp;
-
   // Hide the Show Seconds setting if we're not using 24hr time.
   if (game.settings.get('smalltime', 'time-format') == 12) {
     $('input[name="smalltime.show-seconds"]').parent().parent().css('display', 'none');
@@ -587,10 +585,14 @@ Hooks.on('renderSettingsConfig', () => {
     upButton = controls.find('.smalltime-offset-input-up'),
     downButton = controls.find('.smalltime-offset-input-down');
 
-  function buttonClick(amount) {
-    SmallTimeApp.unPinApp();
+  const myApp = game.modules.get('smalltime').myApp;
+
+  async function buttonClick(amount) {
+    await SmallTimeApp.pinApp();
+    await SmallTimeApp.unPinApp();
+
     const actualTop = document.getElementById('smalltime-app').getBoundingClientRect().top;
-    myApp.setPosition({ top: actualTop - amount, left: 15 });
+    myApp.setPosition({ top: myApp.position.top - amount, left: 15 });
 
     input.val(parseFloat(input.val()) + amount);
     $('input[name="smalltime.offset"]').val($(input).val());
@@ -1906,7 +1908,7 @@ class SmallTimeApp extends FormApplication {
       const topOfSmalltime =
         playersWindow.getBoundingClientRect().top -
         userOffset -
-        smalltimeWindow.getBoundingClientRect().height;
+        Math.round(smalltimeWindow.getBoundingClientRect().height);
 
       const pinOffset = game.canvas.screenDimensions[1] - topOfSmalltime;
 
@@ -1921,7 +1923,7 @@ class SmallTimeApp extends FormApplication {
         </style>
       `);
       await game.settings.set('smalltime', 'pinned', true);
-      //game.modules.get('smalltime').myApp.setPosition({ top: topOfSmalltime });
+      game.modules.get('smalltime').myApp.setPosition({ top: topOfSmalltime });
     }
   }
 
