@@ -12,7 +12,7 @@ const SmallTime_MoonPhases = [
 // Default offset from the Player List window when pinned,
 // an Epoch offset for game systems that don't start at midnight.
 // Also default values for sunrise/set and Darkness extremes.
-let SmallTime_PinOffset = 21;
+let SmallTime_PinOffset = 10;
 let SmallTime_EpochOffset = 0;
 
 const SmallTime_SunriseStartDefault = 180;
@@ -328,9 +328,6 @@ Hooks.on('canvasReady', async () => {
 
   if (game.modules.get('smalltime').viewAuth) {
     await SmallTimeApp.toggleAppVis('initial');
-    if (game.settings.get('smalltime', 'pinned')) {
-      SmallTimeApp.pinApp();
-    }
   } else if (SmallTimeApp._isOpen && !game.modules.get('smalltime').controlAuth) {
     // If the SmallTime app was visible, but we're now in a scene where
     // the player doesn't have permission to view it, close the app.
@@ -417,7 +414,7 @@ Hooks.on('ready', async () => {
 
 // Wait for the app to be rendered, then adjust the CSS to
 // account for the date display, if showing.
-Hooks.on('renderSmallTimeApp', () => {
+Hooks.on('renderSmallTimeApp', async () => {
   // Disable controls for non-GMs.
   if (!game.modules.get('smalltime').controlAuth) {
     document.documentElement.style.setProperty('--SMLTME-pointer-events', 'none');
@@ -442,6 +439,10 @@ Hooks.on('renderSmallTimeApp', () => {
     $('#smalltime-app').css({ height: '79px' });
   }
   handleTimeChange(getWorldTimeAsDayTime());
+
+  if (game.settings.get('smalltime', 'pinned')) {
+    SmallTimeApp.pinApp();
+  }
 });
 
 // Handle our changes to the Scene Config screen.
@@ -520,6 +521,10 @@ Hooks.on('renderSettingsConfig', () => {
   // Everything here is GM-only.
   if (!game.user.isGM) return;
 
+  if (game.settings.get('smalltime', 'pinned')) {
+    SmallTimeApp.pinApp();
+  }
+
   // Hide the Show Seconds setting if we're not using 24hr time.
   if (game.settings.get('smalltime', 'time-format') == 12) {
     $('input[name="smalltime.show-seconds"]').parent().parent().css('display', 'none');
@@ -588,33 +593,23 @@ Hooks.on('renderSettingsConfig', () => {
   const myApp = game.modules.get('smalltime').myApp;
 
   async function buttonClick(amount) {
-    await SmallTimeApp.pinApp();
-    await SmallTimeApp.unPinApp();
+    if (game.settings.get('smalltime', 'pinned')) {
+      await SmallTimeApp.unPinApp();
 
-    const actualTop = document.getElementById('smalltime-app').getBoundingClientRect().top;
-    myApp.setPosition({ top: myApp.position.top - amount, left: 15 });
-
+      const actualTop = document.getElementById('smalltime-app').getBoundingClientRect().top;
+      myApp.setPosition({ top: myApp.position.top - amount, left: 15 });
+    }
     input.val(parseFloat(input.val()) + amount);
     $('input[name="smalltime.offset"]').val($(input).val());
   }
 
-  let timeoutId;
+  upButton.on('mousedown', () => {
+    buttonClick(1);
+  });
 
-  upButton
-    .on('mousedown', () => {
-      timeoutId = setTimeout(buttonClick(1), 200);
-    })
-    .on('mouseup mouseleave', () => {
-      clearTimeout(timeoutId);
-    });
-
-  downButton
-    .on('mousedown', () => {
-      timeoutId = setTimeout(buttonClick(-1), 200);
-    })
-    .on('mouseup mouseleave', () => {
-      clearTimeout(timeoutId);
-    });
+  downButton.on('mousedown', () => {
+    buttonClick(-1);
+  });
 
   // Add a reset-position popup to the setting title.
   const opacityTitleElement = $(
@@ -717,12 +712,16 @@ Hooks.on('renderSettingsConfig', () => {
 });
 
 // Undo the opacity preview settings.
-Hooks.on('closeSettingsConfig', () => {
+Hooks.on('closeSettingsConfig', async () => {
   $('#smalltime-app').css({
     opacity: '',
     'transition-delay': '',
     transition: '',
   });
+
+  if (game.settings.get('smalltime', 'pinned')) {
+    await SmallTimeApp.pinApp();
+  }
 
   // Update the stops on the sunrise/sunset gradient, in case
   // there's been changes to the positions. Also update the
@@ -1904,11 +1903,13 @@ class SmallTimeApp extends FormApplication {
       const playersWindow = document.getElementById('players');
       const smalltimeWindow = document.getElementById('smalltime-app');
       const userOffset = game.settings.get('smalltime', 'offset');
+      const offsetAdjust = 3;
 
       const topOfSmalltime =
         playersWindow.getBoundingClientRect().top -
         userOffset -
-        Math.round(smalltimeWindow.getBoundingClientRect().height);
+        Math.round(smalltimeWindow.getBoundingClientRect().height) -
+        offsetAdjust;
 
       const pinOffset = game.canvas.screenDimensions[1] - topOfSmalltime;
 
