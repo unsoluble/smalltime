@@ -510,9 +510,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
       </legend>
       <div class="form-group">
         <label>${visibilityLabel}</label>
-        <select
-          name="flags.smalltime.player-vis"
-          data-dtype="number">
+        <select name="flags.smalltime.player-vis" data-dtype="number">
           <option value="2" ${vis2}>${vis2text}</option>
           <option value="1" ${vis1}>${vis1text}</option>
           <option value="0" ${vis0}>${vis0text}</option>
@@ -553,13 +551,21 @@ Hooks.on('renderSceneConfig', async (obj) => {
     obj.object.getFlag('smalltime', 'moonlight') &&
     game.modules.get('foundryvtt-simple-calendar')?.active
   ) {
+    const currentThreshold = obj.object.data.globalLightThreshold;
+    const coreThresholdCheckbox = $('input[name="hasGlobalThreshold"]');
+    coreThresholdCheckbox.attr({
+      checked: '',
+    });
     const coreThresholdSlider = $('input[name="globalLightThreshold"]');
     coreThresholdSlider.attr({
       class: 'smalltime-threshold-override',
       'aria-label': game.i18n.localize('SMLTME.Threshold_Override_Tooltip'),
       'data-balloon-pos': 'up',
       disabled: '',
+      value: currentThreshold,
     });
+    const coreThresholdField = $('input[name="globalLightThreshold"]').nextAll('span:first');
+    coreThresholdField.text(currentThreshold);
   }
 });
 
@@ -1418,22 +1424,22 @@ function convertHexToRGB(hex) {
 async function adjustMoonlight(phase) {
   let newThreshold;
   switch (phase) {
-    case 'new':
+    case 0: // new
       newThreshold = 0;
       break;
-    case 'waxing-crescent':
-    case 'waning-crescent':
+    case 1: // waxing crescent
+    case 7: // waning crescent
       newThreshold = 0.25;
       break;
-    case 'first-quarter':
-    case 'last-quarter':
+    case 2: // first quarter
+    case 6: // last quarter
       newThreshold = 0.5;
       break;
-    case 'waxing-gibbous':
-    case 'waning-gibbous':
+    case 3: // waxing gibbous
+    case 5: // waning gibbous
       newThreshold = 0.75;
       break;
-    case 'full':
+    case 4: // full
       newThreshold = 1;
       break;
   }
