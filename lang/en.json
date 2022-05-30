@@ -37,5 +37,5 @@
   "SMLTME.Moonlight_Adjust": "Moonlight Adjustment",
   "SMLTME.Moonlight_Adjust_Hint": "Adjust the Vision Limitation Threshold based on the current phase of the moon.",
   "SMLTME.Moon_Darkness": "Moon Phase Affects Darkness Level",
-  "SMLTME.Moon_Darkness_Hint": "Automatically adapt the maxiumum Darkness level based on the current phase of the moon."
+  "SMLTME.Moon_Darkness_Hint": "Automatically adapt the maximum Darkness level based on the current phase of the moon."
 }
