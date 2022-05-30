@@ -498,8 +498,9 @@ Hooks.on('renderSceneConfig', async (obj) => {
 
   // Set the Player Vis dropdown as appropriate.
   const visChoice = obj.object.getFlag('smalltime', 'player-vis');
-  // Set the Darkness checkbox as appropriate.
+  // Set the Darkness and Moonlight checkboxes as appropriate.
   const darknessCheckStatus = obj.object.getFlag('smalltime', 'darkness-link') ? 'checked' : '';
+  const moonlightCheckStatus = obj.object.getFlag('smalltime', 'moonlight') ? 'checked' : '';
 
   // Build our new options.
   const visibilityLabel = game.i18n.localize('SMLTME.Player_Visibility');
@@ -517,6 +518,8 @@ Hooks.on('renderSceneConfig', async (obj) => {
 
   const controlLabel = game.i18n.localize('SMLTME.Darkness_Control');
   const controlHint = game.i18n.localize('SMLTME.Darkness_Control_Hint');
+  const moonlightLabel = game.i18n.localize('SMLTME.Moonlight_Adjust');
+  const moonlightHint = game.i18n.localize('SMLTME.Moonlight_Adjust_Hint');
   const injection = `
     <fieldset class="st-scene-config">
       <legend>

@@ -207,6 +207,20 @@
   cursor: none;
 }
 
+.smalltime-threshold-override::-webkit-slider-thumb {
+  width: 20px !important;
+  height: 20px !important;
+  outline: 0 !important;
+  border: 0 !important;
+  background: var(--SMLTME-phaseURL) !important;
+  background-size: 20px !important;
+  position: relative !important;
+  top: -5px !important;
+  box-shadow: none !important;
+  -webkit-filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.8));
+  filter: drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.8));
+}
+
 #smalltime-app #slideContainer {
   width: 100%;
   background: linear-gradient(
