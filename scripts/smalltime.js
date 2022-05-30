@@ -9,6 +9,17 @@ const SmallTime_MoonPhases = [
   'waning-crescent',
 ];
 
+const SmallTime_PhaseValues = {
+  0: 0,
+  1: 0.25,
+  2: 0.5,
+  3: 0.75,
+  4: 1,
+  5: 0.75,
+  6: 0.5,
+  7: 0.25,
+};
+
 // Default offset from the Player List window when pinned,
 // an Epoch offset for game systems that don't start at midnight,
 // plus custom offsets for game systems that draw extra borders
@@ -253,6 +264,15 @@ Hooks.on('init', () => {
     default: false,
   });
 
+  game.settings.register('smalltime', 'moon-darkness', {
+    name: game.i18n.localize('SMLTME.Moon_Darkness'),
+    hint: game.i18n.localize('SMLTME.Moon_Darkness_Hint'),
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: false,
+  });
+
   game.settings.register('smalltime', 'allow-trusted', {
     name: game.i18n.localize('SMLTME.Allow_Trusted'),
     hint: game.i18n.localize('SMLTME.Allow_Trusted_Hint'),
@@ -479,7 +499,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
   // Set the Player Vis dropdown as appropriate.
   const visChoice = obj.object.getFlag('smalltime', 'player-vis');
   // Set the Darkness checkbox as appropriate.
-  const checkStatus = obj.object.getFlag('smalltime', 'darkness-link') ? 'checked' : '';
+  const darknessCheckStatus = obj.object.getFlag('smalltime', 'darkness-link') ? 'checked' : '';
 
   // Build our new options.
   const visibilityLabel = game.i18n.localize('SMLTME.Player_Visibility');
@@ -504,23 +524,27 @@ Hooks.on('renderSceneConfig', async (obj) => {
         <span>SmallTime</span>
       </legend>
       <div class="form-group">
-      <label>${visibilityLabel}</label>
-      <select
-        name="flags.smalltime.player-vis"
-        data-dtype="number">
-        <option value="2" ${vis2}>${vis2text}</option>
-        <option value="1" ${vis1}>${vis1text}</option>
-        <option value="0" ${vis0}>${vis0text}</option>
-      </select>
-      <p class="notes">${visibilityHint}</p>
+        <label>${visibilityLabel}</label>
+        <select name="flags.smalltime.player-vis" data-dtype="number">
+          <option value="2" ${vis2}>${vis2text}</option>
+          <option value="1" ${vis1}>${vis1text}</option>
+          <option value="0" ${vis0}>${vis0text}</option>
+        </select>
+        <p class="notes">${visibilityHint}</p>
         <label>${controlLabel}</label>
         <input
           type="checkbox"
           name="flags.smalltime.darkness-link"
-          ${checkStatus}>
+          ${darknessCheckStatus}>
         <p class="notes">${controlHint}</p>
+        <label>${moonlightLabel}</label>
+        <input
+          type="checkbox"
+          name="flags.smalltime.moonlight"
+          ${moonlightCheckStatus}>
+        <p class="notes">${moonlightHint}</p>
       </div>
-    </fieldset>`;
+      </fieldset>`;
 
   // Inject the SmallTime controls, but only into the config window
   // for the current scene, and only if it hasn't already been inserted.
@@ -530,6 +554,24 @@ Hooks.on('renderSceneConfig', async (obj) => {
       .find('p:contains("' + game.i18n.localize('SCENES.GlobalLightThresholdHint') + '")')
       .parent()
       .after(injection);
+  }
+
+  if (obj.object.getFlag('smalltime', 'moonlight')) {
+    const currentThreshold = obj.object.data.globalLightThreshold;
+    const coreThresholdCheckbox = $('input[name="hasGlobalThreshold"]');
+    coreThresholdCheckbox.attr({
+      checked: '',
+    });
+    const coreThresholdSlider = $('input[name="globalLightThreshold"]');
+    coreThresholdSlider.attr({
+      class: 'smalltime-threshold-override',
+      'aria-label': game.i18n.localize('SMLTME.Threshold_Override_Tooltip'),
+      'data-balloon-pos': 'up',
+      disabled: '',
+      value: currentThreshold,
+    });
+    const coreThresholdField = $('input[name="globalLightThreshold"]').nextAll('span:first');
+    coreThresholdField.text(currentThreshold);
   }
 });
 
@@ -1383,6 +1425,36 @@ function convertHexToRGB(hex) {
     : null;
 }
 
+// Overriding the Vision Limitation Threshold value for the scene if requested.
+// Values span from 0.0 to 1.0 to mimic brightness levels of the various phases.
+async function adjustMoonlight(phase) {
+  let newThreshold;
+  switch (phase) {
+    case 0: // new
+      newThreshold = 0;
+      break;
+    case 1: // waxing crescent
+    case 7: // waning crescent
+      newThreshold = 0.25;
+      break;
+    case 2: // first quarter
+    case 6: // last quarter
+      newThreshold = 0.5;
+      break;
+    case 3: // waxing gibbous
+    case 5: // waning gibbous
+      newThreshold = 0.75;
+      break;
+    case 4: // full
+      newThreshold = 1;
+      break;
+  }
+  if (newThreshold === game.scenes.viewed.data.globalLightThreshold) {
+    return true;
+  }
+  await canvas.scene.update({ globalLightThreshold: newThreshold });
+}
+
 class SmallTimeApp extends FormApplication {
   static _isOpen = false;
 
@@ -1572,6 +1644,7 @@ class SmallTimeApp extends FormApplication {
         // Set and broadcast the change.
         if (game.user.isGM) {
           await game.settings.set('smalltime', 'moon-phase', newPhase);
+          adjustMoonlight(newPhase);
         } else {
           SmallTimeApp.emitSocket('changeSetting', {
             scope: 'smalltime',
@@ -1778,9 +1851,6 @@ class SmallTimeApp extends FormApplication {
     }
 
     // If requested, adjust the scene's Darkness level.
-    // The calculations in here to determine the correct level
-    // based on the custom threshold settings are kind of gross,
-    // but they get the job done.
     const currentScene = canvas.scene;
     if (
       currentScene.getFlag('smalltime', 'darkness-link') &&
@@ -1791,8 +1861,15 @@ class SmallTimeApp extends FormApplication {
       const minD = game.settings.get('smalltime', 'min-darkness');
 
       // Clamp the values between 0 and 1 just in case they're out of bounds.
-      const maxDarkness = Math.min(Math.max(maxD, 0), 1);
-      const minDarkness = Math.min(Math.max(minD, 0), 1);
+      let maxDarkness = Math.min(Math.max(maxD, 0), 1);
+      let minDarkness = Math.min(Math.max(minD, 0), 1);
+
+      // If requested, adjust max Darkness based on moon phase.
+      if (game.settings.get('smalltime', 'moon-darkness')) {
+        const moonlightFactor = 0.4; // Percentage by which available moonlight reduces max Darkness.
+        const moonlightMultiplier = moonlightFactor * SmallTime_PhaseValues[currentPhase];
+        maxDarkness = Math.round((1 - maxDarkness * moonlightMultiplier) * 100) / 100;
+      }
 
       let multiplier = maxDarkness - minDarkness;
       if (multiplier < 0) multiplier = minDarkness - maxDarkness;

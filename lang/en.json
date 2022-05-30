@@ -32,5 +32,10 @@
   "SMLTME.Darkness_Reset": "Shift-click to reset times to defaults",
   "SMLTME.Position_Reset": "Shift-click to reset the SmallTime window postion",
   "SMLTME.Sun_Sync": "Synchronize Sunrise/Sunset",
-  "SMLTME.Sun_Sync_Hint": "Acquire sunrise & sunset times from Simple Calendar."
+  "SMLTME.Sun_Sync_Hint": "Acquire sunrise & sunset times from Simple Calendar.",
+  "SMLTME.Threshold_Override_Tooltip": "SmallTime is adjusting this based on the moon's phase",
+  "SMLTME.Moonlight_Adjust": "Moonlight Adjustment",
+  "SMLTME.Moonlight_Adjust_Hint": "Adjust the Vision Limitation Threshold based on the current phase of the moon.",
+  "SMLTME.Moon_Darkness": "Moon Phase Affects Darkness Level",
+  "SMLTME.Moon_Darkness_Hint": "Automatically adapt the maximum Darkness level based on the current phase of the moon."
 }
