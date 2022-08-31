@@ -534,12 +534,16 @@ Hooks.on('renderSceneConfig', async (obj) => {
           <option value="0" ${vis0}>${vis0text}</option>
         </select>
         <p class="notes">${visibilityHint}</p>
+      </div>
+      <div class="form-group">
         <label>${controlLabel}</label>
         <input
           type="checkbox"
           name="flags.smalltime.darkness-link"
           ${darknessCheckStatus}>
         <p class="notes">${controlHint}</p>
+      </div>
+      <div class="form-group">
         <label>${moonlightLabel}</label>
         <input
           type="checkbox"
