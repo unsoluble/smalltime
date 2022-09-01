@@ -682,7 +682,6 @@ Hooks.on('renderSettingsConfig', () => {
 
   const injection = `
     <div id="smalltime-darkness-config" class="notes">
-      <div class="smalltime-dc-inside">
         <div class="handles">
           <div data-balloon-pos="up" class="handle sunrise-start"></div>
           <div data-balloon-pos="up" class="handle sunrise-end"></div>
@@ -693,7 +692,6 @@ Hooks.on('renderSettingsConfig', () => {
         <div class="sunrise-end-bounds"></div>
         <div class="sunset-start-bounds"></div>
         <div class="sunset-end-bounds"></div>
-      </div>
     </div>`;
 
   // Only inject if it isn't already there.
@@ -702,7 +700,7 @@ Hooks.on('renderSettingsConfig', () => {
   }
 
   // Tweak to accommodate TidyUI's smaller available space.
-  if (game.modules.get('tidy-ui_game-settings')?.active) {
+  if (game.modules.get('tidy-ui_game-settings')?.active && game.release.generation === 9) {
     $('#smalltime-darkness-config').css('transform', 'scale(0.9, 0.9) translate(-30px, 0px)');
   }
 

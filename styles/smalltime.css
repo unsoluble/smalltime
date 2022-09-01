@@ -103,7 +103,8 @@
   position: relative;
   height: 72px;
   display: flex;
-  width: 554px;
+  // width: 554px;
+  width: 512px;
   flex-flow: row nowrap;
   z-index: 1;
   background: linear-gradient(
@@ -153,7 +154,6 @@
   top: -68px;
   margin-bottom: -67px;
   z-index: 0;
-  width: 452px;
 }
 .sunrise-start-bounds {
   //border: 1px solid red;
