@@ -674,6 +674,10 @@ Hooks.on('renderSettingsConfig', () => {
     }
   });
 
+  if (game.release.generation === 10) {
+    document.documentElement.style.setProperty('--SMLTME-darkness-container-width', '512px');
+  }
+
   // Create and insert a div for the Darkness Configuration tool.
   const insertionElement = $('input[name="smalltime.sunset-end"]');
   insertionElement.css('display', 'none');

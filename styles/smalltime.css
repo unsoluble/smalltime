@@ -20,6 +20,7 @@
   --SMLTME-darkness-b: 72;
   --SMLTME-display-vis: flex;
   --SMLTME-pointer-events: auto;
+  --SMLTME-darkness-container-width: 554px;
 }
 
 #smalltime-app {
@@ -103,8 +104,7 @@
   position: relative;
   height: 72px;
   display: flex;
-  // width: 554px;
-  width: 512px;
+  width: var(--SMLTME-darkness-container-width);
   flex-flow: row nowrap;
   z-index: 1;
   background: linear-gradient(
