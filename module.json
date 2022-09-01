@@ -1,5 +1,6 @@
 {
   "name": "smalltime",
+  "id": "smalltime",
   "title": "SmallTime",
   "description": "A small module for displaying and controlling the current time of day.",
   "version": "1.0.0",
@@ -64,5 +65,10 @@
   "manifest": "https://github.com/unsoluble/smalltime/releases/latest/download/module.json",
   "download": "https://github.com/unsoluble/smalltime/releases/download/1.0.0/module.zip",
   "minimumCoreVersion": "0.7.9",
-  "compatibleCoreVersion": "10"
+  "compatibleCoreVersion": "10",
+  "compatibility": {
+    "minimum": "0.7.9",
+    "verified": 10,
+    "maximum": 10
+  }
 }
