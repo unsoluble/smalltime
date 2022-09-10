@@ -275,6 +275,10 @@
   box-shadow: none;
 }
 
+#smalltime-app .slider:before {
+  display: none;
+}
+
 #smalltime-app .sun::-webkit-slider-thumb {
   -webkit-appearance: none;
   width: 24px;
