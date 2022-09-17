@@ -559,6 +559,9 @@ Hooks.on('renderSceneConfig', async (obj) => {
   let sceneConfigID = '#scene-config-' + obj.object.data._id;
   if (game.release.generation === 10) {
     sceneConfigID = '#SceneConfig-Scene-' + obj.object.data._id;
+    if (game.system.id == 'pf2e') {
+      sceneConfigID = '#SceneConfigPF2e-Scene-' + obj.object.data._id;
+    }
   }
   if ($(sceneConfigID).find('.st-scene-config').length === 0) {
     $(sceneConfigID)
