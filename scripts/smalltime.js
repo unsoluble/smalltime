@@ -597,6 +597,15 @@ Hooks.on('renderSettingsConfig', () => {
   // Everything here is GM-only.
   if (!game.user.isGM) return;
 
+  // Tweak the Client Settings window's size to account for specific
+  // styling in some systems.
+  if (game.system.id === 'wfrp4e') {
+    $('#client-settings').css('width', '990px');
+  }
+  if (game.system.id === 'dsa5') {
+    $('#client-settings').css('width', '800px');
+  }
+
   // Hide the Show Seconds setting if we're not using 24hr time.
   if (game.settings.get('smalltime', 'time-format') == 12) {
     $('input[name="smalltime.show-seconds"]').parent().parent().css('display', 'none');
