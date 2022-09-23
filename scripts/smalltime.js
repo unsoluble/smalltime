@@ -1,7 +1,3 @@
-// Exclude module from deprecation warnings, as we're relying on shims for now.
-const excludeRgx = new RegExp('/modules/smalltime/');
-CONFIG.compatibility.excludePatterns.push(excludeRgx);
-
 const SmallTime_MoonPhases = [
   'new',
   'waxing-crescent',
@@ -44,6 +40,12 @@ const SmallTime_MaxDarknessDefault = 1;
 const SmallTime_MinDarknessDefault = 0;
 
 Hooks.on('init', () => {
+  // Exclude module from deprecation warnings, as we're relying on shims for now.
+  if (game.release.generation === 10) {
+    const excludeRgx = new RegExp('/modules/smalltime/');
+    CONFIG.compatibility.excludePatterns.push(excludeRgx);
+  }
+
   game.settings.register('smalltime', 'current-date', {
     name: 'Current Date',
     scope: 'world',
