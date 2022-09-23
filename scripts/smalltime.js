@@ -1,3 +1,7 @@
+// Exclude module from deprecation warnings, as we're relying on shims for now.
+const excludeRgx = new RegExp('/modules/smalltime/');
+CONFIG.compatibility.excludePatterns.push(excludeRgx);
+
 const SmallTime_MoonPhases = [
   'new',
   'waxing-crescent',
