@@ -1766,43 +1766,52 @@ class SmallTimeApp extends FormApplication {
     });
 
     // Handle the increment/decrement buttons.
-    let smallStep;
-    let largeStep;
+    let smallStep = game.settings.get('smalltime', 'small-step');
+    let largeStep = game.settings.get('smalltime', 'large-step');
+    let stepAmount;
 
     html.find('#decrease-small').on('click', () => {
-      smallStep = game.settings.get('smalltime', 'small-step');
       if (event.shiftKey) {
-        this.timeRatchet(-Math.abs(smallStep * 2));
+        stepAmount = -Math.abs(smallStep * 2);
+      } else if (event.altKey) {
+        stepAmount = Math.floor(-Math.abs(smallStep / 2));
       } else {
-        this.timeRatchet(-Math.abs(smallStep));
+        stepAmount = -Math.abs(smallStep);
       }
+      this.timeRatchet(stepAmount);
     });
 
     html.find('#decrease-large').on('click', () => {
-      largeStep = game.settings.get('smalltime', 'large-step');
       if (event.shiftKey) {
-        this.timeRatchet(-Math.abs(largeStep * 2));
+        stepAmount = -Math.abs(largeStep * 2);
+      } else if (event.altKey) {
+        stepAmount = Math.floor(-Math.abs(largeStep / 2));
       } else {
-        this.timeRatchet(-Math.abs(largeStep));
+        stepAmount = -Math.abs(largeStep);
       }
+      this.timeRatchet(stepAmount);
     });
 
     html.find('#increase-small').on('click', () => {
-      smallStep = game.settings.get('smalltime', 'small-step');
       if (event.shiftKey) {
-        this.timeRatchet(smallStep * 2);
+        stepAmount = smallStep * 2;
+      } else if (event.altKey) {
+        stepAmount = Math.floor(smallStep / 2);
       } else {
-        this.timeRatchet(smallStep);
+        stepAmount = smallStep;
       }
+      this.timeRatchet(stepAmount);
     });
 
     html.find('#increase-large').on('click', () => {
-      largeStep = game.settings.get('smalltime', 'large-step');
       if (event.shiftKey) {
-        this.timeRatchet(largeStep * 2);
+        stepAmount = largeStep * 2;
+      } else if (event.altKey) {
+        stepAmount = Math.floor(largeStep / 2);
       } else {
-        this.timeRatchet(largeStep);
+        stepAmount = largeStep;
       }
+      this.timeRatchet(stepAmount);
     });
 
     // Listen for moon phase changes from Simple Calendar.
