@@ -5,7 +5,7 @@ _A small module for displaying and controlling the current time of day._
 ## Quick Summary
 
 - Drag the sun/moon or click the forward/back buttons to change the time.
-- Shift-click the buttons to double the amount.
+- Shift-click the buttons to double the amount. Alt for half.
 - Bottom of the window is a repositioning drag handle.
 - Button steps and various other things are changeable in Module Settings.
 - Shift-click the moon to cycle the moon's phase. If you're running Simple Calendar, your phase will be synced from there.

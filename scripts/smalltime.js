@@ -40,6 +40,12 @@ const SmallTime_MaxDarknessDefault = 1;
 const SmallTime_MinDarknessDefault = 0;
 
 Hooks.on('init', () => {
+  // Exclude module from deprecation warnings, as we're relying on shims for now.
+  if (game.release.generation === 10) {
+    const excludeRgx = new RegExp('/modules/smalltime/');
+    CONFIG.compatibility.excludePatterns.push(excludeRgx);
+  }
+
   game.settings.register('smalltime', 'current-date', {
     name: 'Current Date',
     scope: 'world',
@@ -592,6 +598,15 @@ Hooks.on('renderSceneConfig', async (obj) => {
 Hooks.on('renderSettingsConfig', () => {
   // Everything here is GM-only.
   if (!game.user.isGM) return;
+
+  // Tweak the Client Settings window's size to account for specific
+  // styling in some systems.
+  if (game.system.id === 'wfrp4e') {
+    $('#client-settings').css('width', '990px');
+  }
+  if (game.system.id === 'dsa5') {
+    $('#client-settings').css('width', '800px');
+  }
 
   // Hide the Show Seconds setting if we're not using 24hr time.
   if (game.settings.get('smalltime', 'time-format') == 12) {
@@ -1751,43 +1766,52 @@ class SmallTimeApp extends FormApplication {
     });
 
     // Handle the increment/decrement buttons.
-    let smallStep;
-    let largeStep;
+    let smallStep = game.settings.get('smalltime', 'small-step');
+    let largeStep = game.settings.get('smalltime', 'large-step');
+    let stepAmount;
 
     html.find('#decrease-small').on('click', () => {
-      smallStep = game.settings.get('smalltime', 'small-step');
       if (event.shiftKey) {
-        this.timeRatchet(-Math.abs(smallStep * 2));
+        stepAmount = -Math.abs(smallStep * 2);
+      } else if (event.altKey) {
+        stepAmount = Math.floor(-Math.abs(smallStep / 2));
       } else {
-        this.timeRatchet(-Math.abs(smallStep));
+        stepAmount = -Math.abs(smallStep);
       }
+      this.timeRatchet(stepAmount);
     });
 
     html.find('#decrease-large').on('click', () => {
-      largeStep = game.settings.get('smalltime', 'large-step');
       if (event.shiftKey) {
-        this.timeRatchet(-Math.abs(largeStep * 2));
+        stepAmount = -Math.abs(largeStep * 2);
+      } else if (event.altKey) {
+        stepAmount = Math.floor(-Math.abs(largeStep / 2));
       } else {
-        this.timeRatchet(-Math.abs(largeStep));
+        stepAmount = -Math.abs(largeStep);
       }
+      this.timeRatchet(stepAmount);
     });
 
     html.find('#increase-small').on('click', () => {
-      smallStep = game.settings.get('smalltime', 'small-step');
       if (event.shiftKey) {
-        this.timeRatchet(smallStep * 2);
+        stepAmount = smallStep * 2;
+      } else if (event.altKey) {
+        stepAmount = Math.floor(smallStep / 2);
       } else {
-        this.timeRatchet(smallStep);
+        stepAmount = smallStep;
       }
+      this.timeRatchet(stepAmount);
     });
 
     html.find('#increase-large').on('click', () => {
-      largeStep = game.settings.get('smalltime', 'large-step');
       if (event.shiftKey) {
-        this.timeRatchet(largeStep * 2);
+        stepAmount = largeStep * 2;
+      } else if (event.altKey) {
+        stepAmount = Math.floor(largeStep / 2);
       } else {
-        this.timeRatchet(largeStep);
+        stepAmount = largeStep;
       }
+      this.timeRatchet(stepAmount);
     });
 
     // Listen for moon phase changes from Simple Calendar.
