@@ -805,13 +805,16 @@ Hooks.on('renderPlayerList', () => {
     myOffset += 30;
   }
 
+  const interfaceOffset = $('#interface').offset().left;
+  const leftOffset = interfaceOffset + 15;
+
   // This would be better done with a class add, but injecting
   // it here was the only way I could get it to enforce the
   // absolute positioning.
   $('#pin-lock').text(`
       #smalltime-app {
         top: calc(100vh - ${myOffset}px) !important;
-        left: 15px !important;
+        left: ${leftOffset}px !important;
       }
   `);
 });
@@ -1998,13 +2001,15 @@ class SmallTimeApp extends FormApplication {
     if (!$('#pin-lock').length) {
       const playerApp = document.getElementById('players');
       const playerAppPos = playerApp.getBoundingClientRect();
-      let myOffset = playerAppPos.height + SmallTime_PinOffset;
+      const interfaceOffset = $('#interface').offset().left;
+      const leftOffset = interfaceOffset + 15;
+      let bottomOffset = playerAppPos.height + SmallTime_PinOffset;
 
       if (expanded) {
-        myOffset += 21;
+        bottomOffset += 21;
       }
       if (!game.modules.get('smalltime').clockAuth) {
-        myOffset -= 23;
+        bottomOffset -= 23;
       }
 
       // Dropping this into the DOM with an !important was the only way
@@ -2012,12 +2017,19 @@ class SmallTimeApp extends FormApplication {
       $('body').append(`
         <style id="pin-lock">
           #smalltime-app {
-            top: calc(100vh - ${myOffset}px) !important;
-            left: 15px !important;
+            top: calc(100vh - ${bottomOffset}px) !important;
+            left: ${leftOffset}px !important;
           }
         </style>
       `);
       await game.settings.set('smalltime', 'pinned', true);
+    } else {
+      $('#pin-lock').text(`
+          #smalltime-app {
+            top: calc(100vh - ${bottomOffset}px) !important;
+            left: ${leftOffset}px !important;
+          }
+      `);
     }
   }
 
