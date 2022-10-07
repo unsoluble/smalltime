@@ -526,6 +526,9 @@ Hooks.on('renderSceneConfig', async (obj) => {
   const controlHint = game.i18n.localize('SMLTME.Darkness_Control_Hint');
   const moonlightLabel = game.i18n.localize('SMLTME.Moonlight_Adjust');
   const moonlightHint = game.i18n.localize('SMLTME.Moonlight_Adjust_Hint');
+  const moonlightDisabledPF2e = game.settings.get('pf2e', 'automation.rulesBasedVision')
+    ? 'disabled'
+    : '';
   const injection = `
     <fieldset class="st-scene-config">
       <legend>
@@ -551,7 +554,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
       </div>
       <div class="form-group">
         <label>${moonlightLabel}</label>
-        <input
+        <input ${moonlightDisabledPF2e}
           type="checkbox"
           name="flags.smalltime.moonlight"
           ${moonlightCheckStatus}>
@@ -846,13 +849,13 @@ function updateSunriseSunsetTimes(data) {
       game.settings.set('smalltime', 'sunset-end', SmallTime_SunsetEndDefault);
     } else {
       if (typeof data !== 'undefined') {
-        const riseEnd = Math.abs(
-          Math.trunc((SimpleCalendar.api.timestampToDate(data?.date.sunrise).sunrise % 86400) / 60)
-        );
+        const riseEnd =
+          SimpleCalendar.api.timestampToDate(data.date.sunrise).hour * 60 +
+          SimpleCalendar.api.timestampToDate(data.date.sunrise).minute;
         const riseStart = riseEnd - SmallTime_DawnDuskSpread;
-        const setStart = Math.abs(
-          Math.trunc((SimpleCalendar.api.timestampToDate(data?.date.sunset).sunset % 86400) / 60)
-        );
+        const setStart =
+          SimpleCalendar.api.timestampToDate(data.date.sunset).hour * 60 +
+          SimpleCalendar.api.timestampToDate(data.date.sunset).minute;
         const setEnd = setStart + SmallTime_DawnDuskSpread;
         game.settings.set('smalltime', 'sunrise-start', riseStart);
         game.settings.set('smalltime', 'sunrise-end', riseEnd);
