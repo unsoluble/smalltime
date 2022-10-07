@@ -828,12 +828,12 @@ Hooks.on('simple-calendar-clock-start-stop', () => {
   SmallTimeApp.emitSocket('handleRealtime');
 });
 
-Hooks.on('simple-calendar-date-time-change', () => {
-  updateSunriseSunsetTimes();
+Hooks.on('simple-calendar-date-time-change', (data) => {
+  updateSunriseSunsetTimes(data);
   updateGradientStops();
 });
 
-function updateSunriseSunsetTimes() {
+function updateSunriseSunsetTimes(data) {
   if (
     game.settings.get('smalltime', 'sun-sync') &&
     game.modules.get('foundryvtt-simple-calendar')?.active
@@ -845,15 +845,20 @@ function updateSunriseSunsetTimes() {
       game.settings.set('smalltime', 'sunset-start', SmallTime_SunsetStartDefault);
       game.settings.set('smalltime', 'sunset-end', SmallTime_SunsetEndDefault);
     } else {
-      const riseEnd = SimpleCalendar.api.getCurrentSeason().sunriseTime / 60;
-      const riseStart = riseEnd - SmallTime_DawnDuskSpread;
-      const setStart = SimpleCalendar.api.getCurrentSeason().sunsetTime / 60;
-      const setEnd = setStart + SmallTime_DawnDuskSpread;
-
-      game.settings.set('smalltime', 'sunrise-start', riseStart);
-      game.settings.set('smalltime', 'sunrise-end', riseEnd);
-      game.settings.set('smalltime', 'sunset-start', setStart);
-      game.settings.set('smalltime', 'sunset-end', setEnd);
+      if (typeof data !== 'undefined') {
+        const riseEnd = Math.abs(
+          Math.trunc((SimpleCalendar.api.timestampToDate(data?.date.sunrise).sunrise % 86400) / 60)
+        );
+        const riseStart = riseEnd - SmallTime_DawnDuskSpread;
+        const setStart = Math.abs(
+          Math.trunc((SimpleCalendar.api.timestampToDate(data?.date.sunset).sunset % 86400) / 60)
+        );
+        const setEnd = setStart + SmallTime_DawnDuskSpread;
+        game.settings.set('smalltime', 'sunrise-start', riseStart);
+        game.settings.set('smalltime', 'sunrise-end', riseEnd);
+        game.settings.set('smalltime', 'sunset-start', setStart);
+        game.settings.set('smalltime', 'sunset-end', setEnd);
+      }
     }
   }
 }
@@ -1957,7 +1962,7 @@ class SmallTimeApp extends FormApplication {
   // Convert the integer time value to hours and minutes.
   static convertTimeIntegerToDisplay(timeInteger) {
     let theHours = Math.floor(timeInteger / 60);
-    let theMinutes = timeInteger - theHours * 60;
+    let theMinutes = Math.trunc(timeInteger - theHours * 60);
 
     if (theMinutes < 10) theMinutes = `0${theMinutes}`;
     if (theMinutes === 0) theMinutes = '00';
