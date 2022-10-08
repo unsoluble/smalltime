@@ -808,6 +808,11 @@ Hooks.on('renderPlayerList', () => {
     myOffset += 30;
   }
 
+  // Custom offset for Item Piles, which adds a button into the Players app.
+  if (game.modules.get('breaktime')?.active) {
+    myOffset += 34;
+  }
+
   const interfaceOffset = $('#interface').offset().left;
   const leftOffset = interfaceOffset + 15;
 
