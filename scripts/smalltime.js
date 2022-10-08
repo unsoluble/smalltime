@@ -794,34 +794,33 @@ Hooks.on('renderPlayerList', () => {
   // Players list and the top of SmallTime. The +21 accounts
   // for the date dropdown if enabled; the -23 accounts for the clock row
   // being disabled in some cases.
-  let myOffset = playerAppPos.height + SmallTime_PinOffset;
+  let bottomOffset = playerAppPos.height + SmallTime_PinOffset;
 
   if (game.settings.get('smalltime', 'date-showing')) {
-    myOffset += 21;
+    bottomOffset += 21;
   }
   if (!game.modules.get('smalltime').clockAuth) {
-    myOffset -= 23;
+    bottomOffset -= 23;
   }
 
   // Custom offset for Item Piles, which adds a button into the Players app.
   if (game.modules.get('item-piles')?.active) {
-    myOffset += 30;
+    bottomOffset += 30;
   }
 
   // Custom offset for Item Piles, which adds a button into the Players app.
   if (game.modules.get('breaktime')?.active) {
-    myOffset += 34;
+    bottomOffset += 34;
   }
 
-  const interfaceOffset = $('#interface').offset().left;
-  const leftOffset = interfaceOffset + 15;
+  const leftOffset = $('#interface').offset().left + 15;
 
   // This would be better done with a class add, but injecting
   // it here was the only way I could get it to enforce the
   // absolute positioning.
   $('#pin-lock').text(`
       #smalltime-app {
-        top: calc(100vh - ${myOffset}px) !important;
+        top: calc(100vh - ${bottomOffset}px) !important;
         left: ${leftOffset}px !important;
       }
   `);
