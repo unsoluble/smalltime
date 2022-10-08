@@ -526,9 +526,12 @@ Hooks.on('renderSceneConfig', async (obj) => {
   const controlHint = game.i18n.localize('SMLTME.Darkness_Control_Hint');
   const moonlightLabel = game.i18n.localize('SMLTME.Moonlight_Adjust');
   const moonlightHint = game.i18n.localize('SMLTME.Moonlight_Adjust_Hint');
-  const moonlightDisabledPF2e = game.settings.get('pf2e', 'automation.rulesBasedVision')
-    ? 'disabled'
-    : '';
+  let moonlightDisabledPF2e;
+  if (game.system.id === 'pf2e') {
+    moonlightDisabledPF2e = game.settings.get('pf2e', 'automation.rulesBasedVision')
+      ? 'disabled'
+      : '';
+  }
   const injection = `
     <fieldset class="st-scene-config">
       <legend>
@@ -568,7 +571,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
   let sceneConfigID = '#scene-config-' + obj.object.data._id;
   if (game.release.generation === 10) {
     sceneConfigID = '#SceneConfig-Scene-' + obj.object.data._id;
-    if (game.system.id == 'pf2e') {
+    if (game.system.id === 'pf2e') {
       sceneConfigID = '#SceneConfigPF2e-Scene-' + obj.object.data._id;
     }
   }
@@ -1998,13 +2001,13 @@ class SmallTimeApp extends FormApplication {
   // Pin the app above the Players list.
   static async pinApp(expanded) {
     // Only do this if a pin lock isn't already in place.
-    if (!$('#pin-lock').length) {
-      const playerApp = document.getElementById('players');
-      const playerAppPos = playerApp.getBoundingClientRect();
-      const interfaceOffset = $('#interface').offset().left;
-      const leftOffset = interfaceOffset + 15;
-      let bottomOffset = playerAppPos.height + SmallTime_PinOffset;
 
+    const playerApp = document.getElementById('players');
+    const playerAppPos = playerApp.getBoundingClientRect();
+    const interfaceOffset = $('#interface').offset().left;
+    const leftOffset = interfaceOffset + 15;
+    let bottomOffset = playerAppPos.height + SmallTime_PinOffset;
+    if (!$('#pin-lock').length) {
       if (expanded) {
         bottomOffset += 21;
       }
