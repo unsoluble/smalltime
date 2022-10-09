@@ -813,7 +813,10 @@ Hooks.on('renderPlayerList', () => {
     bottomOffset += 34;
   }
 
-  const leftOffset = $('#interface').offset().left + 15;
+  let leftOffset = 15;
+  if (game.release.generation === 10) {
+    leftOffset += $('#interface').offset().left;
+  }
 
   // This would be better done with a class add, but injecting
   // it here was the only way I could get it to enforce the
@@ -2008,7 +2011,10 @@ class SmallTimeApp extends FormApplication {
 
     const playerApp = document.getElementById('players');
     const playerAppPos = playerApp.getBoundingClientRect();
-    const interfaceOffset = $('#interface').offset().left;
+    let interfaceOffset = 0;
+    if (game.release.generation === 10) {
+      interfaceOffset += $('#interface').offset().left;
+    }
     const leftOffset = interfaceOffset + 15;
     let bottomOffset = playerAppPos.height + SmallTime_PinOffset;
     if (!$('#pin-lock').length) {
