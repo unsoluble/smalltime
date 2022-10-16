@@ -21,7 +21,8 @@
       "caption": "SmallTime"
     }
   ],
-  "scripts": ["scripts/smalltime.js", "scripts/draggabilly.min.js"],
+  "esmodules": ["scripts/smalltime-app.mjs"],
+  "scripts": ["scripts/draggabilly.min.js"],
   "styles": ["styles/smalltime.css"],
   "languages": [
     {
