@@ -1846,6 +1846,7 @@ class SmallTimeApp extends FormApplication {
         });
         await game.settings.set('smalltime', 'moon-phase', newPhase);
         SmallTimeApp.timeTransition(getWorldTimeAsDayTime());
+        adjustMoonlight(newPhase);
       });
     }
   }
