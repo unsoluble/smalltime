@@ -1480,6 +1480,8 @@ function convertHexToRGB(hex) {
 // Overriding the Vision Limitation Threshold value for the scene if requested.
 // Values span from 0.0 to 1.0 to mimic brightness levels of the various phases.
 async function adjustMoonlight(phase) {
+  // Only perform this adjustment if the setting is enabled.
+  if (!game.scenes.viewed.getFlag('smalltime', 'moonlight')) return;
   let newThreshold;
   switch (phase) {
     case 0: // new
