@@ -1,4 +1,20 @@
-import { helperFunctions } from './helpers.mjs';
+import {
+  Helpers,
+  SmallTime_MoonPhases,
+  SmallTime_PhaseValues,
+  SmallTime_PinOffset,
+  SmallTime_EpochOffset,
+  SmallTime_WFRP4eOffset,
+  SmallTime_DasSchwarzeAugeOffset,
+  SmallTime_TaskbarOffset,
+  SmallTime_SunriseStartDefault,
+  SmallTime_SunriseEndDefault,
+  SmallTime_SunsetStartDefault,
+  SmallTime_SunsetEndDefault,
+  SmallTime_DawnDuskSpread,
+  SmallTime_MaxDarknessDefault,
+  SmallTime_MinDarknessDefault,
+} from './helpers.mjs';
 
 Hooks.on('init', () => {
   // Exclude module from deprecation warnings, as we're relying on shims for now.
@@ -83,7 +99,7 @@ Hooks.on('init', () => {
 
   // If there is one or more available source of calendar information,
   // add them to the list of providers to choose from in Settings.
-  const calendarProviders = helperFunctions.getCalendarProviders();
+  const calendarProviders = Helpers.getCalendarProviders();
   const calendarAvailable = Object.keys(calendarProviders).length > 0 ? true : false;
 
   game.settings.register('smalltime', 'date-format', {
@@ -173,35 +189,35 @@ Hooks.on('init', () => {
     scope: 'world',
     config: true,
     type: Number,
-    default: helperFunctions.SmallTime_MaxDarknessDefault,
+    default: SmallTime_MaxDarknessDefault,
   });
 
   game.settings.register('smalltime', 'min-darkness', {
     scope: 'world',
     config: true,
     type: Number,
-    default: helperFunctions.SmallTime_MinDarknessDefault,
+    default: SmallTime_MinDarknessDefault,
   });
 
   game.settings.register('smalltime', 'sunrise-start', {
     scope: 'world',
     config: true,
     type: Number,
-    default: helperFunctions.SmallTime_SunriseStartDefault,
+    default: SmallTime_SunriseStartDefault,
   });
 
   game.settings.register('smalltime', 'sunrise-end', {
     scope: 'world',
     config: true,
     type: Number,
-    default: helperFunctions.SmallTime_SunriseEndDefault,
+    default: SmallTime_SunriseEndDefault,
   });
 
   game.settings.register('smalltime', 'sunset-start', {
     scope: 'world',
     config: true,
     type: Number,
-    default: helperFunctions.SmallTime_SunsetStartDefault,
+    default: SmallTime_SunsetStartDefault,
   });
 
   game.settings.register('smalltime', 'sunset-end', {
@@ -210,7 +226,7 @@ Hooks.on('init', () => {
     scope: 'world',
     config: true,
     type: Number,
-    default: helperFunctions.SmallTime_SunsetEndDefault,
+    default: SmallTime_SunsetEndDefault,
   });
 
   game.settings.register('smalltime', 'sun-sync', {
@@ -263,16 +279,16 @@ Hooks.on('init', () => {
 Hooks.on('canvasReady', () => {
   // Account for the extra border art in certain game systems.
   if (game.system.id === 'wfrp4e') {
-    helperFunctions.SmallTime_PinOffset += helperFunctions.SmallTime_WFRP4eOffset;
+    SmallTime_PinOffset += SmallTime_WFRP4eOffset;
   }
   if (game.system.id === 'dsa5') {
-    helperFunctions.SmallTime_PinOffset += helperFunctions.SmallTime_DasSchwarzeAugeOffset;
+    SmallTime_PinOffset += SmallTime_DasSchwarzeAugeOffset;
   }
   if (
     game.modules.get('foundry-taskbar')?.active &&
     game.settings.get('foundry-taskbar', 'moveplayersmacro')
   ) {
-    helperFunctions.SmallTime_PinOffset += helperFunctions.SmallTime_TaskbarOffset;
+    SmallTime_PinOffset += SmallTime_TaskbarOffset;
   }
 
   // Only allow the date display to show if there's a calendar provider available.
@@ -366,10 +382,10 @@ Hooks.on('canvasReady', () => {
     }
     // Refresh the current scene's Darkness level if it should be linked.
     if (thisScene.getFlag('smalltime', 'darkness-link')) {
-      SmallTimeApp.timeTransition(helperFunctions.getWorldTimeAsDayTime());
+      SmallTimeApp.timeTransition(Helpers.getWorldTimeAsDayTime());
     }
     // Refresh the current scene BG for the settings dialog.
-    helperFunctions.grabSceneSlice();
+    Helpers.grabSceneSlice();
   }
 });
 
@@ -382,9 +398,9 @@ Hooks.on('ready', () => {
   async function doSocket(data) {
     if (data.type === 'changeTime') {
       if (game.user.isGM) {
-        await helperFunctions.setWorldTime(data.payload);
+        await Helpers.setWorldTime(data.payload);
       }
-      helperFunctions.handleTimeChange(data.payload);
+      Helpers.handleTimeChange(data.payload);
     }
     if (data.type === 'changeSetting') {
       if (game.user.isGM)
@@ -397,15 +413,15 @@ Hooks.on('ready', () => {
       }
     }
     if (data.type === 'handleRealtime') {
-      if (!game.user.isGM) helperFunctions.handleRealtimeState();
+      if (!game.user.isGM) Helpers.handleRealtimeState();
     }
   }
   // Update the stops on the sunrise/sunset gradient, in case
   // there's been changes to the positions.
-  helperFunctions.updateSunriseSunsetTimes();
-  helperFunctions.updateGradientStops();
+  Helpers.updateSunriseSunsetTimes();
+  Helpers.updateGradientStops();
 
-  helperFunctions.setCalendarFallback();
+  Helpers.setCalendarFallback();
 
   // Obtain the custom worldTime epoch offset for the current PF2E world.
   if (game.system.id === 'pf2e') {
@@ -445,7 +461,7 @@ Hooks.on('renderSmallTimeApp', () => {
     $('#smalltime-app').addClass('show-date');
     $('#smalltime-app').css({ height: '79px' });
   }
-  helperFunctions.handleTimeChange(helperFunctions.getWorldTimeAsDayTime());
+  Helpers.handleTimeChange(Helpers.getWorldTimeAsDayTime());
 });
 
 // Handle our changes to the Scene Config screen.
@@ -602,10 +618,7 @@ Hooks.on('renderSettingsConfig', () => {
   $('select[name="smalltime.date-format"]')
     .children('option')
     .each(function () {
-      this.text = helperFunctions.getDate(
-        game.settings.get('smalltime', 'calendar-provider'),
-        this.value
-      );
+      this.text = Helpers.getDate(game.settings.get('smalltime', 'calendar-provider'), this.value);
     });
 
   // Hide the elements for the threshold settings; we'll be changing
@@ -649,16 +662,12 @@ Hooks.on('renderSettingsConfig', () => {
   // Reset to defaults on Shift-click, and close the window.
   $(darknessTitleElement).on('click', function () {
     if (event.shiftKey) {
-      game.settings.set(
-        'smalltime',
-        'sunrise-start',
-        helperFunctions.SmallTime_SunriseStartDefault
-      );
-      game.settings.set('smalltime', 'sunrise-end', helperFunctions.SmallTime_SunriseEndDefault);
-      game.settings.set('smalltime', 'sunset-start', helperFunctions.SmallTime_SunsetStartDefault);
-      game.settings.set('smalltime', 'sunset-end', helperFunctions.SmallTime_SunsetEndDefault);
-      game.settings.set('smalltime', 'max-darkness', helperFunctions.SmallTime_MaxDarknessDefault);
-      game.settings.set('smalltime', 'min-darkness', helperFunctions.SmallTime_MinDarknessDefault);
+      game.settings.set('smalltime', 'sunrise-start', SmallTime_SunriseStartDefault);
+      game.settings.set('smalltime', 'sunrise-end', SmallTime_SunriseEndDefault);
+      game.settings.set('smalltime', 'sunset-start', SmallTime_SunsetStartDefault);
+      game.settings.set('smalltime', 'sunset-end', SmallTime_SunsetEndDefault);
+      game.settings.set('smalltime', 'max-darkness', SmallTime_MaxDarknessDefault);
+      game.settings.set('smalltime', 'min-darkness', SmallTime_MinDarknessDefault);
 
       Object.values(ui.windows).forEach((app) => {
         if (app.options.id === 'client-settings') app.close();
@@ -701,18 +710,16 @@ Hooks.on('renderSettingsConfig', () => {
   }
 
   // Get the current Darkness overlay color.
-  const coreDarknessColor = helperFunctions.convertHexToRGB(
-    CONFIG.Canvas.darknessColor.toString(16)
-  );
+  const coreDarknessColor = Helpers.convertHexToRGB(CONFIG.Canvas.darknessColor.toString(16));
   document.documentElement.style.setProperty('--SMLTME-darkness-r', coreDarknessColor.r);
   document.documentElement.style.setProperty('--SMLTME-darkness-g', coreDarknessColor.g);
   document.documentElement.style.setProperty('--SMLTME-darkness-b', coreDarknessColor.b);
 
   // Refresh the current scene BG for the settings dialog.
-  helperFunctions.grabSceneSlice();
+  Helpers.grabSceneSlice();
 
   // Build the Darkness Config interface.
-  helperFunctions.setupDragHandles();
+  Helpers.setupDragHandles();
 
   // Live render the opacity changes as a preview.
   $('input[name="smalltime.opacity"]').on('input', () => {
@@ -735,7 +742,7 @@ Hooks.on('closeSettingsConfig', () => {
   // Update the stops on the sunrise/sunset gradient, in case
   // there's been changes to the positions. Also update the
   // rise/set times in case of a change to sync toggle.
-  helperFunctions.updateSunriseSunsetTimes();
+  Helpers.updateSunriseSunsetTimes();
 });
 
 // Add a toggle button inside the Jounral Notes tool layer.
@@ -764,7 +771,7 @@ Hooks.on('renderPlayerList', () => {
   // Players list and the top of SmallTime. The +21 accounts
   // for the date dropdown if enabled; the -23 accounts for the clock row
   // being disabled in some cases.
-  let bottomOffset = playerAppPos.height + helperFunctions.SmallTime_PinOffset;
+  let bottomOffset = playerAppPos.height + SmallTime_PinOffset;
 
   if (game.settings.get('smalltime', 'date-showing')) {
     bottomOffset += 21;
@@ -801,12 +808,12 @@ Hooks.on('renderPlayerList', () => {
 
 // Listen for changes to the worldTime from elsewhere.
 Hooks.on('updateWorldTime', () => {
-  helperFunctions.handleTimeChange(helperFunctions.getWorldTimeAsDayTime());
+  Helpers.handleTimeChange(Helpers.getWorldTimeAsDayTime());
 });
 
 // Handle toggling of time separator flash when game is paused/unpaused.
 Hooks.on('pauseGame', () => {
-  helperFunctions.handleRealtimeState();
+  Helpers.handleRealtimeState();
 });
 
 // Listen for changes to the realtime clock state.
@@ -815,8 +822,8 @@ Hooks.on('simple-calendar-clock-start-stop', () => {
 });
 
 Hooks.on('simple-calendar-date-time-change', (data) => {
-  helperFunctions.updateSunriseSunsetTimes(data);
-  helperFunctions.updateGradientStops();
+  Helpers.updateSunriseSunsetTimes(data);
+  Helpers.updateGradientStops();
 });
 
 class SmallTimeApp extends FormApplication {
@@ -841,7 +848,7 @@ class SmallTimeApp extends FormApplication {
 
   constructor() {
     super();
-    this.currentTime = helperFunctions.getWorldTimeAsDayTime();
+    this.currentTime = Helpers.getWorldTimeAsDayTime();
   }
 
   static get defaultOptions() {
@@ -878,7 +885,7 @@ class SmallTimeApp extends FormApplication {
     const newTime = formData.timeSlider;
     // Save the new time.
     if (game.user.isGM) {
-      await helperFunctions.setWorldTime(newTime);
+      await Helpers.setWorldTime(newTime);
     } else {
       SmallTimeApp.emitSocket('changeTime', newTime);
     }
@@ -998,17 +1005,17 @@ class SmallTimeApp extends FormApplication {
     $('#timeSlider').on('click', async function () {
       if (event.shiftKey && game.modules.get('smalltime').controlAuth) {
         const startingPhase = game.settings.get('smalltime', 'moon-phase');
-        const newPhase = (startingPhase + 1) % helperFunctions.SmallTime_MoonPhases.length;
+        const newPhase = (startingPhase + 1) % SmallTime_MoonPhases.length;
 
         document.documentElement.style.setProperty(
           '--SMLTME-phaseURL',
-          `url('../images/moon-phases/${helperFunctions.SmallTime_MoonPhases[newPhase]}.webp')`
+          `url('../images/moon-phases/${SmallTime_MoonPhases[newPhase]}.webp')`
         );
 
         // Set and broadcast the change.
         if (game.user.isGM) {
           await game.settings.set('smalltime', 'moon-phase', newPhase);
-          helperFunctions.adjustMoonlight(newPhase);
+          Helpers.adjustMoonlight(newPhase);
         } else {
           SmallTimeApp.emitSocket('changeSetting', {
             scope: 'smalltime',
@@ -1017,7 +1024,7 @@ class SmallTimeApp extends FormApplication {
           });
         }
         if (game.user.isGM) {
-          await helperFunctions.setWorldTime($(this).val());
+          await Helpers.setWorldTime($(this).val());
         }
         SmallTimeApp.emitSocket('changeTime', $(this).val());
       }
@@ -1040,7 +1047,7 @@ class SmallTimeApp extends FormApplication {
     // Wait for the actual change event to do the time set.
     $(document).on('change', '#timeSlider', async function () {
       if (game.user.isGM) {
-        helperFunctions.setWorldTime($(this).val());
+        Helpers.setWorldTime($(this).val());
       } else {
         SmallTimeApp.emitSocket('changeTime', $(this).val());
       }
@@ -1062,7 +1069,7 @@ class SmallTimeApp extends FormApplication {
           SimpleCalendar.api.startClock();
         }
         if (game.user.isGM) {
-          helperFunctions.handleRealtimeState();
+          Helpers.handleRealtimeState();
         }
         SmallTimeApp.emitSocket('handleRealtime');
       } else {
@@ -1153,11 +1160,12 @@ class SmallTimeApp extends FormApplication {
         if (typeof data.moons[0] === 'undefined') {
           return;
         }
-        const newPhase = helperFunctions.SmallTime_MoonPhases.findIndex(function (phase) {
+        const newPhase = SmallTime_MoonPhases.findIndex(function (phase) {
           return phase === data.moons[0].currentPhase.icon;
         });
         await game.settings.set('smalltime', 'moon-phase', newPhase);
-        SmallTimeApp.timeTransition(helperFunctions.getWorldTimeAsDayTime());
+        SmallTimeApp.timeTransition(Helpers.getWorldTimeAsDayTime());
+        Helpers.adjustMoonlight(newPhase);
       });
     }
   }
@@ -1172,7 +1180,7 @@ class SmallTimeApp extends FormApplication {
 
   // Functionality for increment/decrement buttons.
   async timeRatchet(delta) {
-    let currentTime = helperFunctions.getWorldTimeAsDayTime();
+    let currentTime = Helpers.getWorldTimeAsDayTime();
     let newTime = currentTime + delta;
 
     if (newTime < 0) {
@@ -1219,7 +1227,7 @@ class SmallTimeApp extends FormApplication {
       $('#timeSlider').addClass('moon');
       document.documentElement.style.setProperty(
         '--SMLTME-phaseURL',
-        `url('../images/moon-phases/${helperFunctions.SmallTime_MoonPhases[currentPhase]}.webp')`
+        `url('../images/moon-phases/${SmallTime_MoonPhases[currentPhase]}.webp')`
       );
     }
 
@@ -1240,8 +1248,7 @@ class SmallTimeApp extends FormApplication {
       // If requested, adjust max Darkness based on moon phase.
       if (game.settings.get('smalltime', 'moon-darkness')) {
         const moonlightFactor = 0.4; // Percentage by which available moonlight reduces max Darkness.
-        const moonlightMultiplier =
-          moonlightFactor * helperFunctions.SmallTime_PhaseValues[currentPhase];
+        const moonlightMultiplier = moonlightFactor * SmallTime_PhaseValues[currentPhase];
         maxDarkness = Math.round((1 - maxDarkness * moonlightMultiplier) * 100) / 100;
       }
 
@@ -1329,7 +1336,7 @@ class SmallTimeApp extends FormApplication {
       interfaceOffset += $('#interface').offset().left;
     }
     const leftOffset = interfaceOffset + 15;
-    let bottomOffset = playerAppPos.height + helperFunctions.SmallTime_PinOffset;
+    let bottomOffset = playerAppPos.height + SmallTime_PinOffset;
     if (!$('#pin-lock').length) {
       if (expanded) {
         bottomOffset += 21;
@@ -1395,7 +1402,7 @@ class SmallTimeApp extends FormApplication {
 
   // Get the date from various calendar providers.
   static async updateDate() {
-    let displayDate = helperFunctions.getDate(
+    let displayDate = Helpers.getDate(
       game.settings.get('smalltime', 'calendar-provider'),
       game.settings.get('smalltime', 'date-format')
     );
