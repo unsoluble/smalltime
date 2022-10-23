@@ -1,4 +1,6 @@
-export const SmallTime_MoonPhases = [
+const ST_Config = {};
+
+ST_Config.MoonPhases = [
   'new',
   'waxing-crescent',
   'first-quarter',
@@ -9,7 +11,7 @@ export const SmallTime_MoonPhases = [
   'waning-crescent',
 ];
 
-export const SmallTime_PhaseValues = {
+ST_Config.PhaseValues = {
   0: 0,
   1: 0.25,
   2: 0.5,
@@ -24,20 +26,22 @@ export const SmallTime_PhaseValues = {
 // an Epoch offset for game systems that don't start at midnight,
 // plus custom offsets for game systems that draw extra borders
 // around their windows. Also default values for sunrise/set.
-export let SmallTime_PinOffset = 83;
-export let SmallTime_EpochOffset = 0;
-export const SmallTime_WFRP4eOffset = 30;
-export const SmallTime_DasSchwarzeAugeOffset = 16;
-export const SmallTime_TaskbarOffset = 50;
+ST_Config.PinOffset = 83;
+ST_Config.EpochOffset = 0;
+ST_Config.WFRP4eOffset = 30;
+ST_Config.DasSchwarzeAugeOffset = 16;
+ST_Config.TaskbarOffset = 50;
 
-export const SmallTime_SunriseStartDefault = 180;
-export const SmallTime_SunriseEndDefault = 420;
-export const SmallTime_SunsetStartDefault = 1050;
-export const SmallTime_SunsetEndDefault = 1320;
-export const SmallTime_DawnDuskSpread = 120;
+ST_Config.SunriseStartDefault = 180;
+ST_Config.SunriseEndDefault = 420;
+ST_Config.SunsetStartDefault = 1050;
+ST_Config.SunsetEndDefault = 1320;
+ST_Config.DawnDuskSpread = 120;
 
-export const SmallTime_MaxDarknessDefault = 1;
-export const SmallTime_MinDarknessDefault = 0;
+ST_Config.MaxDarknessDefault = 1;
+ST_Config.MinDarknessDefault = 0;
+
+export { ST_Config };
 
 export class Helpers {
   static updateSunriseSunsetTimes(data) {
@@ -47,20 +51,20 @@ export class Helpers {
     ) {
       // Use defaults if no seasons have been set up.
       if (SimpleCalendar.api.getAllSeasons().length == 0) {
-        game.settings.set('smalltime', 'sunrise-start', SmallTime_SunriseStartDefault);
-        game.settings.set('smalltime', 'sunrise-end', SmallTime_SunriseEndDefault);
-        game.settings.set('smalltime', 'sunset-start', SmallTime_SunsetStartDefault);
-        game.settings.set('smalltime', 'sunset-end', SmallTime_SunsetEndDefault);
+        game.settings.set('smalltime', 'sunrise-start', ST_Config.SunriseStartDefault);
+        game.settings.set('smalltime', 'sunrise-end', ST_Config.SunriseEndDefault);
+        game.settings.set('smalltime', 'sunset-start', ST_Config.SunsetStartDefault);
+        game.settings.set('smalltime', 'sunset-end', ST_Config.SunsetEndDefault);
       } else {
         if (typeof data !== 'undefined') {
           const riseEnd =
             SimpleCalendar.api.timestampToDate(data.date.sunrise).hour * 60 +
             SimpleCalendar.api.timestampToDate(data.date.sunrise).minute;
-          const riseStart = riseEnd - SmallTime_DawnDuskSpread;
+          const riseStart = riseEnd - ST_Config.DawnDuskSpread;
           const setStart =
             SimpleCalendar.api.timestampToDate(data.date.sunset).hour * 60 +
             SimpleCalendar.api.timestampToDate(data.date.sunset).minute;
-          const setEnd = setStart + SmallTime_DawnDuskSpread;
+          const setEnd = setStart + ST_Config.DawnDuskSpread;
           game.settings.set('smalltime', 'sunrise-start', riseStart);
           game.settings.set('smalltime', 'sunrise-end', riseEnd);
           game.settings.set('smalltime', 'sunset-start', setStart);
@@ -474,7 +478,7 @@ export class Helpers {
 
   // Convert worldTime (seconds elapsed) into an integer time of day.
   static getWorldTimeAsDayTime() {
-    const currentWorldTime = game.time.worldTime + SmallTime_EpochOffset;
+    const currentWorldTime = game.time.worldTime + ST_Config.EpochOffset;
     const dayTime = Math.abs(Math.trunc((currentWorldTime % 86400) / 60));
     if (currentWorldTime < 0) {
       return 1440 - dayTime;
@@ -483,7 +487,7 @@ export class Helpers {
 
   // Advance/retreat the elapsed worldTime based on changes made.
   static async setWorldTime(newTime) {
-    const currentWorldTime = game.time.worldTime + SmallTime_EpochOffset;
+    const currentWorldTime = game.time.worldTime + ST_Config.EpochOffset;
     const dayTime = Helpers.getWorldTimeAsDayTime(currentWorldTime);
     const delta = newTime - dayTime;
     game.time.advance(delta * 60);
@@ -534,7 +538,7 @@ export class Helpers {
       game.settings.get('smalltime', 'time-format') == 24 &&
       game.settings.get('smalltime', 'show-seconds') == true
     ) {
-      const currentWorldTime = game.time.worldTime + SmallTime_EpochOffset;
+      const currentWorldTime = game.time.worldTime + ST_Config.EpochOffset;
       let seconds;
       if (currentWorldTime < 0) {
         seconds = 60 - Math.abs(Math.trunc(((currentWorldTime % 86400) % 3600) % 60));

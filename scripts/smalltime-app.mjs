@@ -1,20 +1,4 @@
-import {
-  Helpers,
-  SmallTime_MoonPhases,
-  SmallTime_PhaseValues,
-  SmallTime_PinOffset,
-  SmallTime_EpochOffset,
-  SmallTime_WFRP4eOffset,
-  SmallTime_DasSchwarzeAugeOffset,
-  SmallTime_TaskbarOffset,
-  SmallTime_SunriseStartDefault,
-  SmallTime_SunriseEndDefault,
-  SmallTime_SunsetStartDefault,
-  SmallTime_SunsetEndDefault,
-  SmallTime_DawnDuskSpread,
-  SmallTime_MaxDarknessDefault,
-  SmallTime_MinDarknessDefault,
-} from './helpers.mjs';
+import { Helpers, ST_Config } from './helpers.mjs';
 
 Hooks.on('init', () => {
   // Exclude module from deprecation warnings, as we're relying on shims for now.
@@ -189,35 +173,35 @@ Hooks.on('init', () => {
     scope: 'world',
     config: true,
     type: Number,
-    default: SmallTime_MaxDarknessDefault,
+    default: ST_Config.MaxDarknessDefault,
   });
 
   game.settings.register('smalltime', 'min-darkness', {
     scope: 'world',
     config: true,
     type: Number,
-    default: SmallTime_MinDarknessDefault,
+    default: ST_Config.MinDarknessDefault,
   });
 
   game.settings.register('smalltime', 'sunrise-start', {
     scope: 'world',
     config: true,
     type: Number,
-    default: SmallTime_SunriseStartDefault,
+    default: ST_Config.SunriseStartDefault,
   });
 
   game.settings.register('smalltime', 'sunrise-end', {
     scope: 'world',
     config: true,
     type: Number,
-    default: SmallTime_SunriseEndDefault,
+    default: ST_Config.SunriseEndDefault,
   });
 
   game.settings.register('smalltime', 'sunset-start', {
     scope: 'world',
     config: true,
     type: Number,
-    default: SmallTime_SunsetStartDefault,
+    default: ST_Config.SunsetStartDefault,
   });
 
   game.settings.register('smalltime', 'sunset-end', {
@@ -226,7 +210,7 @@ Hooks.on('init', () => {
     scope: 'world',
     config: true,
     type: Number,
-    default: SmallTime_SunsetEndDefault,
+    default: ST_Config.SunsetEndDefault,
   });
 
   game.settings.register('smalltime', 'sun-sync', {
@@ -279,16 +263,16 @@ Hooks.on('init', () => {
 Hooks.on('canvasReady', () => {
   // Account for the extra border art in certain game systems.
   if (game.system.id === 'wfrp4e') {
-    SmallTime_PinOffset += SmallTime_WFRP4eOffset;
+    ST_Config.PinOffset += ST_Config.WFRP4eOffset;
   }
   if (game.system.id === 'dsa5') {
-    SmallTime_PinOffset += SmallTime_DasSchwarzeAugeOffset;
+    ST_Config.PinOffset += ST_Config.DasSchwarzeAugeOffset;
   }
   if (
     game.modules.get('foundry-taskbar')?.active &&
     game.settings.get('foundry-taskbar', 'moveplayersmacro')
   ) {
-    SmallTime_PinOffset += SmallTime_TaskbarOffset;
+    ST_Config.PinOffset += ST_Config.TaskbarOffset;
   }
 
   // Only allow the date display to show if there's a calendar provider available.
@@ -431,7 +415,7 @@ Hooks.on('ready', () => {
       localEpoch.minute * 60 +
       localEpoch.second +
       localEpoch.millisecond * 0.001;
-    SmallTime_EpochOffset = deltaInSeconds;
+    ST_Config.EpochOffset = deltaInSeconds;
   }
 });
 
@@ -662,12 +646,12 @@ Hooks.on('renderSettingsConfig', () => {
   // Reset to defaults on Shift-click, and close the window.
   $(darknessTitleElement).on('click', function () {
     if (event.shiftKey) {
-      game.settings.set('smalltime', 'sunrise-start', SmallTime_SunriseStartDefault);
-      game.settings.set('smalltime', 'sunrise-end', SmallTime_SunriseEndDefault);
-      game.settings.set('smalltime', 'sunset-start', SmallTime_SunsetStartDefault);
-      game.settings.set('smalltime', 'sunset-end', SmallTime_SunsetEndDefault);
-      game.settings.set('smalltime', 'max-darkness', SmallTime_MaxDarknessDefault);
-      game.settings.set('smalltime', 'min-darkness', SmallTime_MinDarknessDefault);
+      game.settings.set('smalltime', 'sunrise-start', ST_Config.SunriseStartDefault);
+      game.settings.set('smalltime', 'sunrise-end', ST_Config.SunriseEndDefault);
+      game.settings.set('smalltime', 'sunset-start', ST_Config.SunsetStartDefault);
+      game.settings.set('smalltime', 'sunset-end', ST_Config.SunsetEndDefault);
+      game.settings.set('smalltime', 'max-darkness', ST_Config.MaxDarknessDefault);
+      game.settings.set('smalltime', 'min-darkness', ST_Config.MinDarknessDefault);
 
       Object.values(ui.windows).forEach((app) => {
         if (app.options.id === 'client-settings') app.close();
@@ -767,11 +751,11 @@ Hooks.on('renderPlayerList', () => {
   const element = document.getElementById('players');
   const playerAppPos = element.getBoundingClientRect();
 
-  // The SmallTime_PinOffset here is the ideal distance between the top of the
+  // The ST_Config.PinOffset here is the ideal distance between the top of the
   // Players list and the top of SmallTime. The +21 accounts
   // for the date dropdown if enabled; the -23 accounts for the clock row
   // being disabled in some cases.
-  let bottomOffset = playerAppPos.height + SmallTime_PinOffset;
+  let bottomOffset = playerAppPos.height + ST_Config.PinOffset;
 
   if (game.settings.get('smalltime', 'date-showing')) {
     bottomOffset += 21;
@@ -972,7 +956,7 @@ class SmallTimeApp extends FormApplication {
 
       const playerApp = document.getElementById('players');
       const playerAppPos = playerApp.getBoundingClientRect();
-      let myOffset = playerAppPos.height + SmallTime_PinOffset;
+      let myOffset = playerAppPos.height + ST_Config.PinOffset;
 
       // If the mouseup happens inside the Pin zone, pin the app.
       if (pinZone) {
@@ -1005,11 +989,11 @@ class SmallTimeApp extends FormApplication {
     $('#timeSlider').on('click', async function () {
       if (event.shiftKey && game.modules.get('smalltime').controlAuth) {
         const startingPhase = game.settings.get('smalltime', 'moon-phase');
-        const newPhase = (startingPhase + 1) % SmallTime_MoonPhases.length;
+        const newPhase = (startingPhase + 1) % ST_Config.MoonPhases.length;
 
         document.documentElement.style.setProperty(
           '--SMLTME-phaseURL',
-          `url('../images/moon-phases/${SmallTime_MoonPhases[newPhase]}.webp')`
+          `url('../images/moon-phases/${ST_Config.MoonPhases[newPhase]}.webp')`
         );
 
         // Set and broadcast the change.
@@ -1160,7 +1144,7 @@ class SmallTimeApp extends FormApplication {
         if (typeof data.moons[0] === 'undefined') {
           return;
         }
-        const newPhase = SmallTime_MoonPhases.findIndex(function (phase) {
+        const newPhase = ST_Config.MoonPhases.findIndex(function (phase) {
           return phase === data.moons[0].currentPhase.icon;
         });
         await game.settings.set('smalltime', 'moon-phase', newPhase);
@@ -1227,7 +1211,7 @@ class SmallTimeApp extends FormApplication {
       $('#timeSlider').addClass('moon');
       document.documentElement.style.setProperty(
         '--SMLTME-phaseURL',
-        `url('../images/moon-phases/${SmallTime_MoonPhases[currentPhase]}.webp')`
+        `url('../images/moon-phases/${ST_Config.MoonPhases[currentPhase]}.webp')`
       );
     }
 
@@ -1248,7 +1232,7 @@ class SmallTimeApp extends FormApplication {
       // If requested, adjust max Darkness based on moon phase.
       if (game.settings.get('smalltime', 'moon-darkness')) {
         const moonlightFactor = 0.4; // Percentage by which available moonlight reduces max Darkness.
-        const moonlightMultiplier = moonlightFactor * SmallTime_PhaseValues[currentPhase];
+        const moonlightMultiplier = moonlightFactor * ST_Config.PhaseValues[currentPhase];
         maxDarkness = Math.round((1 - maxDarkness * moonlightMultiplier) * 100) / 100;
       }
 
@@ -1336,7 +1320,7 @@ class SmallTimeApp extends FormApplication {
       interfaceOffset += $('#interface').offset().left;
     }
     const leftOffset = interfaceOffset + 15;
-    let bottomOffset = playerAppPos.height + SmallTime_PinOffset;
+    let bottomOffset = playerAppPos.height + ST_Config.PinOffset;
     if (!$('#pin-lock').length) {
       if (expanded) {
         bottomOffset += 21;
