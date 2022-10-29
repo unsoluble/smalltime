@@ -68,6 +68,14 @@
   padding: 0;
 }
 
+#smalltime-app input {
+  margin: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  -webkit-box-shadow: none;
+}
+
 .st-scene-config {
   border: 1px solid #999;
   border-radius: 8px;
