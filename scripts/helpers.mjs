@@ -693,7 +693,12 @@ export class Helpers {
       // Generic scene slice provided by MADCartographer -- thanks! :)
       sceneBG = 'modules/smalltime/images/generic-bg.webp';
     }
-    document.documentElement.style.setProperty('--SMLTME-scene-bg', 'url(/' + sceneBG + ')');
+    // Check for absolute path here, to account for assets on Forge or other buckets.
+    if (sceneBG.startsWith('http')) {
+      document.documentElement.style.setProperty('--SMLTME-scene-bg', 'url(' + sceneBG + ')');
+    } else {
+      document.documentElement.style.setProperty('--SMLTME-scene-bg', 'url(/' + sceneBG + ')');
+    }
   }
 
   static convertHexToRGB(hex) {
