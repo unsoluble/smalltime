@@ -66,6 +66,7 @@
 
 #smalltime-app .window-content > form {
   padding: 0;
+  font-size: 0.8rem;
 }
 
 #smalltime-app input {
