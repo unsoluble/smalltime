@@ -1,4 +1,4 @@
-const ST_Config = {};
+export const ST_Config = {};
 
 ST_Config.MoonPhases = [
   'new',
@@ -40,8 +40,6 @@ ST_Config.DawnDuskSpread = 120;
 
 ST_Config.MaxDarknessDefault = 1;
 ST_Config.MinDarknessDefault = 0;
-
-export { ST_Config };
 
 export class Helpers {
   static updateSunriseSunsetTimes(data) {
