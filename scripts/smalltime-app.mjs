@@ -542,6 +542,8 @@ Hooks.on('renderSceneConfig', async (obj) => {
       .parent()
       .after(injection);
   }
+  // Re-auto-size the app window.
+  obj.setPosition();
 
   if (obj.object.getFlag('smalltime', 'moonlight')) {
     const currentThreshold = obj.object.data.globalLightThreshold;
@@ -562,7 +564,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
   }
 });
 
-Hooks.on('renderSettingsConfig', () => {
+Hooks.on('renderSettingsConfig', (obj) => {
   // Everything here is GM-only.
   if (!game.user.isGM) return;
 
@@ -687,6 +689,9 @@ Hooks.on('renderSettingsConfig', () => {
   if (!$('#smalltime-darkness-config').length) {
     notesElement.after(injection);
   }
+
+  // Re-auto-size the app window.
+  obj.setPosition();
 
   // Tweak to accommodate TidyUI's smaller available space.
   if (game.modules.get('tidy-ui_game-settings')?.active && game.release.generation === 9) {
