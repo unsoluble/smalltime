@@ -325,16 +325,7 @@ Hooks.on('canvasReady', () => {
   if (game.modules.get('smalltime').viewAuth) {
     SmallTimeApp.toggleAppVis('initial');
     if (game.settings.get('smalltime', 'pinned')) {
-      if (
-        game.settings.get('smalltime', 'date-showing') &&
-        game.modules.get('smalltime').dateAvailable
-      ) {
-        // Sending true here tells the pin to offset to
-        // accommodate the date display.
-        SmallTimeApp.pinApp(true);
-      } else {
-        SmallTimeApp.pinApp();
-      }
+      SmallTimeApp.pinApp();
     }
   } else if (SmallTimeApp._isOpen && !game.modules.get('smalltime').controlAuth) {
     // If the SmallTime app was visible, but we're now in a scene where
@@ -783,16 +774,6 @@ Hooks.on('renderPlayerList', () => {
   if (game.release.generation === 10) {
     leftOffset += $('#interface').offset().left;
   }
-
-  // This would be better done with a class add, but injecting
-  // it here was the only way I could get it to enforce the
-  // absolute positioning.
-  $('#pin-lock').text(`
-      #smalltime-app {
-        top: calc(100vh - ${bottomOffset}px) !important;
-        left: ${leftOffset}px !important;
-      }
-  `);
 });
 
 // Listen for changes to the worldTime from elsewhere.
@@ -820,6 +801,9 @@ class SmallTimeApp extends FormApplication {
 
   async _render(force = false, options = {}) {
     await super._render(force, options);
+    if (game.settings.get('smalltime', 'pinned')) {
+      SmallTimeApp.pinApp();
+    }
     SmallTimeApp._isOpen = true;
     // Remove the window from candidates for closing via Escape.
     delete ui.windows[this.appId];
@@ -841,19 +825,10 @@ class SmallTimeApp extends FormApplication {
   }
 
   static get defaultOptions() {
-    const pinned = game.settings.get('smalltime', 'pinned');
-
     const playerApp = document.getElementById('players');
     const playerAppPos = playerApp.getBoundingClientRect();
 
     this.initialPosition = game.settings.get('smalltime', 'position');
-
-    // The actual pin location is set elsewhere, but we need to insert something
-    // manually here to feed it values for the initial render.
-    if (pinned) {
-      this.initialPosition.top = playerAppPos.top - 70;
-      this.initialPosition.left = playerAppPos.left;
-    }
 
     return mergeObject(super.defaultOptions, {
       classes: ['form'],
@@ -914,26 +889,16 @@ class SmallTimeApp extends FormApplication {
       if (now - this._moveTime < 1000 / 60) return;
       this._moveTime = now;
 
-      SmallTimeApp.unPinApp();
+      // When unpinning, make the drag track from the existing location in screen space
+      const { left, top } = this.element.getBoundingClientRect();
+      if (SmallTimeApp.unPinApp()) {
+        Object.assign(this.position, { left, top });
+      }
 
       // Follow the mouse.
-      // TODO: Figure out how to account for changes to the viewport size
-      // between drags.
-      let conditionalOffset = 0;
-      if (
-        game.settings.get('smalltime', 'date-showing') &&
-        game.settings.get('smalltime', 'pinned') &&
-        game.modules.get('smalltime').dateAvailable
-      ) {
-        conditionalOffset = 20;
-      }
-      if (!game.modules.get('smalltime').clockAuth && game.settings.get('smalltime', 'pinned')) {
-        conditionalOffset = -23;
-      }
-
       this.app.setPosition({
         left: this.position.left + (event.clientX - this._initial.x),
-        top: this.position.top + (event.clientY - this._initial.y - conditionalOffset),
+        top: this.position.top + (event.clientY - this._initial.y),
       });
 
       // Defining a region above the PlayerList that will trigger the jiggle.
@@ -941,7 +906,8 @@ class SmallTimeApp extends FormApplication {
       let playerAppLowerBound = playerAppPos.top + 50;
 
       if (
-        event.clientX < 215 &&
+        event.clientX > playerAppPos.left &&
+        event.clientX < playerAppPos.left + playerAppPos.width &&
         event.clientY > playerAppUpperBound &&
         event.clientY < playerAppLowerBound
       ) {
@@ -965,10 +931,7 @@ class SmallTimeApp extends FormApplication {
 
       // If the mouseup happens inside the Pin zone, pin the app.
       if (pinZone) {
-        SmallTimeApp.pinApp(
-          game.settings.get('smalltime', 'date-showing') &&
-            game.modules.get('smalltime').dateAvailable
-        );
+        SmallTimeApp.pinApp();
         await game.settings.set('smalltime', 'pinned', true);
         this.app.setPosition({
           left: 15,
@@ -1070,7 +1033,7 @@ class SmallTimeApp extends FormApplication {
           $('#smalltime-app').animate({ height: '79px' }, 80);
           if (game.settings.get('smalltime', 'pinned')) {
             SmallTimeApp.unPinApp();
-            SmallTimeApp.pinApp(true);
+            SmallTimeApp.pinApp();
           }
           await game.settings.set('smalltime', 'date-showing', true);
         } else {
@@ -1078,7 +1041,7 @@ class SmallTimeApp extends FormApplication {
           $('#smalltime-app').animate({ height: '59px' }, 80);
           if (game.settings.get('smalltime', 'pinned')) {
             SmallTimeApp.unPinApp();
-            SmallTimeApp.pinApp(false);
+            SmallTimeApp.pinApp();
           }
           await game.settings.set('smalltime', 'date-showing', false);
         }
@@ -1314,51 +1277,26 @@ class SmallTimeApp extends FormApplication {
     return timeObj;
   }
 
-  // Pin the app above the Players list.
-  static async pinApp(expanded) {
-    // Only do this if a pin lock isn't already in place.
-
-    const playerApp = document.getElementById('players');
-    const playerAppPos = playerApp.getBoundingClientRect();
-    let interfaceOffset = 0;
-    if (game.release.generation === 10) {
-      interfaceOffset += $('#interface').offset().left;
-    }
-    const leftOffset = interfaceOffset + 15;
-    let bottomOffset = playerAppPos.height + ST_Config.PinOffset;
-    if (!$('#pin-lock').length) {
-      if (expanded) {
-        bottomOffset += 21;
-      }
-      if (!game.modules.get('smalltime').clockAuth) {
-        bottomOffset -= 23;
-      }
-
-      // Dropping this into the DOM with an !important was the only way
-      // I could get it to enable the locking behaviour.
-      $('body').append(`
-        <style id="pin-lock">
-          #smalltime-app {
-            top: calc(100vh - ${bottomOffset}px) !important;
-            left: ${leftOffset}px !important;
-          }
-        </style>
-      `);
-      await game.settings.set('smalltime', 'pinned', true);
-    } else {
-      $('#pin-lock').text(`
-          #smalltime-app {
-            top: calc(100vh - ${bottomOffset}px) !important;
-            left: ${leftOffset}px !important;
-          }
-      `);
+  // Pin the app above the Players list inside the ui-left container.
+  static async pinApp() {
+    const app = game.modules.get('smalltime').myApp;
+    if (app && !app.element.hasClass('pinned')) {
+      $('#players').before(app.element);
+      app.element.addClass('pinned');
     }
   }
 
   // Un-pin the app.
   static unPinApp() {
-    // Remove the style tag that's pinning the window.
-    $('#pin-lock').remove();
+    const app = game.modules.get('smalltime').myApp;
+    if (app && app.element.hasClass('pinned')) {
+      const element = app.element;
+  
+      $('body').append(element);
+      element.removeClass('pinned');
+
+      return true;
+    }
   }
 
   // Toggle visibility of the main window.
