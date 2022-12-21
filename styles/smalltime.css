@@ -37,6 +37,14 @@
   border-image-width: 0;
   z-index: 20 !important;
   font-size: 14px;
+  pointer-events: all;
+}
+
+#smalltime-app.pinned {
+  position: relative;
+  left: initial !important;
+  top: initial !important;
+  margin: 0 0 10px 15px;
 }
 
 #smalltime-app:hover {
