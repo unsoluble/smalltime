@@ -517,8 +517,8 @@ Hooks.on('renderSceneConfig', async (obj) => {
       </div>
       </fieldset>`;
 
-  // Inject the SmallTime controls, the config window for the current scene,
-  // and only if it hasn't already been inserted.
+  // Inject the SmallTime controls into the config window for the current scene,
+  // but only if it hasn't already been inserted.
   if ($(obj.form).find('.st-scene-config').length === 0) {
     $(obj.form)
       .find('p:contains("' + game.i18n.localize('SCENES.GlobalLightThresholdHint') + '")')
