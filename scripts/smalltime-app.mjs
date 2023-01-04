@@ -517,22 +517,15 @@ Hooks.on('renderSceneConfig', async (obj) => {
       </div>
       </fieldset>`;
 
-  // Inject the SmallTime controls, but only into the config window
-  // for the current scene, and only if it hasn't already been inserted.
-  // Different DOM ID between v9 and v10.
-  let sceneConfigID = '#scene-config-' + obj.object.data._id;
-  if (game.release.generation === 10) {
-    sceneConfigID = '#SceneConfig-Scene-' + obj.object.data._id;
-    if (game.system.id === 'pf2e') {
-      sceneConfigID = '#SceneConfigPF2e-Scene-' + obj.object.data._id;
-    }
-  }
-  if ($(sceneConfigID).find('.st-scene-config').length === 0) {
-    $(sceneConfigID)
+  // Inject the SmallTime controls, the config window for the current scene,
+  // and only if it hasn't already been inserted.
+  if ($(obj.form).find('.st-scene-config').length === 0) {
+    $(obj.form)
       .find('p:contains("' + game.i18n.localize('SCENES.GlobalLightThresholdHint') + '")')
       .parent()
       .after(injection);
   }
+
   // Re-auto-size the app window.
   obj.setPosition();
 
@@ -1291,7 +1284,7 @@ class SmallTimeApp extends FormApplication {
     const app = game.modules.get('smalltime').myApp;
     if (app && app.element.hasClass('pinned')) {
       const element = app.element;
-  
+
       $('body').append(element);
       element.removeClass('pinned');
 
