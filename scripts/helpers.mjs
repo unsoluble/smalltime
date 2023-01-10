@@ -712,30 +712,35 @@ export class Helpers {
 
   // Overriding the Vision Limitation Threshold value for the scene if requested.
   // Values span from 0.0 to 1.0 to mimic brightness levels of the various phases.
-  static async adjustMoonlight(phase) {
+  static async adjustMoonlight(phases) {
     // Only perform this adjustment if the setting is enabled.
-    if (!game.scenes.viewed.getFlag('smalltime', 'moonlight')) return;
-    let newThreshold;
-    switch (phase) {
-      case 0: // new
-        newThreshold = 0;
-        break;
-      case 1: // waxing crescent
-      case 7: // waning crescent
-        newThreshold = 0.25;
-        break;
-      case 2: // first quarter
-      case 6: // last quarter
-        newThreshold = 0.5;
-        break;
-      case 3: // waxing gibbous
-      case 5: // waning gibbous
-        newThreshold = 0.75;
-        break;
-      case 4: // full
-        newThreshold = 1;
-        break;
-    }
+    if (!game.scenes.viewed.getFlag('smalltime', 'moonlight') || !phases.length) return;
+    let newThreshold = 0;
+    phases.forEach(phase => {
+      switch (phase) {
+        case 0: // new
+          newThreshold += 0;
+          break;
+        case 1: // waxing crescent
+        case 7: // waning crescent
+          newThreshold += 0.25;
+          break;
+        case 2: // first quarter
+        case 6: // last quarter
+          newThreshold += 0.5;
+          break;
+        case 3: // waxing gibbous
+        case 5: // waning gibbous
+          newThreshold += 0.75;
+          break;
+        case 4: // full
+          newThreshold += 1;
+          break;
+      }
+    });
+
+    newThreshold = Math.round(newThreshold / phases.length * 100) / 100;
+    
     if (newThreshold === game.scenes.viewed.data.globalLightThreshold) {
       return true;
     }
