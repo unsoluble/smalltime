@@ -525,7 +525,6 @@ Hooks.on('renderSceneConfig', async (obj) => {
       .parent()
       .after(injection);
   }
-
   // Re-auto-size the app window.
   obj.setPosition();
 
@@ -960,7 +959,7 @@ class SmallTimeApp extends FormApplication {
         // Set and broadcast the change.
         if (game.user.isGM) {
           await game.settings.set('smalltime', 'moon-phase', newPhase);
-          Helpers.adjustMoonlight(newPhase);
+          Helpers.adjustMoonlight([newPhase]);
         } else {
           SmallTimeApp.emitSocket('changeSetting', {
             scope: 'smalltime',
@@ -1105,12 +1104,17 @@ class SmallTimeApp extends FormApplication {
         if (typeof data.moons[0] === 'undefined') {
           return;
         }
-        const newPhase = ST_Config.MoonPhases.findIndex(function (phase) {
-          return phase === data.moons[0].currentPhase.icon;
-        });
-        await game.settings.set('smalltime', 'moon-phase', newPhase);
+        const newPhases = [];
+        data.moons.forEach(m => {
+          const newPhase = ST_Config.MoonPhases.findIndex(function (phase) {
+            return phase === m.currentPhase.icon;
+          });
+          newPhases.push(newPhase);
+        })
+        
+        await game.settings.set('smalltime', 'moon-phase', newPhases[0]);
         SmallTimeApp.timeTransition(Helpers.getWorldTimeAsDayTime());
-        Helpers.adjustMoonlight(newPhase);
+        Helpers.adjustMoonlight(newPhases);
       });
     }
   }
@@ -1284,7 +1288,6 @@ class SmallTimeApp extends FormApplication {
     const app = game.modules.get('smalltime').myApp;
     if (app && app.element.hasClass('pinned')) {
       const element = app.element;
-
       $('body').append(element);
       element.removeClass('pinned');
 
