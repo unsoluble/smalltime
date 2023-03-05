@@ -70,6 +70,6 @@
   "compatibility": {
     "minimum": "0.7.9",
     "verified": 10,
-    "maximum": 10
+    "maximum": 11
   }
 }
