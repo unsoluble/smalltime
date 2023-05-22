@@ -166,10 +166,10 @@
 .sunrise-end-bounds,
 .sunset-start-bounds,
 .sunset-end-bounds {
-  height: 67px;
+  height: 65px;
   position: relative;
-  top: -68px;
-  margin-bottom: -67px;
+  top: -65px;
+  margin-bottom: -65px;
   z-index: 0;
 }
 .sunrise-start-bounds {
@@ -184,12 +184,12 @@
 }
 .sunset-start-bounds {
   // border: 1px solid blue;
-  left: 240px;
+  left: 242px;
   width: 250px;
 }
 .sunset-end-bounds {
   // border: 1px solid purple;
-  left: 260px;
+  left: 262px;
   width: 250px;
 }
 

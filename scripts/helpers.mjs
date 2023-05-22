@@ -220,11 +220,11 @@ export class Helpers {
     $('.sunrise-start').css('left', initialPositions.sunriseStart);
     $('.sunrise-start').attr('aria-label', initialTimes.sunriseStart);
 
-    $('.sunrise-end').css('top', Helpers.convertDarknessToPostion(minDarkness));
+    $('.sunrise-end').css('top', Helpers.convertDarknessToPostion(minDarkness) + 1);
     $('.sunrise-end').css('left', initialPositions.sunriseEnd);
     $('.sunrise-end').attr('aria-label', initialTimes.sunriseEnd);
 
-    $('.sunset-start').css('top', Helpers.convertDarknessToPostion(minDarkness));
+    $('.sunset-start').css('top', Helpers.convertDarknessToPostion(minDarkness) + 1);
     $('.sunset-start').css('left', initialPositions.sunsetStart);
     $('.sunset-start').attr('aria-label', initialTimes.sunsetStart);
 
@@ -451,7 +451,7 @@ export class Helpers {
   }
 
   static convertTimeIntegerToPosition(timeInteger) {
-    return timeInteger / 3 + 30;
+    return timeInteger / 3;
   }
 
   static convertDarknessToPostion(darkness) {
