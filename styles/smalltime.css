@@ -20,7 +20,7 @@
   --SMLTME-darkness-b: 72;
   --SMLTME-display-vis: flex;
   --SMLTME-pointer-events: auto;
-  --SMLTME-darkness-container-width: 554px;
+  --SMLTME-darkness-container-width: 510px;
 }
 
 #smalltime-app {
@@ -173,24 +173,24 @@
   z-index: 0;
 }
 .sunrise-start-bounds {
-  //border: 1px solid red;
-  left: 24px;
-  width: 248px;
+  // border: 1px solid red;
+  left: 8px;
+  width: 230px;
 }
 .sunrise-end-bounds {
-  //border: 1px solid green;
-  left: 48px;
-  width: 240px;
+  // border: 1px solid green;
+  left: 28px;
+  width: 230px;
 }
 .sunset-start-bounds {
-  //border: 1px solid blue;
-  left: 272px;
+  // border: 1px solid blue;
+  left: 240px;
   width: 250px;
 }
 .sunset-end-bounds {
-  //border: 1px solid purple;
-  left: 300px;
-  width: 240px;
+  // border: 1px solid purple;
+  left: 260px;
+  width: 250px;
 }
 
 #smalltime-darkness-config .handle {

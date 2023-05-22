@@ -670,11 +670,6 @@ Hooks.on('renderSettingsConfig', (obj) => {
   // Re-auto-size the app window.
   obj.setPosition();
 
-  // Tweak to accommodate TidyUI's smaller available space.
-  if (game.modules.get('tidy-ui_game-settings')?.active && game.release.generation === 9) {
-    $('#smalltime-darkness-config').css('transform', 'scale(0.9, 0.9) translate(-30px, 0px)');
-  }
-
   // Get the current Darkness overlay color.
   const coreDarknessColor = Helpers.convertHexToRGB(CONFIG.Canvas.darknessColor.toString(16));
   document.documentElement.style.setProperty('--SMLTME-darkness-r', coreDarknessColor.r);
@@ -1180,7 +1175,7 @@ class SmallTimeApp extends FormApplication {
       currentScene.getFlag('smalltime', 'darkness-link') &&
       game.modules.get('smalltime').controlAuth
     ) {
-      let darknessValue = canvas.lighting.darknessLevel;
+      let darknessValue = canvas.darknessLevel;
       const maxD = game.settings.get('smalltime', 'max-darkness');
       const minD = game.settings.get('smalltime', 'min-darkness');
 

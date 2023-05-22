@@ -447,7 +447,7 @@ export class Helpers {
   }
 
   static convertPositionToTimeInteger(position) {
-    return (position - 30) * 3;
+    return (position) * 3;
   }
 
   static convertTimeIntegerToPosition(timeInteger) {
