@@ -683,9 +683,9 @@ export class Helpers {
   static grabSceneSlice() {
     // Prefer the full image, but fall back to the thumbnail in the case
     // of tile BGs or animations. Use a generic image for empty scenes.
-    let sceneBG = canvas.scene.data.img;
+    let sceneBG = canvas.scene.background.src;
     if (!sceneBG || sceneBG.endsWith('.m4v') || sceneBG.endsWith('.webp')) {
-      sceneBG = canvas.scene.data.thumb;
+      sceneBG = canvas.scene.thumb;
     }
     if (!sceneBG || sceneBG.startsWith('data')) {
       // Generic scene slice provided by MADCartographer -- thanks! :)

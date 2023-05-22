@@ -1,12 +1,6 @@
 import { Helpers, ST_Config } from './helpers.mjs';
 
 Hooks.on('init', () => {
-  // Exclude module from deprecation warnings, as we're relying on shims for now.
-  if (game.release.generation === 10) {
-    const excludeRgx = new RegExp('/modules/smalltime/');
-    CONFIG.compatibility.excludePatterns.push(excludeRgx);
-  }
-
   game.settings.register('smalltime', 'current-date', {
     name: 'Current Date',
     scope: 'world',
@@ -348,11 +342,11 @@ Hooks.on('canvasReady', () => {
     const visDefault = game.settings.get('smalltime', 'player-visibility-default');
 
     // Set the Darkness link state to the default choice.
-    if (!hasProperty(thisScene, 'data.flags.smalltime.darkness-link')) {
+    if (!hasProperty(thisScene, 'flags.smalltime.darkness-link')) {
       thisScene.setFlag('smalltime', 'darkness-link', darknessDefault);
     }
     // Set the Player Vis state to the default choice.
-    if (!hasProperty(thisScene, 'data.flags.smalltime.player-vis')) {
+    if (!hasProperty(thisScene, 'flags.smalltime.player-vis')) {
       thisScene.setFlag('smalltime', 'player-vis', visDefault);
     }
     // Refresh the current scene's Darkness level if it should be linked.
@@ -446,11 +440,11 @@ Hooks.on('renderSceneConfig', async (obj) => {
   const darknessDefault = game.settings.get('smalltime', 'darkness-default');
   const visDefault = game.settings.get('smalltime', 'player-visibility-default');
   // Set the Darkness link state to the default choice.
-  if (!hasProperty(obj.object, 'data.flags.smalltime.darkness-link')) {
+  if (!hasProperty(obj.object, 'flags.smalltime.darkness-link')) {
     await obj.object.setFlag('smalltime', 'darkness-link', darknessDefault);
   }
   // Set the Player Vis state to the default choice.
-  if (!hasProperty(obj.object, 'data.flags.smalltime.player-vis')) {
+  if (!hasProperty(obj.object, 'flags.smalltime.player-vis')) {
     await obj.object.setFlag('smalltime', 'player-vis', visDefault);
   }
 
