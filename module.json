@@ -14,11 +14,22 @@
       "discord": "unsoluble#5084"
     }
   ],
+  "minimumCoreVersion": "10",
+  "compatibleCoreVersion": "11",
+  "compatibility": {
+    "minimum": 10,
+    "verified": 11,
+    "maximum": 12
+  },
   "media": [
     {
       "type": "cover",
       "url": "https://raw.githubusercontent.com/unsoluble/smalltime/main/doc/manifest-cover.webp",
       "caption": "SmallTime"
+    },
+    {
+      "type": "setup",
+      "thumbnail": "modules/smalltime/images/manifest-cover.webp"
     }
   ],
   "esmodules": ["scripts/smalltime-app.mjs"],
@@ -64,12 +75,5 @@
   "socket": true,
   "url": "https://github.com/unsoluble/smalltime",
   "manifest": "https://github.com/unsoluble/smalltime/releases/latest/download/module.json",
-  "download": "https://github.com/unsoluble/smalltime/releases/download/1.0.0/module.zip",
-  "minimumCoreVersion": "0.7.9",
-  "compatibleCoreVersion": "10",
-  "compatibility": {
-    "minimum": "0.7.9",
-    "verified": 10,
-    "maximum": 11
-  }
+  "download": "https://github.com/unsoluble/smalltime/releases/download/1.0.0/module.zip"
 }
