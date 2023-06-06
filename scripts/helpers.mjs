@@ -741,7 +741,7 @@ export class Helpers {
 
     newThreshold = Math.round(newThreshold / phases.length * 100) / 100;
     
-    if (newThreshold === game.scenes.viewed.data.globalLightThreshold) {
+    if (newThreshold === game.scenes.viewed.globalLightThreshold) {
       return true;
     }
     await canvas.scene.update({ globalLightThreshold: newThreshold });
