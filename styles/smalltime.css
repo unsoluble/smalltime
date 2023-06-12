@@ -166,10 +166,10 @@
 .sunrise-end-bounds,
 .sunset-start-bounds,
 .sunset-end-bounds {
-  height: 65px;
+  height: 70px;
   position: relative;
-  top: -65px;
-  margin-bottom: -65px;
+  top: -70px;
+  margin-bottom: -70px;
   z-index: 0;
 }
 .sunrise-start-bounds {
