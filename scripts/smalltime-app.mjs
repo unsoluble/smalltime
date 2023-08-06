@@ -1,6 +1,18 @@
 import { Helpers, ST_Config } from './helpers.mjs';
 
 Hooks.on('init', () => {
+  game.keybindings.register('smalltime', 'toggle-hotkey', {
+    name: game.i18n.localize('SMLTME.Toggle_Hotkey'),
+    hint: game.i18n.localize('SMLTME.Toggle_Hotkey_Hint'),
+    editable: [{ key: 'KeyS', modifiers: ['SHIFT'] }],
+    precedence: CONST.KEYBINDING_PRECEDENCE.PRIORITY,
+    restricted: false,
+    onDown: () => {
+      SmallTimeApp.toggleAppVis('toggle');
+      return true;
+    },
+  });
+  
   game.settings.register('smalltime', 'current-date', {
     name: 'Current Date',
     scope: 'world',
