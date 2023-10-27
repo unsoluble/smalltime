@@ -278,6 +278,19 @@ Hooks.on("init", () => {
     // Default is full moon.
     default: 4,
   });
+
+  if (game.modules.get("foundryvtt-simple-calendar")?.active) {
+    // Set the global Darkness color to the color of the first moon in Simple Calendar, if configured.
+    // The pSBC function drops the brightness to an appropriate level.
+    // Ignore if the moon is set to its default color of white.
+    if (SimpleCalendar.api.getAllMoons()[0].color != "#ffffff") {
+      const darknessColorFromMoon = Helpers.pSBC(
+        -0.9,
+        SimpleCalendar.api.getAllMoons()[0].color
+      );
+      CONFIG.Canvas.darknessColor = darknessColorFromMoon;
+    }
+  }
 });
 
 // Set the initial state for newly rendered scenes.
@@ -773,6 +786,7 @@ Hooks.on("renderSettingsConfig", (obj) => {
   const coreDarknessColor = Helpers.convertHexToRGB(
     CONFIG.Canvas.darknessColor.toString(16)
   );
+  console.log(coreDarknessColor);
   document.documentElement.style.setProperty(
     "--SMLTME-darkness-r",
     coreDarknessColor.r
