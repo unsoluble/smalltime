@@ -277,16 +277,6 @@ Hooks.on('init', () => {
     // Default is full moon.
     default: 4,
   });
-
-  if (game.modules.get('foundryvtt-simple-calendar')?.active) {
-    // Set the global Darkness color to the color of the first moon in Simple Calendar, if configured.
-    // The pSBC function drops the brightness to an appropriate level.
-    // Ignore if the moon is set to its default color of white.
-    if (SimpleCalendar.api.getAllMoons()[0].color != '#ffffff') {
-      const darknessColorFromMoon = Helpers.pSBC(-0.9, SimpleCalendar.api.getAllMoons()[0].color);
-      CONFIG.Canvas.darknessColor = darknessColorFromMoon;
-    }
-  }
 });
 
 // Set the initial state for newly rendered scenes.
@@ -703,11 +693,10 @@ Hooks.on('renderSettingsConfig', (obj) => {
   obj.setPosition();
 
   // Get the current Darkness overlay color.
-  const coreDarknessColor = Helpers.convertHexToRGB(CONFIG.Canvas.darknessColor.toString(16));
-  console.log(coreDarknessColor);
-  document.documentElement.style.setProperty('--SMLTME-darkness-r', coreDarknessColor.r);
-  document.documentElement.style.setProperty('--SMLTME-darkness-g', coreDarknessColor.g);
-  document.documentElement.style.setProperty('--SMLTME-darkness-b', coreDarknessColor.b);
+  const currentDarknessColor = Helpers.convertHexToRGB(CONFIG.Canvas.darknessColor.toString(16));
+  document.documentElement.style.setProperty('--SMLTME-darkness-r', currentDarknessColor.r);
+  document.documentElement.style.setProperty('--SMLTME-darkness-g', currentDarknessColor.g);
+  document.documentElement.style.setProperty('--SMLTME-darkness-b', currentDarknessColor.b);
 
   // Refresh the current scene BG for the settings dialog.
   Helpers.grabSceneSlice();
@@ -1253,6 +1242,20 @@ class SmallTimeApp extends FormApplication {
       }
       // Truncate long decimals.
       darknessValue = Math.round(darknessValue * 10) / 10;
+      
+      if (game.modules.get('foundryvtt-simple-calendar')?.active) {
+        if (game.scenes.viewed.getFlag('smalltime', 'darkness-link')) {
+          // Set the global Darkness color to the color of the first moon in Simple Calendar, if configured.
+          // The pSBC function drops the brightness to an appropriate level.
+          // Ignore if the moon is set to its default color of white.
+          if (SimpleCalendar.api.getAllMoons()[0].color != '#ffffff') {
+            const darknessColorFromMoon = Helpers.pSBC(-0.9, SimpleCalendar.api.getAllMoons()[0].color);
+            CONFIG.Canvas.darknessColor = darknessColorFromMoon;
+          }
+        } else {
+          CONFIG.Canvas.darknessColor = ST_Config.coreDarknessColor;
+        }
+      }
 
       // Perform the Darkness update, and send it out to other clients.
       if (game.user.isGM) {
