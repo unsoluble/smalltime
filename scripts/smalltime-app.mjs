@@ -704,7 +704,6 @@ Hooks.on('renderSettingsConfig', (obj) => {
 
   // Get the current Darkness overlay color.
   const coreDarknessColor = Helpers.convertHexToRGB(CONFIG.Canvas.darknessColor.toString(16));
-  console.log(coreDarknessColor);
   document.documentElement.style.setProperty('--SMLTME-darkness-r', coreDarknessColor.r);
   document.documentElement.style.setProperty('--SMLTME-darkness-g', coreDarknessColor.g);
   document.documentElement.style.setProperty('--SMLTME-darkness-b', coreDarknessColor.b);
