@@ -375,6 +375,21 @@ Hooks.on('canvasReady', () => {
     if (!hasProperty(thisScene, 'flags.smalltime.player-vis')) {
       thisScene.setFlag('smalltime', 'player-vis', visDefault);
     }
+    
+    CONFIG.Canvas.darknessColor = ST_Config.coreDarknessColor;
+    
+    if (game.modules.get('foundryvtt-simple-calendar')?.active) {
+      if (thisScene.getFlag('smalltime', 'darkness-link')) {
+        // Set the global Darkness color to the color of the first moon in Simple Calendar, if configured.
+        // The pSBC function drops the brightness to an appropriate level.
+        // Ignore if the moon is set to its default color of white.
+        if (SimpleCalendar.api.getAllMoons()[0].color != '#ffffff') {
+          const darknessColorFromMoon = Helpers.pSBC(-0.9, SimpleCalendar.api.getAllMoons()[0].color);
+          CONFIG.Canvas.darknessColor = darknessColorFromMoon;
+        }
+      }
+    }
+    
     // Refresh the current scene's Darkness level if it should be linked.
     if (thisScene.getFlag('smalltime', 'darkness-link')) {
       SmallTimeApp.timeTransition(Helpers.getWorldTimeAsDayTime());
@@ -1242,20 +1257,6 @@ class SmallTimeApp extends FormApplication {
       }
       // Truncate long decimals.
       darknessValue = Math.round(darknessValue * 10) / 10;
-      
-      if (game.modules.get('foundryvtt-simple-calendar')?.active) {
-        if (game.scenes.viewed.getFlag('smalltime', 'darkness-link')) {
-          // Set the global Darkness color to the color of the first moon in Simple Calendar, if configured.
-          // The pSBC function drops the brightness to an appropriate level.
-          // Ignore if the moon is set to its default color of white.
-          if (SimpleCalendar.api.getAllMoons()[0].color != '#ffffff') {
-            const darknessColorFromMoon = Helpers.pSBC(-0.9, SimpleCalendar.api.getAllMoons()[0].color);
-            CONFIG.Canvas.darknessColor = darknessColorFromMoon;
-          }
-        } else {
-          CONFIG.Canvas.darknessColor = ST_Config.coreDarknessColor;
-        }
-      }
 
       // Perform the Darkness update, and send it out to other clients.
       if (game.user.isGM) {
