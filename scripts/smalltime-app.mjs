@@ -279,6 +279,25 @@ Hooks.on('init', () => {
   });
 });
 
+Hooks.on('canvasInit', () => {
+  // Start by resetting the Darkness color to the core value.
+  CONFIG.Canvas.darknessColor = ST_Config.coreDarknessColor;
+  
+  if (game.modules.get('foundryvtt-simple-calendar')?.active) {
+    if (game.scenes.viewed.getFlag('smalltime', 'darkness-link')) {
+      // Set the global Darkness color to the color of the first moon in Simple Calendar, if configured.
+      // The pSBC function drops the brightness to an appropriate level.
+      // Ignore if the moon is set to its default color of white.
+      if (SimpleCalendar.api.getAllMoons()[0].color != '#ffffff') {
+        const darknessColorFromMoon = Helpers.pSBC(-0.9, SimpleCalendar.api.getAllMoons()[0].color);
+        CONFIG.Canvas.darknessColor = darknessColorFromMoon;
+      }
+    }
+  }
+  // Re-draw the canvas with the new Darkness color.
+  canvas.colorManager.initialize()
+});
+
 // Set the initial state for newly rendered scenes.
 Hooks.on('canvasReady', () => {
   // Account for the extra border art in certain game systems.
@@ -374,20 +393,6 @@ Hooks.on('canvasReady', () => {
     // Set the Player Vis state to the default choice.
     if (!hasProperty(thisScene, 'flags.smalltime.player-vis')) {
       thisScene.setFlag('smalltime', 'player-vis', visDefault);
-    }
-    
-    CONFIG.Canvas.darknessColor = ST_Config.coreDarknessColor;
-    
-    if (game.modules.get('foundryvtt-simple-calendar')?.active) {
-      if (thisScene.getFlag('smalltime', 'darkness-link')) {
-        // Set the global Darkness color to the color of the first moon in Simple Calendar, if configured.
-        // The pSBC function drops the brightness to an appropriate level.
-        // Ignore if the moon is set to its default color of white.
-        if (SimpleCalendar.api.getAllMoons()[0].color != '#ffffff') {
-          const darknessColorFromMoon = Helpers.pSBC(-0.9, SimpleCalendar.api.getAllMoons()[0].color);
-          CONFIG.Canvas.darknessColor = darknessColorFromMoon;
-        }
-      }
     }
     
     // Refresh the current scene's Darkness level if it should be linked.

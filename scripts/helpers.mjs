@@ -23,7 +23,7 @@ ST_Config.PhaseValues = {
 };
 
 // Saving the default core Darkness color for reference.
-ST_Config.coreDarknessColor = '2368584';
+ST_Config.coreDarknessColor = 2368584;
 
 // Default offset from the Player List window when pinned,
 // an Epoch offset for game systems that don't start at midnight,
