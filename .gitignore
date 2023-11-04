@@ -1,7 +1,3 @@
-# Foundry
-foundry.js
-foundry-0.8.2.js
-
 # Nova
 .nova/
 
@@ -10,6 +6,7 @@ art/
 
 todo.md
 smalltime.lock
+smalltime.code-workspace
 
 # Created by https://www.toptal.com/developers/gitignore/api/macos
 # Edit at https://www.toptal.com/developers/gitignore?templates=macos
