@@ -36,6 +36,8 @@
   "SMLTME.Threshold_Override_Tooltip": "SmallTime is adjusting this based on the moon's phase",
   "SMLTME.Moonlight_Adjust": "Moonlight Adjustment",
   "SMLTME.Moonlight_Adjust_Hint": "Adjust the Global Illumination Threshold based on the current phase of the moon.",
+  "SMLTME.Moon_Tint": "Tint Darkness with Moon Color",
+  "SMLTME.Moon_Tint_Hint": "Scenes in which SmallTime is controlling the Darkness level will be tinted with the color of the first available moon as configured in Simple Calendar.",
   "SMLTME.Phase_Impact": "Phase Impact",
   "SMLTME.Phase_Impact_Hint": "Scales the amount of brightness impact the moon phase has on the current Darkness level (requires a refresh).",
   "SMLTME.Moon_Darkness": "Moon Phase Affects Darkness",

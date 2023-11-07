@@ -246,6 +246,15 @@ Hooks.on('init', () => {
     default: false,
   });
 
+  game.settings.register('smalltime', 'moon-tint', {
+    name: game.i18n.localize('SMLTME.Moon_Tint'),
+    hint: game.i18n.localize('SMLTME.Moon_Tint_Hint'),
+    scope: 'world',
+    config: game.modules.get('foundryvtt-simple-calendar')?.active,
+    type: Boolean,
+    default: false,
+  });
+
   game.settings.register('smalltime', 'phase-impact', {
     name: game.i18n.localize('SMLTME.Phase_Impact'),
     hint: game.i18n.localize('SMLTME.Phase_Impact_Hint'),
@@ -282,8 +291,11 @@ Hooks.on('init', () => {
 Hooks.on('canvasInit', () => {
   // Start by resetting the Darkness color to the core value.
   CONFIG.Canvas.darknessColor = ST_Config.coreDarknessColor;
-  
-  if (game.modules.get('foundryvtt-simple-calendar')?.active) {
+
+  if (
+    game.modules.get('foundryvtt-simple-calendar')?.active &&
+    game.settings.get('smalltime', 'moon-tint')
+  ) {
     if (game.scenes.viewed.getFlag('smalltime', 'darkness-link')) {
       // Set the global Darkness color to the color of the first moon in Simple Calendar, if configured.
       // The pSBC function drops the brightness to an appropriate level.
@@ -295,7 +307,7 @@ Hooks.on('canvasInit', () => {
     }
   }
   // Re-draw the canvas with the new Darkness color.
-  canvas.colorManager.initialize()
+  canvas.colorManager.initialize();
 });
 
 // Set the initial state for newly rendered scenes.
@@ -394,7 +406,7 @@ Hooks.on('canvasReady', () => {
     if (!hasProperty(thisScene, 'flags.smalltime.player-vis')) {
       thisScene.setFlag('smalltime', 'player-vis', visDefault);
     }
-    
+
     // Refresh the current scene's Darkness level if it should be linked.
     if (thisScene.getFlag('smalltime', 'darkness-link')) {
       SmallTimeApp.timeTransition(Helpers.getWorldTimeAsDayTime());
