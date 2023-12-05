@@ -1,15 +1,6 @@
 export const ST_Config = {};
 
-ST_Config.MoonPhases = [
-  'new',
-  'waxing-crescent',
-  'first-quarter',
-  'waxing-gibbous',
-  'full',
-  'waning-gibbous',
-  'last-quarter',
-  'waning-crescent',
-];
+ST_Config.MoonPhases = ['new', 'waxing-crescent', 'first-quarter', 'waxing-gibbous', 'full', 'waning-gibbous', 'last-quarter', 'waning-crescent'];
 
 ST_Config.PhaseValues = {
   0: 0,
@@ -46,10 +37,7 @@ ST_Config.MinDarknessDefault = 0;
 
 export class Helpers {
   static updateSunriseSunsetTimes(data) {
-    if (
-      game.settings.get('smalltime', 'sun-sync') &&
-      game.modules.get('foundryvtt-simple-calendar')?.active
-    ) {
+    if (game.settings.get('smalltime', 'sun-sync') && game.modules.get('foundryvtt-simple-calendar')?.active) {
       // Use defaults if no seasons have been set up.
       if (SimpleCalendar.api.getAllSeasons().length == 0) {
         game.settings.set('smalltime', 'sunrise-start', ST_Config.SunriseStartDefault);
@@ -58,13 +46,9 @@ export class Helpers {
         game.settings.set('smalltime', 'sunset-end', ST_Config.SunsetEndDefault);
       } else {
         if (typeof data !== 'undefined') {
-          const riseEnd =
-            SimpleCalendar.api.timestampToDate(data.date.sunrise).hour * 60 +
-            SimpleCalendar.api.timestampToDate(data.date.sunrise).minute;
+          const riseEnd = SimpleCalendar.api.timestampToDate(data.date.sunrise).hour * 60 + SimpleCalendar.api.timestampToDate(data.date.sunrise).minute;
           const riseStart = riseEnd - ST_Config.DawnDuskSpread;
-          const setStart =
-            SimpleCalendar.api.timestampToDate(data.date.sunset).hour * 60 +
-            SimpleCalendar.api.timestampToDate(data.date.sunset).minute;
+          const setStart = SimpleCalendar.api.timestampToDate(data.date.sunset).hour * 60 + SimpleCalendar.api.timestampToDate(data.date.sunset).minute;
           const setEnd = setStart + ST_Config.DawnDuskSpread;
           game.settings.set('smalltime', 'sunrise-start', riseStart);
           game.settings.set('smalltime', 'sunrise-end', riseEnd);
@@ -93,30 +77,16 @@ export class Helpers {
     // Make the CSS linear gradient stops proportionally match the custom sunrise/sunset times.
     // Also used to build the gradient stops in the Settings screen.
     const initialPositions = {
-      sunriseStart: Helpers.convertTimeIntegerToPosition(
-        game.settings.get('smalltime', 'sunrise-start')
-      ),
-      sunriseEnd: Helpers.convertTimeIntegerToPosition(
-        game.settings.get('smalltime', 'sunrise-end')
-      ),
-      sunsetStart: Helpers.convertTimeIntegerToPosition(
-        game.settings.get('smalltime', 'sunset-start')
-      ),
+      sunriseStart: Helpers.convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunrise-start')),
+      sunriseEnd: Helpers.convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunrise-end')),
+      sunsetStart: Helpers.convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunset-start')),
       sunsetEnd: Helpers.convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunset-end')),
     };
 
-    const sunriseMiddle1 = Math.round(
-      (initialPositions.sunriseStart * 2) / 3 + (initialPositions.sunriseEnd * 1) / 3
-    );
-    const sunriseMiddle2 = Math.round(
-      (initialPositions.sunriseStart * 1) / 3 + (initialPositions.sunriseEnd * 2) / 3
-    );
-    const sunsetMiddle1 = Math.round(
-      (initialPositions.sunsetStart * 2) / 3 + (initialPositions.sunsetEnd * 1) / 3
-    );
-    const sunsetMiddle2 = Math.round(
-      (initialPositions.sunsetStart * 1) / 3 + (initialPositions.sunsetEnd * 2) / 3
-    );
+    const sunriseMiddle1 = Math.round((initialPositions.sunriseStart * 2) / 3 + (initialPositions.sunriseEnd * 1) / 3);
+    const sunriseMiddle2 = Math.round((initialPositions.sunriseStart * 1) / 3 + (initialPositions.sunriseEnd * 2) / 3);
+    const sunsetMiddle1 = Math.round((initialPositions.sunsetStart * 2) / 3 + (initialPositions.sunsetEnd * 1) / 3);
+    const sunsetMiddle2 = Math.round((initialPositions.sunsetStart * 1) / 3 + (initialPositions.sunsetEnd * 2) / 3);
 
     // Set the initial gradient transition points.
     document.documentElement.style.setProperty(
@@ -131,14 +101,8 @@ export class Helpers {
       '--SMLTME-sunrise-middle-2',
       Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(sunriseMiddle2))
     );
-    document.documentElement.style.setProperty(
-      '--SMLTME-sunrise-end',
-      Helpers.convertTimeIntegerToPercentage(game.settings.get('smalltime', 'sunrise-end'))
-    );
-    document.documentElement.style.setProperty(
-      '--SMLTME-sunset-start',
-      Helpers.convertTimeIntegerToPercentage(game.settings.get('smalltime', 'sunset-start'))
-    );
+    document.documentElement.style.setProperty('--SMLTME-sunrise-end', Helpers.convertTimeIntegerToPercentage(game.settings.get('smalltime', 'sunrise-end')));
+    document.documentElement.style.setProperty('--SMLTME-sunset-start', Helpers.convertTimeIntegerToPercentage(game.settings.get('smalltime', 'sunset-start')));
     document.documentElement.style.setProperty(
       '--SMLTME-sunset-middle-1',
       Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(sunsetMiddle1))
@@ -147,27 +111,16 @@ export class Helpers {
       '--SMLTME-sunset-middle-2',
       Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(sunsetMiddle2))
     );
-    document.documentElement.style.setProperty(
-      '--SMLTME-sunset-end',
-      Helpers.convertTimeIntegerToPercentage(game.settings.get('smalltime', 'sunset-end'))
-    );
+    document.documentElement.style.setProperty('--SMLTME-sunset-end', Helpers.convertTimeIntegerToPercentage(game.settings.get('smalltime', 'sunset-end')));
   }
 
   static async saveNewDarknessConfig(positions, max, min) {
     // Set the hidden inputs for these settings to the new values,
     // so that the form-saving workflow takes care of saving them.
-    $('input[name="smalltime.sunrise-start"]').val(
-      Helpers.convertPositionToTimeInteger(positions.sunriseStart)
-    );
-    $('input[name="smalltime.sunrise-end"]').val(
-      Helpers.convertPositionToTimeInteger(positions.sunriseEnd)
-    );
-    $('input[name="smalltime.sunset-start"]').val(
-      Helpers.convertPositionToTimeInteger(positions.sunsetStart)
-    );
-    $('input[name="smalltime.sunset-end"]').val(
-      Helpers.convertPositionToTimeInteger(positions.sunsetEnd)
-    );
+    $('input[name="smalltime.sunrise-start"]').val(Helpers.convertPositionToTimeInteger(positions.sunriseStart));
+    $('input[name="smalltime.sunrise-end"]').val(Helpers.convertPositionToTimeInteger(positions.sunriseEnd));
+    $('input[name="smalltime.sunset-start"]').val(Helpers.convertPositionToTimeInteger(positions.sunsetStart));
+    $('input[name="smalltime.sunset-end"]').val(Helpers.convertPositionToTimeInteger(positions.sunsetEnd));
 
     // Set the max or min Darkness, depending on which was passed.
     if (min === false) $('input[name="smalltime.max-darkness"]').val(max);
@@ -177,9 +130,7 @@ export class Helpers {
   static setupDragHandles() {
     // If sunrise/sunset are being synced from Simple Calendar, we'll lock
     // the drag handles on the X axis.
-    const sunSync =
-      game.settings.get('smalltime', 'sun-sync') &&
-      game.modules.get('foundryvtt-simple-calendar')?.active;
+    const sunSync = game.settings.get('smalltime', 'sun-sync') && game.modules.get('foundryvtt-simple-calendar')?.active;
 
     // Build the sun/moon drag handles for the darkness config UI.
     const maxDarkness = game.settings.get('smalltime', 'max-darkness');
@@ -189,15 +140,9 @@ export class Helpers {
     document.documentElement.style.setProperty('--SMLTME-darkness-min', minDarkness);
 
     const initialPositions = {
-      sunriseStart: Helpers.convertTimeIntegerToPosition(
-        game.settings.get('smalltime', 'sunrise-start')
-      ),
-      sunriseEnd: Helpers.convertTimeIntegerToPosition(
-        game.settings.get('smalltime', 'sunrise-end')
-      ),
-      sunsetStart: Helpers.convertTimeIntegerToPosition(
-        game.settings.get('smalltime', 'sunset-start')
-      ),
+      sunriseStart: Helpers.convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunrise-start')),
+      sunriseEnd: Helpers.convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunrise-end')),
+      sunsetStart: Helpers.convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunset-start')),
       sunsetEnd: Helpers.convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunset-end')),
     };
 
@@ -272,15 +217,10 @@ export class Helpers {
       $('.sunrise-start').attr('aria-label', displayTime);
 
       // Live update the darkness maximum.
-      document.documentElement.style.setProperty(
-        '--SMLTME-darkness-max',
-        Helpers.convertPositionToDarkness(this.position.y)
-      );
+      document.documentElement.style.setProperty('--SMLTME-darkness-max', Helpers.convertPositionToDarkness(this.position.y));
 
       // Live update the gradient transition point.
-      newTransition = Helpers.convertTimeIntegerToPercentage(
-        Helpers.convertPositionToTimeInteger(this.position.x)
-      );
+      newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(this.position.x));
       document.documentElement.style.setProperty('--SMLTME-sunrise-start', newTransition);
 
       // Shove other handle on collisions.
@@ -289,9 +229,7 @@ export class Helpers {
         $('.sunrise-end').css('left', shovedPos);
         $('.sunrise-end').attr('aria-label', Helpers.convertPositionToDisplayTime(shovedPos));
         sunriseEndDrag.setPosition(shovedPos);
-        newTransition = Helpers.convertTimeIntegerToPercentage(
-          Helpers.convertPositionToTimeInteger(shovedPos)
-        );
+        newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(shovedPos));
         document.documentElement.style.setProperty('--SMLTME-sunrise-end', newTransition);
       }
     });
@@ -305,15 +243,10 @@ export class Helpers {
       $('.sunrise-end').attr('aria-label', displayTime);
 
       // Live update the darkness minimum.
-      document.documentElement.style.setProperty(
-        '--SMLTME-darkness-min',
-        Helpers.convertPositionToDarkness(this.position.y)
-      );
+      document.documentElement.style.setProperty('--SMLTME-darkness-min', Helpers.convertPositionToDarkness(this.position.y));
 
       // Live update the gradient transition point.
-      newTransition = Helpers.convertTimeIntegerToPercentage(
-        Helpers.convertPositionToTimeInteger(this.position.x)
-      );
+      newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(this.position.x));
       document.documentElement.style.setProperty('--SMLTME-sunrise-end', newTransition);
 
       // Shove other handle on collisions.
@@ -322,9 +255,7 @@ export class Helpers {
         $('.sunrise-start').css('left', shovedPos);
         $('.sunrise-start').attr('aria-label', Helpers.convertPositionToDisplayTime(shovedPos));
         sunriseStartDrag.setPosition(shovedPos);
-        newTransition = Helpers.convertTimeIntegerToPercentage(
-          Helpers.convertPositionToTimeInteger(shovedPos)
-        );
+        newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(shovedPos));
         document.documentElement.style.setProperty('--SMLTME-sunrise-start', newTransition);
       }
     });
@@ -338,15 +269,10 @@ export class Helpers {
       $('.sunset-start').attr('aria-label', displayTime);
 
       // Live update the darkness minimum.
-      document.documentElement.style.setProperty(
-        '--SMLTME-darkness-min',
-        Helpers.convertPositionToDarkness(this.position.y)
-      );
+      document.documentElement.style.setProperty('--SMLTME-darkness-min', Helpers.convertPositionToDarkness(this.position.y));
 
       // Live update the gradient transition point.
-      newTransition = Helpers.convertTimeIntegerToPercentage(
-        Helpers.convertPositionToTimeInteger(this.position.x)
-      );
+      newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(this.position.x));
       document.documentElement.style.setProperty('--SMLTME-sunset-start', newTransition);
 
       // Shove other handle on collisions.
@@ -355,9 +281,7 @@ export class Helpers {
         $('.sunset-end').css('left', shovedPos);
         $('.sunset-end').attr('aria-label', Helpers.convertPositionToDisplayTime(shovedPos));
         sunsetEndDrag.setPosition(shovedPos);
-        newTransition = Helpers.convertTimeIntegerToPercentage(
-          Helpers.convertPositionToTimeInteger(shovedPos)
-        );
+        newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(shovedPos));
         document.documentElement.style.setProperty('--SMLTME-sunset-end', newTransition);
       }
     });
@@ -371,15 +295,10 @@ export class Helpers {
       $('.sunset-end').attr('aria-label', displayTime);
 
       // Live update the darkness maximum.
-      document.documentElement.style.setProperty(
-        '--SMLTME-darkness-max',
-        Helpers.convertPositionToDarkness(this.position.y)
-      );
+      document.documentElement.style.setProperty('--SMLTME-darkness-max', Helpers.convertPositionToDarkness(this.position.y));
 
       // Live update the gradient transition point.
-      newTransition = Helpers.convertTimeIntegerToPercentage(
-        Helpers.convertPositionToTimeInteger(this.position.x)
-      );
+      newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(this.position.x));
       document.documentElement.style.setProperty('--SMLTME-sunset-end', newTransition);
 
       // Shove other handle on collisions.
@@ -388,9 +307,7 @@ export class Helpers {
         $('.sunset-start').css('left', shovedPos);
         $('.sunset-start').attr('aria-label', Helpers.convertPositionToDisplayTime(shovedPos));
         sunsetStartDrag.setPosition(shovedPos);
-        newTransition = Helpers.convertTimeIntegerToPercentage(
-          Helpers.convertPositionToTimeInteger(shovedPos)
-        );
+        newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(shovedPos));
         document.documentElement.style.setProperty('--SMLTME-sunset-start', newTransition);
       }
     });
@@ -467,9 +384,7 @@ export class Helpers {
   }
 
   static convertPositionToDisplayTime(position) {
-    const displayTimeObj = SmallTimeApp.convertTimeIntegerToDisplay(
-      Helpers.convertPositionToTimeInteger(position)
-    );
+    const displayTimeObj = SmallTimeApp.convertTimeIntegerToDisplay(Helpers.convertPositionToTimeInteger(position));
     return displayTimeObj.hours + ':' + displayTimeObj.minutes;
   }
 
@@ -535,10 +450,7 @@ export class Helpers {
     $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay(timeInteger).minutes);
 
     // Calculate and show the current seconds if required.
-    if (
-      game.settings.get('smalltime', 'time-format') == 24 &&
-      game.settings.get('smalltime', 'show-seconds') == true
-    ) {
+    if (game.settings.get('smalltime', 'time-format') == 24 && game.settings.get('smalltime', 'show-seconds') == true) {
       const currentWorldTime = game.time.worldTime + ST_Config.EpochOffset;
       let seconds;
       if (currentWorldTime < 0) {
@@ -572,9 +484,7 @@ export class Helpers {
 
     if (game.modules.get('foundryvtt-simple-calendar')?.active && provider === 'sc') {
       let SCobject = SimpleCalendar.api.timestampToDate(game.time.worldTime).display;
-      day = SimpleCalendar.api.timestampToDate(game.time.worldTime).showWeekdayHeadings
-        ? SCobject.weekday
-        : undefined;
+      day = SimpleCalendar.api.timestampToDate(game.time.worldTime).showWeekdayHeadings ? SCobject.weekday : undefined;
       monthName = SCobject.monthName;
       month = SCobject.month;
       date = SCobject.day;
@@ -619,28 +529,18 @@ export class Helpers {
     );
 
     // Thursday, August 12th
-    displayDate.push(
-      Helpers.stringAfter(day, ', ') +
-        Helpers.stringAfter(monthName) +
-        Helpers.stringAfter(date + (ordinalSuffix ? ordinalSuffix : ''))
-    );
+    displayDate.push(Helpers.stringAfter(day, ', ') + Helpers.stringAfter(monthName) + Helpers.stringAfter(date + (ordinalSuffix ? ordinalSuffix : '')));
 
     // Thursday August, 2021
     displayDate.push(Helpers.stringAfter(day, ' ') + Helpers.stringAfter(monthName, ', ') + year);
 
     // August 12th, 2021
     displayDate.push(
-      Helpers.stringAfter(monthName) +
-        Helpers.stringAfter(date + (ordinalSuffix ? ordinalSuffix : ''), ', ') +
-        Helpers.stringAfter(yearPrefix) +
-        year
+      Helpers.stringAfter(monthName) + Helpers.stringAfter(date + (ordinalSuffix ? ordinalSuffix : ''), ', ') + Helpers.stringAfter(yearPrefix) + year
     );
 
     // August 12th
-    displayDate.push(
-      Helpers.stringAfter(monthName) +
-        Helpers.stringAfter(date + (ordinalSuffix ? ordinalSuffix : ''))
-    );
+    displayDate.push(Helpers.stringAfter(monthName) + Helpers.stringAfter(date + (ordinalSuffix ? ordinalSuffix : '')));
 
     // Thursday, 12 August, 2021 C.E.
     displayDate.push(
@@ -653,9 +553,7 @@ export class Helpers {
     );
 
     // Thursday, 12 August
-    displayDate.push(
-      Helpers.stringAfter(day, ', ') + Helpers.stringAfter(date) + Helpers.stringAfter(monthName)
-    );
+    displayDate.push(Helpers.stringAfter(day, ', ') + Helpers.stringAfter(date) + Helpers.stringAfter(monthName));
 
     // 12 August, 2021
     displayDate.push(Helpers.stringAfter(date) + Helpers.stringAfter(monthName, ', ') + year);
@@ -724,15 +622,7 @@ export class Helpers {
       i = parseInt,
       m = Math.round,
       a = typeof c1 == 'string';
-    if (
-      typeof p != 'number' ||
-      p < -1 ||
-      p > 1 ||
-      typeof c0 != 'string' ||
-      (c0[0] != 'r' && c0[0] != '#') ||
-      (c1 && !a)
-    )
-      return null;
+    if (typeof p != 'number' || p < -1 || p > 1 || typeof c0 != 'string' || (c0[0] != 'r' && c0[0] != '#') || (c1 && !a)) return null;
     if (!this.pSBCr)
       this.pSBCr = (d) => {
         let n = d.length,
@@ -740,19 +630,12 @@ export class Helpers {
         if (n > 9) {
           ([r, g, b, a] = d = d.split(',')), (n = d.length);
           if (n < 3 || n > 4) return null;
-          (x.r = i(r[3] == 'a' ? r.slice(5) : r.slice(4))),
-            (x.g = i(g)),
-            (x.b = i(b)),
-            (x.a = a ? parseFloat(a) : -1);
+          (x.r = i(r[3] == 'a' ? r.slice(5) : r.slice(4))), (x.g = i(g)), (x.b = i(b)), (x.a = a ? parseFloat(a) : -1);
         } else {
           if (n == 8 || n == 6 || n < 4) return null;
           if (n < 6) d = '#' + d[1] + d[1] + d[2] + d[2] + d[3] + d[3] + (n > 4 ? d[4] + d[4] : '');
           d = i(d.slice(1), 16);
-          if (n == 9 || n == 5)
-            (x.r = (d >> 24) & 255),
-              (x.g = (d >> 16) & 255),
-              (x.b = (d >> 8) & 255),
-              (x.a = m((d & 255) / 0.255) / 1000);
+          if (n == 9 || n == 5) (x.r = (d >> 24) & 255), (x.g = (d >> 16) & 255), (x.b = (d >> 8) & 255), (x.a = m((d & 255) / 0.255) / 1000);
           else (x.r = d >> 16), (x.g = (d >> 8) & 255), (x.b = d & 255), (x.a = -1);
         }
         return x;
@@ -761,35 +644,15 @@ export class Helpers {
       (h = a ? (c1.length > 9 ? true : c1 == 'c' ? !h : false) : h),
       (f = this.pSBCr(c0)),
       (P = p < 0),
-      (t =
-        c1 && c1 != 'c'
-          ? this.pSBCr(c1)
-          : P
-          ? { r: 0, g: 0, b: 0, a: -1 }
-          : { r: 255, g: 255, b: 255, a: -1 }),
+      (t = c1 && c1 != 'c' ? this.pSBCr(c1) : P ? { r: 0, g: 0, b: 0, a: -1 } : { r: 255, g: 255, b: 255, a: -1 }),
       (p = P ? p * -1 : p),
       (P = 1 - p);
     if (!f || !t) return null;
     if (l) (r = m(P * f.r + p * t.r)), (g = m(P * f.g + p * t.g)), (b = m(P * f.b + p * t.b));
-    else
-      (r = m((P * f.r ** 2 + p * t.r ** 2) ** 0.5)),
-        (g = m((P * f.g ** 2 + p * t.g ** 2) ** 0.5)),
-        (b = m((P * f.b ** 2 + p * t.b ** 2) ** 0.5));
-    (a = f.a),
-      (t = t.a),
-      (f = a >= 0 || t >= 0),
-      (a = f ? (a < 0 ? t : t < 0 ? a : a * P + t * p) : 0);
-    if (h)
-      return (
-        'rgb' + (f ? 'a(' : '(') + r + ',' + g + ',' + b + (f ? ',' + m(a * 1000) / 1000 : '') + ')'
-      );
-    else
-      return (
-        '#' +
-        (4294967296 + r * 16777216 + g * 65536 + b * 256 + (f ? m(a * 255) : 0))
-          .toString(16)
-          .slice(1, f ? undefined : -2)
-      );
+    else (r = m((P * f.r ** 2 + p * t.r ** 2) ** 0.5)), (g = m((P * f.g ** 2 + p * t.g ** 2) ** 0.5)), (b = m((P * f.b ** 2 + p * t.b ** 2) ** 0.5));
+    (a = f.a), (t = t.a), (f = a >= 0 || t >= 0), (a = f ? (a < 0 ? t : t < 0 ? a : a * P + t * p) : 0);
+    if (h) return 'rgb' + (f ? 'a(' : '(') + r + ',' + g + ',' + b + (f ? ',' + m(a * 1000) / 1000 : '') + ')';
+    else return '#' + (4294967296 + r * 16777216 + g * 65536 + b * 256 + (f ? m(a * 255) : 0)).toString(16).slice(1, f ? undefined : -2);
   }
 
   static applySaturationToHexColor(hex, saturationPercent) {
@@ -802,11 +665,7 @@ export class Helpers {
     }
 
     let saturationFloat = saturationPercent / 100,
-      rgbIntensityFloat = [
-        parseInt(hex.substr(1, 2), 16) / 255,
-        parseInt(hex.substr(3, 2), 16) / 255,
-        parseInt(hex.substr(5, 2), 16) / 255,
-      ];
+      rgbIntensityFloat = [parseInt(hex.substr(1, 2), 16) / 255, parseInt(hex.substr(3, 2), 16) / 255, parseInt(hex.substr(5, 2), 16) / 255];
 
     let rgbIntensityFloatSorted = rgbIntensityFloat.slice(0).sort(function (a, b) {
         return a - b;
@@ -830,19 +689,12 @@ export class Helpers {
       newMediumIntensityFloat = newMinIntensityFloat;
     } else {
       // Calculate medium intensity with respect to original intensity proportion.
-      let intensityProportion =
-        (maxIntensityFloat - mediumIntensityFloat) / (mediumIntensityFloat - minIntensityFloat);
-      newMediumIntensityFloat =
-        (intensityProportion * newMinIntensityFloat + maxIntensityFloat) /
-        (intensityProportion + 1);
+      let intensityProportion = (maxIntensityFloat - mediumIntensityFloat) / (mediumIntensityFloat - minIntensityFloat);
+      newMediumIntensityFloat = (intensityProportion * newMinIntensityFloat + maxIntensityFloat) / (intensityProportion + 1);
     }
 
     let newRgbIntensityFloat = [],
-      newRgbIntensityFloatSorted = [
-        newMinIntensityFloat,
-        newMediumIntensityFloat,
-        maxIntensityFloat,
-      ];
+      newRgbIntensityFloatSorted = [newMinIntensityFloat, newMediumIntensityFloat, maxIntensityFloat];
 
     // We've found new intensities, but we have then sorted from min to max.
     // Now we have to restore original order.

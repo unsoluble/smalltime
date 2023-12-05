@@ -127,34 +127,10 @@
   background: linear-gradient(
     to right,
     rgba(18, 18, 36, var(--SMLTME-darkness-max)) 0%,
-    rgba(
-        var(--SMLTME-darkness-r),
-        var(--SMLTME-darkness-g),
-        var(--SMLTME-darkness-b),
-        var(--SMLTME-darkness-max)
-      )
-      var(--SMLTME-sunrise-start),
-    rgba(
-        var(--SMLTME-darkness-r),
-        var(--SMLTME-darkness-g),
-        var(--SMLTME-darkness-b),
-        var(--SMLTME-darkness-min)
-      )
-      var(--SMLTME-sunrise-end),
-    rgba(
-        var(--SMLTME-darkness-r),
-        var(--SMLTME-darkness-g),
-        var(--SMLTME-darkness-b),
-        var(--SMLTME-darkness-min)
-      )
-      var(--SMLTME-sunset-start),
-    rgba(
-        var(--SMLTME-darkness-r),
-        var(--SMLTME-darkness-g),
-        var(--SMLTME-darkness-b),
-        var(--SMLTME-darkness-max)
-      )
-      var(--SMLTME-sunset-end),
+    rgba(var(--SMLTME-darkness-r), var(--SMLTME-darkness-g), var(--SMLTME-darkness-b), var(--SMLTME-darkness-max)) var(--SMLTME-sunrise-start),
+    rgba(var(--SMLTME-darkness-r), var(--SMLTME-darkness-g), var(--SMLTME-darkness-b), var(--SMLTME-darkness-min)) var(--SMLTME-sunrise-end),
+    rgba(var(--SMLTME-darkness-r), var(--SMLTME-darkness-g), var(--SMLTME-darkness-b), var(--SMLTME-darkness-min)) var(--SMLTME-sunset-start),
+    rgba(var(--SMLTME-darkness-r), var(--SMLTME-darkness-g), var(--SMLTME-darkness-b), var(--SMLTME-darkness-max)) var(--SMLTME-sunset-end),
     rgba(18, 18, 36, var(--SMLTME-darkness-max)) 100%
   );
   border-radius: 5px;
