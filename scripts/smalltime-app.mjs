@@ -305,7 +305,9 @@ Hooks.on('canvasInit', () => {
     }
   }
   // Re-draw the canvas with the new Darkness color.
-  canvas.colorManager.initialize();
+  if (game.release.generation < 12) {
+    canvas.colorManager.initialize();
+  }
 });
 
 // Set the initial state for newly rendered scenes.
@@ -387,11 +389,11 @@ Hooks.on('canvasReady', () => {
     const visDefault = game.settings.get('smalltime', 'player-visibility-default');
 
     // Set the Darkness link state to the default choice.
-    if (!hasProperty(thisScene, 'flags.smalltime.darkness-link')) {
+    if (!foundry.utils.hasProperty(thisScene, 'flags.smalltime.darkness-link')) {
       thisScene.setFlag('smalltime', 'darkness-link', darknessDefault);
     }
     // Set the Player Vis state to the default choice.
-    if (!hasProperty(thisScene, 'flags.smalltime.player-vis')) {
+    if (!foundry.utils.hasProperty(thisScene, 'flags.smalltime.player-vis')) {
       thisScene.setFlag('smalltime', 'player-vis', visDefault);
     }
 
@@ -478,11 +480,11 @@ Hooks.on('renderSceneConfig', async (obj) => {
   const darknessDefault = game.settings.get('smalltime', 'darkness-default');
   const visDefault = game.settings.get('smalltime', 'player-visibility-default');
   // Set the Darkness link state to the default choice.
-  if (!hasProperty(obj.object, 'flags.smalltime.darkness-link')) {
+  if (!foundry.utils.hasProperty(obj.object, 'flags.smalltime.darkness-link')) {
     await obj.object.setFlag('smalltime', 'darkness-link', darknessDefault);
   }
   // Set the Player Vis state to the default choice.
-  if (!hasProperty(obj.object, 'flags.smalltime.player-vis')) {
+  if (!foundry.utils.hasProperty(obj.object, 'flags.smalltime.player-vis')) {
     await obj.object.setFlag('smalltime', 'player-vis', visDefault);
   }
 
@@ -839,7 +841,7 @@ class SmallTimeApp extends FormApplication {
 
     this.initialPosition = game.settings.get('smalltime', 'position');
 
-    return mergeObject(super.defaultOptions, {
+    return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ['form'],
       popOut: true,
       submitOnChange: true,
@@ -992,7 +994,7 @@ class SmallTimeApp extends FormApplication {
     $(document).on(
       'input',
       '#timeSlider',
-      debounce(async function () {
+      foundry.utils.debounce(async function () {
         $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).hours);
         $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).minutes);
         SmallTimeApp.timeTransition($(this).val());
