@@ -59,6 +59,10 @@ export class Helpers {
     }
   }
 
+  static configureReleaseSpecificStuff() {
+    ST_Config.GlobalThresholdPath = game.release.generation < 12 ? 'globalLightThreshold' : 'environment.globalLight.darkness.max';
+  }
+
   static handleRealtimeState() {
     if (game.modules.get('foundryvtt-simple-calendar')?.active) {
       // Need to insert a small delay here, to wait for Simple Calendar to finish
@@ -715,7 +719,7 @@ export class Helpers {
     return newHex;
   }
 
-  // Overriding the Vision Limitation Threshold value for the scene if requested.
+  // Overriding the Global Illumination Threshold value for the scene if requested.
   // Values span from 0.0 to 1.0 to mimic brightness levels of the various phases.
   static async adjustMoonlight(phases) {
     // Only perform this adjustment if the setting is enabled.
@@ -745,11 +749,11 @@ export class Helpers {
     });
 
     newThreshold = Math.round((newThreshold / phases.length) * 100) / 100;
-
-    if (newThreshold === game.scenes.viewed.globalLightThreshold) {
+    const currentThreshold = `game.scenes.viewed.${ST_Config.GlobalThresholdPath}`;
+    if (newThreshold === currentThreshold) {
       return true;
     }
-    await canvas.scene.update({ globalLightThreshold: newThreshold });
+    await canvas.scene.update({ [ST_Config.GlobalThresholdPath]: newThreshold });
   }
 
   // Sun & moon icons by Freepik on flaticon.com

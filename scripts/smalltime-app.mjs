@@ -1,6 +1,8 @@
 import { Helpers, ST_Config } from './helpers.mjs';
 
 Hooks.on('init', () => {
+  Helpers.configureReleaseSpecificStuff();
+
   game.keybindings.register('smalltime', 'toggle-hotkey', {
     name: game.i18n.localize('SMLTME.Toggle_Hotkey'),
     hint: game.i18n.localize('SMLTME.Toggle_Hotkey_Hint'),
@@ -561,12 +563,12 @@ Hooks.on('renderSceneConfig', async (obj) => {
   obj.setPosition();
 
   if (obj.object.getFlag('smalltime', 'moonlight')) {
-    const currentThreshold = obj.object.data.globalLightThreshold;
+    const currentThreshold = `obj.object.data.${ST_Config.GlobalThresholdPath}`;
     const coreThresholdCheckbox = $('input[name="hasGlobalThreshold"]');
     coreThresholdCheckbox.attr({
       checked: '',
     });
-    const coreThresholdSlider = $('input[name="globalLightThreshold"]');
+    const coreThresholdSlider = $('input[name="' + `${ST_Config.GlobalThresholdPath}` + '"]');
     coreThresholdSlider.attr({
       class: 'smalltime-threshold-override',
       'aria-label': game.i18n.localize('SMLTME.Threshold_Override_Tooltip'),
@@ -574,7 +576,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
       disabled: '',
       value: currentThreshold,
     });
-    const coreThresholdField = $('input[name="globalLightThreshold"]').nextAll('span:first');
+    const coreThresholdField = $('input[name="' + `${ST_Config.GlobalThresholdPath}` + '"]').nextAll('span:first');
     coreThresholdField.text(currentThreshold);
   }
 });
