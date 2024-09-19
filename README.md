@@ -62,6 +62,7 @@ Full support for:
 - Korean (thanks @jbblily!)
 - French (thanks @DarKDinDoN!)
 - Portuguese (thanks @Castanho!)
+- Chinese/Taiwan (thanks @zeteticl!)
 
 I'm happy to accept and implement more translations!
 
