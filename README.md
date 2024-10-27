@@ -47,6 +47,8 @@ There are a number of settings you can change:
 
 ![Settings](doc/Settings.webp)
 
+(if your SmallTime window ever gets stuck in a weird location, Shift-click the "Resting Opacity" header in the settings screen to reset it.)
+
 ...including custom sunrise/sunset times, and global maximum & minimum darkness levels:
 
 ![Darkness Config](doc/Darkness_Config.gif)
@@ -62,6 +64,7 @@ Full support for:
 - Korean (thanks @jbblily!)
 - French (thanks @DarKDinDoN!)
 - Portuguese (thanks @Castanho!)
+- Chinese/Taiwan (thanks @zeteticl!)
 
 I'm happy to accept and implement more translations!
 
