@@ -582,7 +582,24 @@ Hooks.on('renderSceneConfig', async (obj) => {
 });
 
 Hooks.on('renderSettingsConfig', (obj) => {
-  // Everything here is GM-only.
+  // Add a reset-position popup to the setting title. This is available to both Players and GMs.
+  const opacityTitleElement = $('label:contains(' + game.i18n.localize('SMLTME.Resting_Opacity') + ')');
+  let popupDirection = 'right';
+  if (game.modules.get('tidy-ui_game-settings')?.active) popupDirection = 'up';
+  opacityTitleElement.attr({
+    'aria-label': game.i18n.localize('SMLTME.Position_Reset'),
+    'data-balloon-pos': popupDirection,
+  });
+
+  // Reset to pinned position on Shift-click, and refresh the page.
+  $(opacityTitleElement).on('click', function () {
+    if (event.shiftKey) {
+      game.settings.set('smalltime', 'pinned', true);
+      window.location.reload(false);
+    }
+  });
+
+  // Everything below is GM-only.
   if (!game.user.isGM) return;
 
   // Tweak the Client Settings window's size to account for specific
@@ -631,23 +648,6 @@ Hooks.on('renderSettingsConfig', (obj) => {
   $('input[name="smalltime.sunrise-start"]').parent().parent().css('display', 'none');
   $('input[name="smalltime.sunrise-end"]').parent().parent().css('display', 'none');
   $('input[name="smalltime.sunset-start"]').parent().parent().css('display', 'none');
-
-  // Add a reset-position popup to the setting title.
-  const opacityTitleElement = $('label:contains(' + game.i18n.localize('SMLTME.Resting_Opacity') + ')');
-  let popupDirection = 'right';
-  if (game.modules.get('tidy-ui_game-settings')?.active) popupDirection = 'up';
-  opacityTitleElement.attr({
-    'aria-label': game.i18n.localize('SMLTME.Position_Reset'),
-    'data-balloon-pos': popupDirection,
-  });
-
-  // Reset to pinned position on Shift-click, and refresh the page.
-  $(opacityTitleElement).on('click', function () {
-    if (event.shiftKey) {
-      game.settings.set('smalltime', 'pinned', true);
-      window.location.reload(false);
-    }
-  });
 
   // Add a reset-to-defaults popup to the setting title.
   const darknessTitleElement = $('label:contains(' + game.i18n.localize('SMLTME.Darkness_Config') + ')');
