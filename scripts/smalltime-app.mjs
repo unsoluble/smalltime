@@ -132,6 +132,7 @@ Hooks.on('init', () => {
     hint: game.i18n.localize('SMLTME.Small_Step_Hint'),
     scope: 'world',
     config: true,
+    requiresReload: true,
     type: Number,
     choices: {
       1: '1',
@@ -149,6 +150,7 @@ Hooks.on('init', () => {
     hint: game.i18n.localize('SMLTME.Large_Step_Hint'),
     scope: 'world',
     config: true,
+    requiresReload: true,
     type: Number,
     choices: {
       20: '20',
