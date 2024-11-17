@@ -65,6 +65,7 @@ Full support for:
 - French (thanks @DarKDinDoN!)
 - Portuguese (thanks @Castanho!)
 - Chinese/Taiwan (thanks @zeteticl!)
+- Italian (thanks @bertolinimarco!)
 
 I'm happy to accept and implement more translations!
 
