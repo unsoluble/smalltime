@@ -66,6 +66,7 @@ Full support for:
 - Portuguese (thanks @Castanho!)
 - Chinese/Taiwan (thanks @zeteticl!)
 - Italian (thanks @bertolinimarco!)
+- Polish (thanks @Lioheart!)
 
 I'm happy to accept and implement more translations!
 
