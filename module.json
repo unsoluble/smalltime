@@ -84,6 +84,11 @@
       "lang": "it",
       "name": "Italiano",
       "path": "lang/it.json"
+    },
+    {
+      "lang": "pl",
+      "name": "Polski",
+      "path": "lang/pl.json"
     }
   ],
   "socket": true,
