@@ -293,40 +293,7 @@ Hooks.on('init', () => {
   });
 });
 
-Hooks.on('canvasInit', () => {
-  // Start by resetting the Darkness color to the core value.
-  CONFIG.Canvas.darknessColor = ST_Config.coreDarknessColor;
-
-  if (game.modules.get('foundryvtt-simple-calendar')?.active && game.settings.get('smalltime', 'moon-tint')) {
-    if (game.scenes.viewed.getFlag('smalltime', 'darkness-link')) {
-      // Set the global Darkness color to the color of the first moon in Simple Calendar, if configured.
-      // The pSBC function drops the brightness to an appropriate level.
-      // Ignore if the moon is set to its default color of white.
-      if (SimpleCalendar.api.getAllMoons()[0].color != '#ffffff') {
-        const darknessColorFromMoon = Helpers.pSBC(-0.9, SimpleCalendar.api.getAllMoons()[0].color);
-        CONFIG.Canvas.darknessColor = darknessColorFromMoon;
-      }
-    }
-  }
-  // Re-draw the canvas with the new Darkness color.
-  if (game.release.generation < 12) {
-    canvas.colorManager.initialize();
-  }
-});
-
-// Set the initial state for newly rendered scenes.
-Hooks.on('canvasReady', () => {
-  // Account for the extra border art in certain game systems.
-  if (game.system.id === 'wfrp4e') {
-    ST_Config.PinOffset += ST_Config.WFRP4eOffset;
-  }
-  if (game.system.id === 'dsa5') {
-    ST_Config.PinOffset += ST_Config.DasSchwarzeAugeOffset;
-  }
-  if (game.modules.get('foundry-taskbar')?.active && game.settings.get('foundry-taskbar', 'moveplayersmacro')) {
-    ST_Config.PinOffset += ST_Config.TaskbarOffset;
-  }
-
+Hooks.on('setup', () => {
   // Only allow the date display to show if there's a calendar provider available.
   game.modules.get('smalltime').dateAvailable = false;
   if (game.system.id === 'pf2e' || game.modules.get('foundryvtt-simple-calendar')?.active || game.modules.get('calendar-weather')?.active) {
@@ -366,7 +333,31 @@ Hooks.on('canvasReady', () => {
     game.modules.get('smalltime').clockAuth = true;
     game.modules.get('smalltime').controlAuth = true;
   }
+});
 
+Hooks.on('canvasInit', () => {
+  // Start by resetting the Darkness color to the core value.
+  CONFIG.Canvas.darknessColor = ST_Config.coreDarknessColor;
+
+  if (game.modules.get('foundryvtt-simple-calendar')?.active && game.settings.get('smalltime', 'moon-tint')) {
+    if (game.scenes.viewed.getFlag('smalltime', 'darkness-link')) {
+      // Set the global Darkness color to the color of the first moon in Simple Calendar, if configured.
+      // The pSBC function drops the brightness to an appropriate level.
+      // Ignore if the moon is set to its default color of white.
+      if (SimpleCalendar.api.getAllMoons()[0].color != '#ffffff') {
+        const darknessColorFromMoon = Helpers.pSBC(-0.9, SimpleCalendar.api.getAllMoons()[0].color);
+        CONFIG.Canvas.darknessColor = darknessColorFromMoon;
+      }
+    }
+  }
+  // Re-draw the canvas with the new Darkness color.
+  if (game.release.generation < 12) {
+    canvas.colorManager.initialize();
+  }
+});
+
+// Set the initial state for newly rendered scenes.
+Hooks.on('canvasReady', () => {
   if (game.modules.get('smalltime').viewAuth) {
     SmallTimeApp.toggleAppVis('initial');
     if (game.settings.get('smalltime', 'pinned')) {
@@ -391,6 +382,7 @@ Hooks.on('canvasReady', () => {
   if (game.modules.get('smalltime').controlAuth) {
     const darknessDefault = game.settings.get('smalltime', 'darkness-default');
     const visDefault = game.settings.get('smalltime', 'player-visibility-default');
+    const thisScene = game.scenes.viewed;
 
     // Set the Darkness link state to the default choice.
     if (!foundry.utils.hasProperty(thisScene, 'flags.smalltime.darkness-link')) {
@@ -484,19 +476,19 @@ Hooks.on('renderSceneConfig', async (obj) => {
   const darknessDefault = game.settings.get('smalltime', 'darkness-default');
   const visDefault = game.settings.get('smalltime', 'player-visibility-default');
   // Set the Darkness link state to the default choice.
-  if (!foundry.utils.hasProperty(obj.object, 'flags.smalltime.darkness-link')) {
-    await obj.object.setFlag('smalltime', 'darkness-link', darknessDefault);
+  if (!foundry.utils.hasProperty(obj.document, 'flags.smalltime.darkness-link')) {
+    await obj.document.setFlag('smalltime', 'darkness-link', darknessDefault);
   }
   // Set the Player Vis state to the default choice.
-  if (!foundry.utils.hasProperty(obj.object, 'flags.smalltime.player-vis')) {
-    await obj.object.setFlag('smalltime', 'player-vis', visDefault);
+  if (!foundry.utils.hasProperty(obj.document, 'flags.smalltime.player-vis')) {
+    await obj.document.setFlag('smalltime', 'player-vis', visDefault);
   }
 
   // Set the Player Vis dropdown as appropriate.
-  const visChoice = obj.object.getFlag('smalltime', 'player-vis');
+  const visChoice = obj.document.getFlag('smalltime', 'player-vis');
   // Set the Darkness and Moonlight checkboxes as appropriate.
-  const darknessCheckStatus = obj.object.getFlag('smalltime', 'darkness-link') ? 'checked' : '';
-  const moonlightCheckStatus = obj.object.getFlag('smalltime', 'moonlight') ? 'checked' : '';
+  const darknessCheckStatus = obj.document.getFlag('smalltime', 'darkness-link') ? 'checked' : '';
+  const moonlightCheckStatus = obj.document.getFlag('smalltime', 'moonlight') ? 'checked' : '';
 
   // Build our new options.
   const visibilityLabel = game.i18n.localize('SMLTME.Player_Visibility');
@@ -533,7 +525,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
           <option value="1" ${vis1}>${vis1text}</option>
           <option value="0" ${vis0}>${vis0text}</option>
         </select>
-        <p class="notes">${visibilityHint}</p>
+        <p class="hint">${visibilityHint}</p>
       </div>
       <div class="form-group">
         <label>${controlLabel}</label>
@@ -541,7 +533,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
           type="checkbox"
           name="flags.smalltime.darkness-link"
           ${darknessCheckStatus}>
-        <p class="notes">${controlHint}</p>
+        <p class="hint">${controlHint}</p>
       </div>
       <div class="form-group">
         <label>${moonlightLabel}</label>
@@ -549,7 +541,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
           type="checkbox"
           name="flags.smalltime.moonlight"
           ${moonlightCheckStatus}>
-        <p class="notes">${moonlightHint}</p>
+        <p class="hint">${moonlightHint}</p>
       </div>
       </fieldset>`;
 
@@ -557,15 +549,15 @@ Hooks.on('renderSceneConfig', async (obj) => {
   // but only if they haven't already been inserted.
   if ($(obj.form).find('.st-scene-config').length === 0) {
     $(obj.form)
-      .find('p:contains("' + game.i18n.localize('SCENES.GlobalLightThresholdHint') + '")')
+      .find('p:contains("' + game.i18n.localize('SCENE.FIELDS.environment.darknessLock.hint') + '")')
       .parent()
       .after(injection);
   }
   // Re-auto-size the app window.
   obj.setPosition();
 
-  if (obj.object.getFlag('smalltime', 'moonlight')) {
-    const currentThreshold = `obj.object.data.${ST_Config.GlobalThresholdPath}`;
+  if (obj.document.getFlag('smalltime', 'moonlight')) {
+    const currentThreshold = `obj.document.data.${ST_Config.GlobalThresholdPath}`;
     const coreThresholdCheckbox = $('input[name="hasGlobalThreshold"]');
     coreThresholdCheckbox.attr({
       checked: '',
@@ -587,7 +579,6 @@ Hooks.on('renderSettingsConfig', (obj) => {
   // Add a reset-position popup to the setting title. This is available to both Players and GMs.
   const opacityTitleElement = $('label:contains(' + game.i18n.localize('SMLTME.Resting_Opacity') + ')');
   let popupDirection = 'right';
-  if (game.modules.get('tidy-ui_game-settings')?.active) popupDirection = 'up';
   opacityTitleElement.attr({
     'aria-label': game.i18n.localize('SMLTME.Position_Reset'),
     'data-balloon-pos': popupDirection,
@@ -654,7 +645,6 @@ Hooks.on('renderSettingsConfig', (obj) => {
   // Add a reset-to-defaults popup to the setting title.
   const darknessTitleElement = $('label:contains(' + game.i18n.localize('SMLTME.Darkness_Config') + ')');
   popupDirection = 'right';
-  if (game.modules.get('tidy-ui_game-settings')?.active) popupDirection = 'up';
   darknessTitleElement.attr({
     'aria-label': game.i18n.localize('SMLTME.Darkness_Reset'),
     'data-balloon-pos': popupDirection,
@@ -740,54 +730,19 @@ Hooks.on('closeSettingsConfig', () => {
   Helpers.updateSunriseSunsetTimes();
 });
 
-// Add a toggle button inside the Jounral Notes tool layer.
-Hooks.on('getSceneControlButtons', (buttons) => {
-  if (!canvas) return;
+// Add a toggle button inside the Journal Notes tool layer.
+Hooks.on('getSceneControlButtons', (controls) => {
+  console.log(game.modules.get('smalltime').viewAuth);
   if (game.modules.get('smalltime').viewAuth) {
-    let group = buttons.find((b) => b.name === 'notes');
-    group.tools.push({
-      button: true,
-      icon: 'fas fa-adjust',
+    controls.notes.tools.smalltime = {
       name: 'smalltime',
       title: 'Toggle SmallTime',
-      onClick: () => {
+      icon: 'fas fa-adjust',
+      onChange: (event, active) => {
         SmallTimeApp.toggleAppVis('toggle');
       },
-    });
-  }
-});
-
-// Adjust the position of the window when the size of the PlayerList changes.
-Hooks.on('renderPlayerList', () => {
-  const element = document.getElementById('players');
-  const playerAppPos = element.getBoundingClientRect();
-
-  // The ST_Config.PinOffset here is the ideal distance between the top of the
-  // Players list and the top of SmallTime. The +21 accounts
-  // for the date dropdown if enabled; the -23 accounts for the clock row
-  // being disabled in some cases.
-  let bottomOffset = playerAppPos.height + ST_Config.PinOffset;
-
-  if (game.settings.get('smalltime', 'date-showing')) {
-    bottomOffset += 21;
-  }
-  if (!game.modules.get('smalltime').clockAuth) {
-    bottomOffset -= 23;
-  }
-
-  // Custom offset for Item Piles, which adds a button into the Players app.
-  if (game.modules.get('item-piles')?.active) {
-    bottomOffset += 30;
-  }
-
-  // Custom offset for Item Piles, which adds a button into the Players app.
-  if (game.modules.get('breaktime')?.active) {
-    bottomOffset += 34;
-  }
-
-  let leftOffset = 15;
-  if (game.release.generation === 10) {
-    leftOffset += $('#interface').offset().left;
+      button: true,
+    };
   }
 });
 
@@ -896,7 +851,7 @@ class SmallTimeApp extends FormApplication {
     drag._onDragMouseMove = function _newOnDragMouseMove(event) {
       event.preventDefault();
 
-      const playerApp = document.getElementById('players');
+      const playerApp = document.getElementById('players-inactive');
       const playerAppPos = playerApp.getBoundingClientRect();
 
       // Limit dragging to 60 updates per second.
@@ -940,18 +895,10 @@ class SmallTimeApp extends FormApplication {
       window.removeEventListener(...this.handlers.dragMove);
       window.removeEventListener(...this.handlers.dragUp);
 
-      const playerApp = document.getElementById('players');
-      const playerAppPos = playerApp.getBoundingClientRect();
-      let myOffset = playerAppPos.height + ST_Config.PinOffset;
-
       // If the mouseup happens inside the Pin zone, pin the app.
       if (pinZone) {
         SmallTimeApp.pinApp();
         await game.settings.set('smalltime', 'pinned', true);
-        this.app.setPosition({
-          left: 15,
-          top: window.innerHeight - myOffset,
-        });
       } else {
         let windowPos = $('#smalltime-app').position();
         let newPos = { top: windowPos.top, left: windowPos.left };
@@ -1289,7 +1236,6 @@ class SmallTimeApp extends FormApplication {
       const element = app.element;
       $('body').append(element);
       element.removeClass('pinned');
-
       return true;
     }
   }

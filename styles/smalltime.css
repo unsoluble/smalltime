@@ -27,7 +27,8 @@
   flex-wrap: nowrap;
   background: none;
   height: var(--SMLTME-height);
-  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.7);
+  max-width: 200px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
   opacity: var(--SMLTME-opacity);
   animation: fadeOut 3s ease-out;
   transition: opacity 1s;
@@ -41,9 +42,9 @@
 
 #smalltime-app.pinned {
   position: relative;
-  left: initial !important;
-  top: initial !important;
-  margin: 0 0 10px 15px;
+  left: inherit !important;
+  top: inherit !important;
+  margin-bottom: -8px;
 }
 
 #smalltime-app:hover {
