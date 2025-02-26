@@ -471,6 +471,8 @@ Hooks.on('renderSmallTimeApp', () => {
 
 // Handle our changes to the Scene Config screen.
 Hooks.on('renderSceneConfig', async (obj) => {
+  // Nope out if this scene document isn't editable
+  if (!obj.isEditable) return;
   // Set defaults here (duplicate of what we did on canvasReady, in case the
   // scene config is being accessed for a non-rendered scene.
   const darknessDefault = game.settings.get('smalltime', 'darkness-default');
@@ -732,7 +734,6 @@ Hooks.on('closeSettingsConfig', () => {
 
 // Add a toggle button inside the Journal Notes tool layer.
 Hooks.on('getSceneControlButtons', (controls) => {
-  console.log(game.modules.get('smalltime').viewAuth);
   if (game.modules.get('smalltime').viewAuth) {
     controls.notes.tools.smalltime = {
       name: 'smalltime',
