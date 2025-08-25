@@ -313,7 +313,7 @@ Hooks.on('setup', () => {
 
   // If the scene is set to use Default vis level, use it here.
   const thisScene = game.scenes.viewed;
-  let visLevel = thisScene.getFlag('smalltime', 'player-vis');
+  let visLevel = thisScene?.getFlag?.('smalltime', 'player-vis');
   // visLevel of 3 is "use default".
   if (visLevel == 3 || visLevel == undefined) {
     visLevel = game.settings.get('smalltime', 'player-visibility-default');
@@ -953,7 +953,7 @@ class SmallTimeApp extends FormApplication {
         if (game.user.isGM) {
           SmallTimeApp.emitSocket('changeTime', $(this).val());
         }
-      }, 100)
+      }, 100),
     );
 
     // Wait for the actual change event to do the time set.
