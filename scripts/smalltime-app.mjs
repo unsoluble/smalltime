@@ -840,7 +840,7 @@ class SmallTimeApp extends FormApplication {
     super.activateListeners(html);
 
     const dragHandle = html.find('#dragHandle')[0];
-    const drag = new Draggable(this, html, dragHandle, false);
+    const drag = new foundry.applications.ux.Draggable.implementation(this, this.element[0], dragHandle, false);
 
     // Pin zone is the "jiggle area" in which the app will be locked
     // to a pinned position if dropped. pinZone stores whether or not
