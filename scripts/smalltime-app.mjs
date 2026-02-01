@@ -288,7 +288,6 @@ Hooks.on('init', () => {
   });
 });
 
-/* TODO: Requires moon colour info from Cal
 Hooks.on('canvasInit', () => {
   // Start by resetting the Darkness color to the core value.
   CONFIG.Canvas.darknessColor = ST_Config.coreDarknessColor;
@@ -305,9 +304,10 @@ Hooks.on('canvasInit', () => {
     }
   }
   // Re-draw the canvas with the new Darkness color.
-  canvas.colorManager.initialize();
+  if (game.release.generation < 12) {
+    canvas.colorManager.initialize();
+  }
 });
-*/
 
 // Set the initial state for newly rendered scenes.
 Hooks.on('canvasReady', () => {
@@ -375,6 +375,7 @@ Hooks.on('canvasReady', () => {
   if (game.modules.get('smalltime').controlAuth) {
     const darknessDefault = game.settings.get('smalltime', 'darkness-default');
     const visDefault = game.settings.get('smalltime', 'player-visibility-default');
+    const thisScene = game.scenes.viewed;
 
     // Set the Darkness link state to the default choice.
     if (!foundry.utils.hasProperty(thisScene, 'flags.smalltime.darkness-link')) {
@@ -464,19 +465,19 @@ Hooks.on('renderSceneConfig', async (obj) => {
   const darknessDefault = game.settings.get('smalltime', 'darkness-default');
   const visDefault = game.settings.get('smalltime', 'player-visibility-default');
   // Set the Darkness link state to the default choice.
-  if (!hasProperty(obj.object, 'flags.smalltime.darkness-link')) {
-    await obj.object.setFlag('smalltime', 'darkness-link', darknessDefault);
+  if (!foundry.utils.hasProperty(obj.document, 'flags.smalltime.darkness-link')) {
+    await obj.document.setFlag('smalltime', 'darkness-link', darknessDefault);
   }
   // Set the Player Vis state to the default choice.
-  if (!hasProperty(obj.object, 'flags.smalltime.player-vis')) {
-    await obj.object.setFlag('smalltime', 'player-vis', visDefault);
+  if (!foundry.utils.hasProperty(obj.document, 'flags.smalltime.player-vis')) {
+    await obj.document.setFlag('smalltime', 'player-vis', visDefault);
   }
 
   // Set the Player Vis dropdown as appropriate.
-  const visChoice = obj.object.getFlag('smalltime', 'player-vis');
+  const visChoice = obj.document.getFlag('smalltime', 'player-vis');
   // Set the Darkness and Moonlight checkboxes as appropriate.
-  const darknessCheckStatus = obj.object.getFlag('smalltime', 'darkness-link') ? 'checked' : '';
-  const moonlightCheckStatus = obj.object.getFlag('smalltime', 'moonlight') ? 'checked' : '';
+  const darknessCheckStatus = obj.document.getFlag('smalltime', 'darkness-link') ? 'checked' : '';
+  const moonlightCheckStatus = obj.document.getFlag('smalltime', 'moonlight') ? 'checked' : '';
 
   // Build our new options.
   const visibilityLabel = game.i18n.localize('SMLTME.Player_Visibility');
@@ -513,7 +514,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
           <option value="1" ${vis1}>${vis1text}</option>
           <option value="0" ${vis0}>${vis0text}</option>
         </select>
-        <p class="notes">${visibilityHint}</p>
+        <p class="hint">${visibilityHint}</p>
       </div>
       <div class="form-group">
         <label>${controlLabel}</label>
@@ -521,7 +522,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
           type="checkbox"
           name="flags.smalltime.darkness-link"
           ${darknessCheckStatus}>
-        <p class="notes">${controlHint}</p>
+        <p class="hint">${controlHint}</p>
       </div>
       <div class="form-group">
         <label>${moonlightLabel}</label>
@@ -529,7 +530,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
           type="checkbox"
           name="flags.smalltime.moonlight"
           ${moonlightCheckStatus}>
-        <p class="notes">${moonlightHint}</p>
+        <p class="hint">${moonlightHint}</p>
       </div>
       </fieldset>`;
 
@@ -537,7 +538,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
   // but only if they haven't already been inserted.
   if ($(obj.form).find('.st-scene-config').length === 0) {
     $(obj.form)
-      .find('p:contains("' + game.i18n.localize('SCENES.GlobalLightThresholdHint') + '")')
+      .find('p:contains("' + game.i18n.localize('SCENE.FIELDS.environment.darknessLock.hint') + '")')
       .parent()
       .after(injection);
   }
@@ -808,7 +809,7 @@ class SmallTimeApp extends FormApplication {
   }
 
   static get defaultOptions() {
-    const playerApp = document.getElementById('players');
+    const playerApp = document.getElementById('players-inactive');
     const playerAppPos = playerApp.getBoundingClientRect();
 
     this.initialPosition = game.settings.get('smalltime', 'position');
