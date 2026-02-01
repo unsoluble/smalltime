@@ -22,45 +22,38 @@ ST_Config.coreDarknessColor = 2368584;
 // around their windows. Also default values for sunrise/set.
 ST_Config.PinOffset = 83;
 ST_Config.EpochOffset = 0;
-ST_Config.WFRP4eOffset = 30;
-ST_Config.DasSchwarzeAugeOffset = 16;
-ST_Config.TaskbarOffset = 50;
 
 ST_Config.SunriseStartDefault = 180;
 ST_Config.SunriseEndDefault = 420;
 ST_Config.SunsetStartDefault = 1050;
 ST_Config.SunsetEndDefault = 1320;
-ST_Config.DawnDuskSpread = 120;
+ST_Config.DawnDuskSpread = 240;
 
 ST_Config.MaxDarknessDefault = 1;
 ST_Config.MinDarknessDefault = 0;
 
 export class Helpers {
-  static updateSunriseSunsetTimes(data) {
-    if (game.settings.get('smalltime', 'sun-sync') && game.modules.get('foundryvtt-simple-calendar')?.active) {
-      // Use defaults if no seasons have been set up.
-      if (SimpleCalendar.api.getAllSeasons().length == 0) {
-        game.settings.set('smalltime', 'sunrise-start', ST_Config.SunriseStartDefault);
-        game.settings.set('smalltime', 'sunrise-end', ST_Config.SunriseEndDefault);
-        game.settings.set('smalltime', 'sunset-start', ST_Config.SunsetStartDefault);
-        game.settings.set('smalltime', 'sunset-end', ST_Config.SunsetEndDefault);
-      } else {
-        if (typeof data !== 'undefined') {
-          const riseEnd = SimpleCalendar.api.timestampToDate(data.date.sunrise).hour * 60 + SimpleCalendar.api.timestampToDate(data.date.sunrise).minute;
-          const riseStart = riseEnd - ST_Config.DawnDuskSpread;
-          const setStart = SimpleCalendar.api.timestampToDate(data.date.sunset).hour * 60 + SimpleCalendar.api.timestampToDate(data.date.sunset).minute;
-          const setEnd = setStart + ST_Config.DawnDuskSpread;
-          game.settings.set('smalltime', 'sunrise-start', riseStart);
-          game.settings.set('smalltime', 'sunrise-end', riseEnd);
-          game.settings.set('smalltime', 'sunset-start', setStart);
-          game.settings.set('smalltime', 'sunset-end', setEnd);
-        }
-      }
+  static updateSunriseSunsetTimes() {
+    if (game.settings.get('smalltime', 'sun-sync') && game.modules.get('calendaria')?.active) {
+      const riseEnd = CALENDARIA.api.getSunrise() * 60;
+      const riseStart = riseEnd - ST_Config.DawnDuskSpread;
+      const setStart = CALENDARIA.api.getSunset() * 60;
+      const setEnd = setStart + ST_Config.DawnDuskSpread;
+      game.settings.set('smalltime', 'sunrise-start', riseStart);
+      game.settings.set('smalltime', 'sunrise-end', riseEnd);
+      game.settings.set('smalltime', 'sunset-start', setStart);
+      game.settings.set('smalltime', 'sunset-end', setEnd);
+    } else {
+      game.settings.set('smalltime', 'sunrise-start', ST_Config.SunriseStartDefault);
+      game.settings.set('smalltime', 'sunrise-end', ST_Config.SunriseEndDefault);
+      game.settings.set('smalltime', 'sunset-start', ST_Config.SunsetStartDefault);
+      game.settings.set('smalltime', 'sunset-end', ST_Config.SunsetEndDefault);
     }
   }
 
   static handleRealtimeState() {
-    if (game.modules.get('foundryvtt-simple-calendar')?.active) {
+    /* TODO: Requires realtime clock state from Calendaria.
+    if (game.modules.get('calendaria')?.active) {
       // Need to insert a small delay here, to wait for Simple Calendar to finish
       // setting its clockStatus.
       setTimeout(function () {
@@ -71,6 +64,7 @@ export class Helpers {
         }
       }, 500);
     }
+    */
   }
 
   static updateGradientStops() {
@@ -91,25 +85,25 @@ export class Helpers {
     // Set the initial gradient transition points.
     document.documentElement.style.setProperty(
       '--SMLTME-sunrise-start',
-      Helpers.convertTimeIntegerToPercentage(game.settings.get('smalltime', 'sunrise-start'))
+      Helpers.convertTimeIntegerToPercentage(game.settings.get('smalltime', 'sunrise-start')),
     );
     document.documentElement.style.setProperty(
       '--SMLTME-sunrise-middle-1',
-      Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(sunriseMiddle1))
+      Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(sunriseMiddle1)),
     );
     document.documentElement.style.setProperty(
       '--SMLTME-sunrise-middle-2',
-      Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(sunriseMiddle2))
+      Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(sunriseMiddle2)),
     );
     document.documentElement.style.setProperty('--SMLTME-sunrise-end', Helpers.convertTimeIntegerToPercentage(game.settings.get('smalltime', 'sunrise-end')));
     document.documentElement.style.setProperty('--SMLTME-sunset-start', Helpers.convertTimeIntegerToPercentage(game.settings.get('smalltime', 'sunset-start')));
     document.documentElement.style.setProperty(
       '--SMLTME-sunset-middle-1',
-      Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(sunsetMiddle1))
+      Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(sunsetMiddle1)),
     );
     document.documentElement.style.setProperty(
       '--SMLTME-sunset-middle-2',
-      Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(sunsetMiddle2))
+      Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(sunsetMiddle2)),
     );
     document.documentElement.style.setProperty('--SMLTME-sunset-end', Helpers.convertTimeIntegerToPercentage(game.settings.get('smalltime', 'sunset-end')));
   }
@@ -130,7 +124,7 @@ export class Helpers {
   static setupDragHandles() {
     // If sunrise/sunset are being synced from Simple Calendar, we'll lock
     // the drag handles on the X axis.
-    const sunSync = game.settings.get('smalltime', 'sun-sync') && game.modules.get('foundryvtt-simple-calendar')?.active;
+    const sunSync = game.settings.get('smalltime', 'sun-sync') && game.modules.get('calendaria')?.active;
 
     // Build the sun/moon drag handles for the darkness config UI.
     const maxDarkness = game.settings.get('smalltime', 'max-darkness');
@@ -154,7 +148,7 @@ export class Helpers {
     };
 
     // If syncing, append a note to the tooltips.
-    const syncString = ' (Simple Calendar)';
+    const syncString = ' (Calendaria)';
     if (sunSync) {
       Object.keys(initialTimes).forEach((key) => (initialTimes[key] += syncString));
     }
@@ -412,14 +406,8 @@ export class Helpers {
   static getCalendarProviders() {
     let calendarProviders = new Object();
 
-    if (game.modules.get('foundryvtt-simple-calendar')?.active) {
-      Object.assign(calendarProviders, { sc: 'Simple Calendar' });
-    }
-    if (game.modules.get('calendar-weather')?.active) {
-      Object.assign(calendarProviders, { cw: 'Calendar/Weather' });
-    }
-    if (game.system.id === 'pf2e') {
-      Object.assign(calendarProviders, { pf2e: 'PF2E ' });
+    if (game.modules.get('calendaria')?.active) {
+      Object.assign(calendarProviders, { cd: 'Calendaria' });
     }
 
     return calendarProviders;
@@ -434,11 +422,7 @@ export class Helpers {
 
     // If the provider is set to a module or system that isn't available, use the
     // first available provider by default.
-    if (
-      (providerSetting === 'sc' && !game.modules.get('foundryvtt-simple-calendar')?.active) ||
-      (providerSetting === 'cw' && !game.modules.get('calendar-weather')?.active) ||
-      (providerSetting === 'pf2e' && !(game.system.id === 'pf2e'))
-    ) {
+    if (providerSetting === 'cd' && !game.modules.get('calendaria')?.active) {
       game.settings.set('smalltime', 'calendar-provider', Helpers.getCalendarProviders()[0]);
     }
   }
@@ -482,7 +466,8 @@ export class Helpers {
     let ordinalSuffix;
     let displayDate = [];
 
-    if (game.modules.get('foundryvtt-simple-calendar')?.active && provider === 'sc') {
+    /*
+    if (game.modules.get('calendaria')?.active && provider === 'cd') {
       let SCobject = SimpleCalendar.api.timestampToDate(game.time.worldTime).display;
       day = SimpleCalendar.api.timestampToDate(game.time.worldTime).showWeekdayHeadings ? SCobject.weekday : undefined;
       monthName = SCobject.monthName;
@@ -493,30 +478,7 @@ export class Helpers {
       yearPrefix = SCobject.yearPrefix || undefined;
       yearPostfix = SCobject.yearPostfix || undefined;
     }
-
-    if (game.system.id === 'pf2e' && provider === 'pf2e') {
-      let PFobject = game.pf2e.worldClock;
-      day = PFobject.weekday;
-      monthName = PFobject.month;
-      month = PFobject.worldTime.c.month;
-      date = PFobject.worldTime.c.day;
-      year = PFobject.year;
-      ordinalSuffix = PFobject.ordinalSuffix || undefined;
-      yearPostfix = PFobject.era;
-    }
-
-    // Support for C/W and AT calendars will be dropped soon, but
-    // leaving these in for now.
-
-    if (game.modules.get('calendar-weather')?.active && provider === 'cw') {
-      let CWobject = game.settings.get('calendar-weather', 'dateTime');
-      day = CWobject.daysOfTheWeek[CWobject.numDayOfTheWeek];
-      monthName = CWobject.months[CWobject.currentMonth].name;
-      // CW .currentMonth and .day are zero-indexed, so add one to get the display date.
-      month = CWobject.currentMonth + 1;
-      date = CWobject.day + 1;
-      year = CWobject.year;
-    }
+    */
 
     // Thursday, August 12th, 2021 C.E.
     displayDate.push(
@@ -525,7 +487,7 @@ export class Helpers {
         Helpers.stringAfter(date + (ordinalSuffix ? ordinalSuffix : ''), ', ') +
         Helpers.stringAfter(yearPrefix) +
         year +
-        Helpers.stringBefore(yearPostfix)
+        Helpers.stringBefore(yearPostfix),
     );
 
     // Thursday, August 12th
@@ -536,7 +498,7 @@ export class Helpers {
 
     // August 12th, 2021
     displayDate.push(
-      Helpers.stringAfter(monthName) + Helpers.stringAfter(date + (ordinalSuffix ? ordinalSuffix : ''), ', ') + Helpers.stringAfter(yearPrefix) + year
+      Helpers.stringAfter(monthName) + Helpers.stringAfter(date + (ordinalSuffix ? ordinalSuffix : ''), ', ') + Helpers.stringAfter(yearPrefix) + year,
     );
 
     // August 12th
@@ -549,7 +511,7 @@ export class Helpers {
         Helpers.stringAfter(monthName, ', ') +
         Helpers.stringAfter(yearPrefix) +
         year +
-        Helpers.stringBefore(yearPostfix)
+        Helpers.stringBefore(yearPostfix),
     );
 
     // Thursday, 12 August
@@ -628,29 +590,29 @@ export class Helpers {
         let n = d.length,
           x = {};
         if (n > 9) {
-          ([r, g, b, a] = d = d.split(',')), (n = d.length);
+          (([r, g, b, a] = d = d.split(',')), (n = d.length));
           if (n < 3 || n > 4) return null;
-          (x.r = i(r[3] == 'a' ? r.slice(5) : r.slice(4))), (x.g = i(g)), (x.b = i(b)), (x.a = a ? parseFloat(a) : -1);
+          ((x.r = i(r[3] == 'a' ? r.slice(5) : r.slice(4))), (x.g = i(g)), (x.b = i(b)), (x.a = a ? parseFloat(a) : -1));
         } else {
           if (n == 8 || n == 6 || n < 4) return null;
           if (n < 6) d = '#' + d[1] + d[1] + d[2] + d[2] + d[3] + d[3] + (n > 4 ? d[4] + d[4] : '');
           d = i(d.slice(1), 16);
-          if (n == 9 || n == 5) (x.r = (d >> 24) & 255), (x.g = (d >> 16) & 255), (x.b = (d >> 8) & 255), (x.a = m((d & 255) / 0.255) / 1000);
-          else (x.r = d >> 16), (x.g = (d >> 8) & 255), (x.b = d & 255), (x.a = -1);
+          if (n == 9 || n == 5) ((x.r = (d >> 24) & 255), (x.g = (d >> 16) & 255), (x.b = (d >> 8) & 255), (x.a = m((d & 255) / 0.255) / 1000));
+          else ((x.r = d >> 16), (x.g = (d >> 8) & 255), (x.b = d & 255), (x.a = -1));
         }
         return x;
       };
-    (h = c0.length > 9),
+    ((h = c0.length > 9),
       (h = a ? (c1.length > 9 ? true : c1 == 'c' ? !h : false) : h),
       (f = this.pSBCr(c0)),
       (P = p < 0),
       (t = c1 && c1 != 'c' ? this.pSBCr(c1) : P ? { r: 0, g: 0, b: 0, a: -1 } : { r: 255, g: 255, b: 255, a: -1 }),
       (p = P ? p * -1 : p),
-      (P = 1 - p);
+      (P = 1 - p));
     if (!f || !t) return null;
-    if (l) (r = m(P * f.r + p * t.r)), (g = m(P * f.g + p * t.g)), (b = m(P * f.b + p * t.b));
-    else (r = m((P * f.r ** 2 + p * t.r ** 2) ** 0.5)), (g = m((P * f.g ** 2 + p * t.g ** 2) ** 0.5)), (b = m((P * f.b ** 2 + p * t.b ** 2) ** 0.5));
-    (a = f.a), (t = t.a), (f = a >= 0 || t >= 0), (a = f ? (a < 0 ? t : t < 0 ? a : a * P + t * p) : 0);
+    if (l) ((r = m(P * f.r + p * t.r)), (g = m(P * f.g + p * t.g)), (b = m(P * f.b + p * t.b)));
+    else ((r = m((P * f.r ** 2 + p * t.r ** 2) ** 0.5)), (g = m((P * f.g ** 2 + p * t.g ** 2) ** 0.5)), (b = m((P * f.b ** 2 + p * t.b ** 2) ** 0.5)));
+    ((a = f.a), (t = t.a), (f = a >= 0 || t >= 0), (a = f ? (a < 0 ? t : t < 0 ? a : a * P + t * p) : 0));
     if (h) return 'rgb' + (f ? 'a(' : '(') + r + ',' + g + ',' + b + (f ? ',' + m(a * 1000) / 1000 : '') + ')';
     else return '#' + (4294967296 + r * 16777216 + g * 65536 + b * 256 + (f ? m(a * 255) : 0)).toString(16).slice(1, f ? undefined : -2);
   }

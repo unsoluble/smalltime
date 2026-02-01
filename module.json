@@ -75,6 +75,11 @@
       "lang": "cn",
       "name": "简体中文",
       "path": "lang/cn.json"
+    },
+    {
+      "lang": "cs",
+      "name": "Čeština",
+      "path": "lang/cs.json"
     }
   ],
   "socket": true,

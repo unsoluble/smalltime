@@ -122,7 +122,7 @@ Hooks.on('init', () => {
     config: calendarAvailable,
     type: String,
     choices: calendarProviders,
-    default: 'sc',
+    default: 'cd',
   });
 
   game.settings.register('smalltime', 'small-step', {
@@ -223,7 +223,7 @@ Hooks.on('init', () => {
     name: game.i18n.localize('SMLTME.Sun_Sync'),
     hint: game.i18n.localize('SMLTME.Sun_Sync_Hint'),
     scope: 'world',
-    config: game.modules.get('foundryvtt-simple-calendar')?.active,
+    config: game.modules.get('calendaria')?.active,
     type: Boolean,
     default: false,
   });
@@ -250,7 +250,7 @@ Hooks.on('init', () => {
     name: game.i18n.localize('SMLTME.Moon_Tint'),
     hint: game.i18n.localize('SMLTME.Moon_Tint_Hint'),
     scope: 'world',
-    config: game.modules.get('foundryvtt-simple-calendar')?.active,
+    config: game.modules.get('calendaria')?.active,
     type: Boolean,
     default: false,
   });
@@ -288,6 +288,7 @@ Hooks.on('init', () => {
   });
 });
 
+/* TODO: Requires moon colour info from Cal
 Hooks.on('canvasInit', () => {
   // Start by resetting the Darkness color to the core value.
   CONFIG.Canvas.darknessColor = ST_Config.coreDarknessColor;
@@ -306,23 +307,13 @@ Hooks.on('canvasInit', () => {
   // Re-draw the canvas with the new Darkness color.
   canvas.colorManager.initialize();
 });
+*/
 
 // Set the initial state for newly rendered scenes.
 Hooks.on('canvasReady', () => {
-  // Account for the extra border art in certain game systems.
-  if (game.system.id === 'wfrp4e') {
-    ST_Config.PinOffset += ST_Config.WFRP4eOffset;
-  }
-  if (game.system.id === 'dsa5') {
-    ST_Config.PinOffset += ST_Config.DasSchwarzeAugeOffset;
-  }
-  if (game.modules.get('foundry-taskbar')?.active && game.settings.get('foundry-taskbar', 'moveplayersmacro')) {
-    ST_Config.PinOffset += ST_Config.TaskbarOffset;
-  }
-
   // Only allow the date display to show if there's a calendar provider available.
   game.modules.get('smalltime').dateAvailable = false;
-  if (game.system.id === 'pf2e' || game.modules.get('foundryvtt-simple-calendar')?.active || game.modules.get('calendar-weather')?.active) {
+  if (game.modules.get('calendaria')?.active) {
     game.modules.get('smalltime').dateAvailable = true;
   }
 
@@ -386,11 +377,11 @@ Hooks.on('canvasReady', () => {
     const visDefault = game.settings.get('smalltime', 'player-visibility-default');
 
     // Set the Darkness link state to the default choice.
-    if (!hasProperty(thisScene, 'flags.smalltime.darkness-link')) {
+    if (!foundry.utils.hasProperty(thisScene, 'flags.smalltime.darkness-link')) {
       thisScene.setFlag('smalltime', 'darkness-link', darknessDefault);
     }
     // Set the Player Vis state to the default choice.
-    if (!hasProperty(thisScene, 'flags.smalltime.player-vis')) {
+    if (!foundry.utils.hasProperty(thisScene, 'flags.smalltime.player-vis')) {
       thisScene.setFlag('smalltime', 'player-vis', visDefault);
     }
 
@@ -401,6 +392,11 @@ Hooks.on('canvasReady', () => {
     // Refresh the current scene BG for the settings dialog.
     Helpers.grabSceneSlice();
   }
+});
+
+// Wait for Calendaria to have its seasons set up before checking rise/set times.
+Hooks.on('calendaria.ready', () => {
+  Helpers.updateSunriseSunsetTimes();
 });
 
 Hooks.on('ready', () => {
@@ -431,17 +427,8 @@ Hooks.on('ready', () => {
   }
   // Update the stops on the sunrise/sunset gradient, in case
   // there's been changes to the positions.
-  Helpers.updateSunriseSunsetTimes();
   Helpers.updateGradientStops();
-
   Helpers.setCalendarFallback();
-
-  // Obtain the custom worldTime epoch offset for the current PF2E world.
-  if (game.system.id === 'pf2e') {
-    const localEpoch = game.pf2e.worldClock.worldCreatedOn.c;
-    const deltaInSeconds = localEpoch.hour * 3600 + localEpoch.minute * 60 + localEpoch.second + localEpoch.millisecond * 0.001;
-    ST_Config.EpochOffset = deltaInSeconds;
-  }
 });
 
 // Wait for the app to be rendered, then adjust the CSS to
@@ -736,6 +723,7 @@ Hooks.on('closeSettingsConfig', () => {
 // Add a toggle button inside the Jounral Notes tool layer.
 Hooks.on('getSceneControlButtons', (buttons) => {
   if (!canvas) return;
+  console.log(game.modules.get('smalltime').viewAuth);
   if (game.modules.get('smalltime').viewAuth) {
     let group = buttons.find((b) => b.name === 'notes');
     group.tools.push({
@@ -767,21 +755,11 @@ Hooks.on('renderPlayerList', () => {
   if (!game.modules.get('smalltime').clockAuth) {
     bottomOffset -= 23;
   }
-
   // Custom offset for Item Piles, which adds a button into the Players app.
   if (game.modules.get('item-piles')?.active) {
     bottomOffset += 30;
   }
-
-  // Custom offset for Item Piles, which adds a button into the Players app.
-  if (game.modules.get('breaktime')?.active) {
-    bottomOffset += 34;
-  }
-
   let leftOffset = 15;
-  if (game.release.generation === 10) {
-    leftOffset += $('#interface').offset().left;
-  }
 });
 
 // Listen for changes to the worldTime from elsewhere.
@@ -795,12 +773,12 @@ Hooks.on('pauseGame', () => {
 });
 
 // Listen for changes to the realtime clock state.
-Hooks.on('simple-calendar-clock-start-stop', () => {
+Hooks.on('calendaria.clockStartStop', () => {
   SmallTimeApp.emitSocket('handleRealtime');
 });
 
-Hooks.on('simple-calendar-date-time-change', (data) => {
-  Helpers.updateSunriseSunsetTimes(data);
+Hooks.on('calendaria.dateTimeChange', (data) => {
+  Helpers.updateSunriseSunsetTimes();
   Helpers.updateGradientStops();
 });
 
@@ -877,7 +855,7 @@ class SmallTimeApp extends FormApplication {
     super.activateListeners(html);
 
     const dragHandle = html.find('#dragHandle')[0];
-    const drag = new Draggable(this, html, dragHandle, false);
+    const drag = new foundry.applications.ux.Draggable.implementation(this, this.element[0], dragHandle, false);
 
     // Pin zone is the "jiggle area" in which the app will be locked
     // to a pinned position if dropped. pinZone stores whether or not
@@ -998,7 +976,7 @@ class SmallTimeApp extends FormApplication {
         if (game.user.isGM) {
           SmallTimeApp.emitSocket('changeTime', $(this).val());
         }
-      }, 100)
+      }, 100),
     );
 
     // Wait for the actual change event to do the time set.
