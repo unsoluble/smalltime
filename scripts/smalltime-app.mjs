@@ -288,6 +288,48 @@ Hooks.on('init', () => {
   });
 });
 
+Hooks.on('setup', () => {
+  // Only allow the date display to show if there's a calendar provider available.
+  game.modules.get('smalltime').dateAvailable = false;
+  if (game.modules.get('calendaria')?.active) {
+    game.modules.get('smalltime').dateAvailable = true;
+  }
+
+  // Check and set the correct level of authorization for the current user.
+  game.modules.get('smalltime').viewAuth = false;
+  game.modules.get('smalltime').clockAuth = false;
+  game.modules.get('smalltime').controlAuth = false;
+  // First give view & control to Assistants and GMs.
+  if (game.user.role >= CONST.USER_ROLES.ASSISTANT) {
+    game.modules.get('smalltime').viewAuth = true;
+    game.modules.get('smalltime').clockAuth = true;
+    game.modules.get('smalltime').controlAuth = true;
+  }
+
+  // If the scene is set to use Default vis level, use it here.
+  const thisScene = game.scenes.viewed;
+  let visLevel = thisScene?.getFlag?.('smalltime', 'player-vis');
+  // visLevel of 3 is "use default".
+  if (visLevel == 3 || visLevel == undefined) {
+    visLevel = game.settings.get('smalltime', 'player-visibility-default');
+  }
+  // Give basic view auth to players if they're allowed in this scene.
+  if (visLevel > 0) {
+    game.modules.get('smalltime').viewAuth = true;
+  }
+  // Also give them the clock if the permission level allows.
+  if (visLevel > 1) {
+    game.modules.get('smalltime').clockAuth = true;
+  }
+  // If the Allow Trusted Player Control setting is on, give Trusted
+  // Players control privs as well.
+  if (game.settings.get('smalltime', 'allow-trusted') && game.user.role === CONST.USER_ROLES.TRUSTED) {
+    game.modules.get('smalltime').viewAuth = true;
+    game.modules.get('smalltime').clockAuth = true;
+    game.modules.get('smalltime').controlAuth = true;
+  }
+});
+
 Hooks.on('canvasInit', () => {
   // Start by resetting the Darkness color to the core value.
   CONFIG.Canvas.darknessColor = ST_Config.coreDarknessColor;
@@ -311,46 +353,6 @@ Hooks.on('canvasInit', () => {
 
 // Set the initial state for newly rendered scenes.
 Hooks.on('canvasReady', () => {
-  // Only allow the date display to show if there's a calendar provider available.
-  game.modules.get('smalltime').dateAvailable = false;
-  if (game.modules.get('calendaria')?.active) {
-    game.modules.get('smalltime').dateAvailable = true;
-  }
-
-  // Check and set the correct level of authorization for the current user.
-  game.modules.get('smalltime').viewAuth = false;
-  game.modules.get('smalltime').clockAuth = false;
-  game.modules.get('smalltime').controlAuth = false;
-  // First give view & control to Assistants and GMs.
-  if (game.user.role >= CONST.USER_ROLES.ASSISTANT) {
-    game.modules.get('smalltime').viewAuth = true;
-    game.modules.get('smalltime').clockAuth = true;
-    game.modules.get('smalltime').controlAuth = true;
-  }
-
-  // If the scene is set to use Default vis level, use it here.
-  const thisScene = game.scenes.viewed;
-  let visLevel = thisScene.getFlag('smalltime', 'player-vis');
-  // visLevel of 3 is "use default".
-  if (visLevel == 3 || visLevel == undefined) {
-    visLevel = game.settings.get('smalltime', 'player-visibility-default');
-  }
-  // Give basic view auth to players if they're allowed in this scene.
-  if (visLevel > 0) {
-    game.modules.get('smalltime').viewAuth = true;
-  }
-  // Also give them the clock if the permission level allows.
-  if (visLevel > 1) {
-    game.modules.get('smalltime').clockAuth = true;
-  }
-  // If the Allow Trusted Player Control setting is on, give Trusted
-  // Players control privs as well.
-  if (game.settings.get('smalltime', 'allow-trusted') && game.user.role === CONST.USER_ROLES.TRUSTED) {
-    game.modules.get('smalltime').viewAuth = true;
-    game.modules.get('smalltime').clockAuth = true;
-    game.modules.get('smalltime').controlAuth = true;
-  }
-
   if (game.modules.get('smalltime').viewAuth) {
     SmallTimeApp.toggleAppVis('initial');
     if (game.settings.get('smalltime', 'pinned')) {
@@ -814,7 +816,7 @@ class SmallTimeApp extends FormApplication {
 
     this.initialPosition = game.settings.get('smalltime', 'position');
 
-    return mergeObject(super.defaultOptions, {
+    return foundry.utils.mergeObject(super.defaultOptions, {
       classes: ['form'],
       popOut: true,
       submitOnChange: true,
@@ -865,7 +867,7 @@ class SmallTimeApp extends FormApplication {
     drag._onDragMouseMove = function _newOnDragMouseMove(event) {
       event.preventDefault();
 
-      const playerApp = document.getElementById('players');
+      const playerApp = document.getElementById('players-inactive');
       const playerAppPos = playerApp.getBoundingClientRect();
 
       // Limit dragging to 60 updates per second.
@@ -909,7 +911,7 @@ class SmallTimeApp extends FormApplication {
       window.removeEventListener(...this.handlers.dragMove);
       window.removeEventListener(...this.handlers.dragUp);
 
-      const playerApp = document.getElementById('players');
+      const playerApp = document.getElementById('players-inactive');
       const playerAppPos = playerApp.getBoundingClientRect();
       let myOffset = playerAppPos.height + ST_Config.PinOffset;
 
@@ -967,7 +969,7 @@ class SmallTimeApp extends FormApplication {
     $(document).on(
       'input',
       '#timeSlider',
-      debounce(async function () {
+      foundry.utils.debounce(async function () {
         $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).hours);
         $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).minutes);
         SmallTimeApp.timeTransition($(this).val());
