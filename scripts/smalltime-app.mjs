@@ -721,20 +721,17 @@ Hooks.on('closeSettingsConfig', () => {
 });
 
 // Add a toggle button inside the Jounral Notes tool layer.
-Hooks.on('getSceneControlButtons', (buttons) => {
-  if (!canvas) return;
-  console.log(game.modules.get('smalltime').viewAuth);
+Hooks.on('getSceneControlButtons', (controls) => {
   if (game.modules.get('smalltime').viewAuth) {
-    let group = buttons.find((b) => b.name === 'notes');
-    group.tools.push({
-      button: true,
-      icon: 'fas fa-adjust',
+    controls.notes.tools.smalltime = {
       name: 'smalltime',
       title: 'Toggle SmallTime',
-      onClick: () => {
+      icon: 'fas fa-adjust',
+      onChange: (event, active) => {
         SmallTimeApp.toggleAppVis('toggle');
       },
-    });
+      button: true,
+    };
   }
 });
 
