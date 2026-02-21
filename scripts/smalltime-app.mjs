@@ -760,6 +760,10 @@ Hooks.on('renderPlayerList', () => {
     bottomOffset += 30;
   }
   let leftOffset = 15;
+
+  if (game.settings.get('smalltime', 'pinned')) {
+    SmallTimeApp.pinApp();
+  }
 });
 
 // Listen for changes to the worldTime from elsewhere.
@@ -809,7 +813,10 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
     await super._onRender(context, options);
 
     if (game.settings.get('smalltime', 'pinned')) {
-      SmallTimeApp.pinApp();
+      const pinned = SmallTimeApp.pinApp(this);
+      if (!pinned) {
+        setTimeout(() => SmallTimeApp.pinApp(this), 50);
+      }
     }
     SmallTimeApp._isOpen = true;
 
@@ -869,8 +876,10 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
     drag._onDragMouseMove = function _newOnDragMouseMove(event) {
       event.preventDefault();
 
-      const playerApp = document.getElementById('players-inactive');
+      const playerApp = document.getElementById('players-inactive') || document.getElementById('players');
+      if (!playerApp) return;
       const playerAppPos = playerApp.getBoundingClientRect();
+      const appElement = this.app.element;
 
       // Limit dragging to 60 updates per second.
       const now = Date.now();
@@ -893,18 +902,13 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
       let playerAppUpperBound = playerAppPos.top - 50;
       let playerAppLowerBound = playerAppPos.top + 50;
 
-      if (
+      pinZone =
         event.clientX > playerAppPos.left &&
         event.clientX < playerAppPos.left + playerAppPos.width &&
         event.clientY > playerAppUpperBound &&
-        event.clientY < playerAppLowerBound
-      ) {
-        $('#smalltime-app').css('animation', 'jiggle 0.2s infinite');
-        pinZone = true;
-      } else {
-        $('#smalltime-app').css('animation', '');
-        pinZone = false;
-      }
+        event.clientY < playerAppLowerBound;
+
+      appElement.style.animation = pinZone ? 'jiggle 0.2s infinite' : '';
     };
 
     drag._onDragMouseUp = async function _newOnDragMouseUp(event) {
@@ -913,27 +917,30 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
       window.removeEventListener(...this.handlers.dragMove);
       window.removeEventListener(...this.handlers.dragUp);
 
-      const playerApp = document.getElementById('players-inactive');
+      const playerApp = document.getElementById('players-inactive') || document.getElementById('players');
+      if (!playerApp) return;
       const playerAppPos = playerApp.getBoundingClientRect();
-      let myOffset = playerAppPos.height + ST_Config.PinOffset;
+      const playerAppUpperBound = playerAppPos.top - 50;
+      const playerAppLowerBound = playerAppPos.top + 50;
+
+      const droppedInPinZone =
+        event.clientX > playerAppPos.left &&
+        event.clientX < playerAppPos.left + playerAppPos.width &&
+        event.clientY > playerAppUpperBound &&
+        event.clientY < playerAppLowerBound;
 
       // If the mouseup happens inside the Pin zone, pin the app.
-      if (pinZone) {
-        SmallTimeApp.pinApp();
+      if (droppedInPinZone || pinZone) {
+        SmallTimeApp.pinApp(this.app);
         await game.settings.set('smalltime', 'pinned', true);
-        this.app.setPosition({
-          left: 15,
-          top: window.innerHeight - myOffset,
-        });
       } else {
-        let windowPos = $('#smalltime-app').position();
-        let newPos = { top: windowPos.top, left: windowPos.left };
+        const newPos = { top: this.app.position.top, left: this.app.position.left };
         await game.settings.set('smalltime', 'position', newPos);
         await game.settings.set('smalltime', 'pinned', false);
       }
 
       // Kill the jiggle animation on mouseUp.
-      $('#smalltime-app').css('animation', '');
+      this.app.element.style.animation = '';
     };
 
     // An initial set of the sun/moon/bg/time/date display in case it hasn't been
@@ -1245,12 +1252,18 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
   }
 
   // Pin the app above the Players list inside the ui-left container.
-  static async pinApp() {
-    const app = game.modules.get('smalltime').myApp;
-    if (app && !app.element.classList.contains('pinned')) {
-      document.getElementById('players')?.insertAdjacentElement('beforebegin', app.element);
-      app.element.classList.add('pinned');
+  static async pinApp(appInstance = null) {
+    const app = appInstance || game.modules.get('smalltime').myApp;
+    if (!app) return false;
+
+    const playersAnchor = document.getElementById('players') || document.getElementById('players-inactive');
+    if (!playersAnchor) return false;
+
+    if (app.element.nextElementSibling !== playersAnchor) {
+      playersAnchor.insertAdjacentElement('beforebegin', app.element);
     }
+    app.element.classList.add('pinned');
+    return true;
   }
 
   // Un-pin the app.
@@ -1288,12 +1301,18 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
         const app = new SmallTimeApp();
         await app.render({ force: true });
         game.modules.get('smalltime').myApp = app;
+        if (game.settings.get('smalltime', 'pinned')) {
+          SmallTimeApp.pinApp(app);
+        }
         game.settings.set('smalltime', 'visible', true);
       }
     } else if (game.settings.get('smalltime', 'visible') === true) {
       const app = new SmallTimeApp();
       await app.render({ force: true });
       game.modules.get('smalltime').myApp = app;
+      if (game.settings.get('smalltime', 'pinned')) {
+        SmallTimeApp.pinApp(app);
+      }
     }
   }
 
