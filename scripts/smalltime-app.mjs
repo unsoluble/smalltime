@@ -362,6 +362,7 @@ Hooks.on('ready', async () => {
       const currentScene = game.scenes.get(payload.sceneID);
       if (!currentScene) return false;
       if (!currentScene.getFlag('smalltime', 'darkness-link')) return false;
+      if (Helpers.isExternalDarknessSyncActive(currentScene)) return false;
       return true;
     };
 
@@ -1228,7 +1229,11 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
 
     // If requested, adjust the scene's Darkness level.
     const currentScene = canvas.scene;
-    if (currentScene.getFlag('smalltime', 'darkness-link') && game.modules.get('smalltime').controlAuth) {
+    if (
+      currentScene.getFlag('smalltime', 'darkness-link') &&
+      game.modules.get('smalltime').controlAuth &&
+      !Helpers.isExternalDarknessSyncActive(currentScene)
+    ) {
       let darknessValue = canvas.environment.darknessLevel;
       const maxD = game.settings.get('smalltime', 'max-darkness');
       const minD = game.settings.get('smalltime', 'min-darkness');

@@ -964,6 +964,36 @@ export class Helpers {
     return globalThis.CALENDARIA?.api ?? null;
   }
 
+  static isCalendariaDarknessSyncActive(scene = canvas.scene ?? game.scenes.viewed) {
+    const module = game.modules?.get('calendaria');
+    if (!module?.active || !scene) return false;
+
+    const sceneFlag = scene.getFlag?.('calendaria', 'darknessSync');
+    if (sceneFlag === true || sceneFlag === 'enabled') return true;
+    if (sceneFlag === false || sceneFlag === 'disabled') return false;
+
+    return !!game.settings.get('calendaria', 'darknessSync');
+  }
+
+  static isPF2eDarknessSyncActive(scene = canvas.scene ?? game.scenes.viewed) {
+    if (game.system?.id !== 'pf2e' || !scene) return false;
+
+    const sceneSetting = scene.getFlag?.('pf2e', 'syncDarkness');
+    if (sceneSetting === true || sceneSetting === 'enabled') return true;
+    if (sceneSetting === false || sceneSetting === 'disabled') return false;
+
+    const pf2eWorldClock = game.settings.get('pf2e', 'worldClock');
+    if (pf2eWorldClock && typeof pf2eWorldClock.syncDarkness === 'boolean') {
+      return pf2eWorldClock.syncDarkness;
+    }
+
+    return !!game.pf2e?.settings?.worldClock?.syncDarkness;
+  }
+
+  static isExternalDarknessSyncActive(scene = canvas.scene ?? game.scenes.viewed) {
+    return Helpers.isCalendariaDarknessSyncActive(scene) || Helpers.isPF2eDarknessSyncActive(scene);
+  }
+
   static async openBestCalendarView() {
     const calendariaApi = Helpers.getCalendariaApi();
     if (calendariaApi?.openBigCal instanceof Function) {
