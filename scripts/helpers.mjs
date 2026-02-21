@@ -964,6 +964,46 @@ export class Helpers {
     return globalThis.CALENDARIA?.api ?? null;
   }
 
+  static async openBestCalendarView() {
+    const calendariaApi = Helpers.getCalendariaApi();
+    if (calendariaApi?.openBigCal instanceof Function) {
+      await calendariaApi.openBigCal();
+      return true;
+    }
+
+    const dnd5eCalendarApp = game.dnd5e?.ui?.calendar;
+    if (dnd5eCalendarApp?.render instanceof Function) {
+      dnd5eCalendarApp.render(true);
+      return true;
+    }
+
+    const systemCalendarApp = game.system?.ui?.calendar;
+    if (systemCalendarApp?.render instanceof Function) {
+      systemCalendarApp.render(true);
+      return true;
+    }
+    if (systemCalendarApp?.toggle instanceof Function) {
+      systemCalendarApp.toggle();
+      return true;
+    }
+
+    if (game.system?.id === 'pf2e') {
+      const worldClock = game.pf2e?.worldClock;
+      if (worldClock?.render instanceof Function) {
+        worldClock.render(true);
+        return true;
+      }
+
+      const worldClockApp = foundry?.applications?.instances?.get?.('world-clock');
+      if (worldClockApp?.render instanceof Function) {
+        worldClockApp.render(true);
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   static getPF2eOrdinalDay(dayNumber) {
     const day = Number(dayNumber);
     if (!Number.isFinite(day)) return String(dayNumber ?? '');

@@ -510,6 +510,7 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  cursor: pointer;
 }
 
 #smalltime-app.show-date #dateDisplay {

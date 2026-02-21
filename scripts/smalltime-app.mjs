@@ -1031,6 +1031,7 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
     const hourStringEl = appElement.querySelector('#hourString');
     const minuteStringEl = appElement.querySelector('#minuteString');
     const timeDisplayEl = appElement.querySelector('#timeDisplay');
+    const dateDisplayEl = appElement.querySelector('#dateDisplay');
     const decreaseSmallEl = appElement.querySelector('#decrease-small');
     const decreaseLargeEl = appElement.querySelector('#decrease-large');
     const increaseSmallEl = appElement.querySelector('#increase-small');
@@ -1103,6 +1104,12 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
         }
         await game.settings.set('smalltime', 'date-showing', false);
       }
+    });
+
+    dateDisplayEl?.addEventListener('click', async (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
+      await Helpers.openBestCalendarView();
     });
 
     // Handle the increment/decrement buttons.
