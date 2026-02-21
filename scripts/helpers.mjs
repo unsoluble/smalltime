@@ -583,6 +583,7 @@ export class Helpers {
       options.push({
         value: i,
         label: Helpers.getDate(i),
+        source: 'smalltime',
       });
     }
 
@@ -592,6 +593,7 @@ export class Helpers {
       options.push({
         value: 12 + index,
         label: `${preview} (${game.i18n.localize(format.label)})`,
+        source: 'system',
       });
     });
 
@@ -601,6 +603,7 @@ export class Helpers {
       options.push({
         value: 12 + systemDateFormats.length + index,
         label: `${preview} (${format.label})`,
+        source: format.source ?? 'system',
       });
     });
 
@@ -624,12 +627,45 @@ export class Helpers {
   static getAdditionalSystemDateFormats() {
     const formats = [];
 
+    const calendariaApi = Helpers.getCalendariaApi();
+    if (calendariaApi) {
+      const calendariaDatePresets = [
+        ['approxDate', 'CALENDARIA.Format.Preset.ApproxDate'],
+        ['dateShort', 'CALENDARIA.Format.Preset.DateShort'],
+        ['dateMedium', 'CALENDARIA.Format.Preset.DateMedium'],
+        ['dateLong', 'CALENDARIA.Format.Preset.DateLong'],
+        ['dateFull', 'CALENDARIA.Format.Preset.DateFull'],
+        ['dateUS', 'CALENDARIA.Format.Preset.DateUS'],
+        ['dateUSFull', 'CALENDARIA.Format.Preset.DateUSFull'],
+        ['dateISO', 'CALENDARIA.Format.Preset.DateISO'],
+        ['dateNumericUS', 'CALENDARIA.Format.Preset.DateNumericUS'],
+        ['dateNumericEU', 'CALENDARIA.Format.Preset.DateNumericEU'],
+        ['ordinal', 'CALENDARIA.Format.Preset.Ordinal'],
+        ['ordinalLong', 'CALENDARIA.Format.Preset.OrdinalLong'],
+        ['ordinalEra', 'CALENDARIA.Format.Preset.OrdinalEra'],
+        ['ordinalFull', 'CALENDARIA.Format.Preset.OrdinalFull'],
+        ['seasonDate', 'CALENDARIA.Format.Preset.SeasonDate'],
+        ['weekHeader', 'CALENDARIA.Format.Preset.WeekHeader'],
+        ['yearOnly', 'CALENDARIA.Format.Preset.YearOnly'],
+        ['yearEra', 'CALENDARIA.Format.Preset.YearEra'],
+      ];
+
+      for (const [preset, key] of calendariaDatePresets) {
+        formats.push({
+          id: `calendaria:${preset}`,
+          label: game.i18n.has(key) ? game.i18n.localize(key) : preset,
+          source: 'module',
+        });
+      }
+    }
+
     if (game.system?.id === 'pf2e' && game.pf2e?.worldClock) {
       const localizedWorldClockLabel =
         game.i18n.has('PF2E.WorldClock.Title') ? game.i18n.localize('PF2E.WorldClock.Title') : game.i18n.localize('PF2E.SETTINGS.WorldClock.Name');
       formats.push({
         id: 'pf2e-world-clock',
         label: localizedWorldClockLabel,
+        source: 'system',
       });
     }
 
@@ -644,11 +680,28 @@ export class Helpers {
     const format = Helpers.getAdditionalSystemDateFormats()[offset];
     if (!format) return null;
 
+    if (format.id.startsWith('calendaria:')) {
+      const calendariaApi = Helpers.getCalendariaApi();
+      if (!calendariaApi?.formatDate) return null;
+      const preset = format.id.slice('calendaria:'.length);
+      try {
+        return calendariaApi.formatDate(null, preset);
+      } catch (_error) {
+        return null;
+      }
+    }
+
     if (format.id === 'pf2e-world-clock') {
       return Helpers.getPF2eWorldClockFormattedDate();
     }
 
     return null;
+  }
+
+  static getCalendariaApi() {
+    const module = game.modules?.get('calendaria');
+    if (!module?.active) return null;
+    return globalThis.CALENDARIA?.api ?? null;
   }
 
   static getPF2eOrdinalDay(dayNumber) {

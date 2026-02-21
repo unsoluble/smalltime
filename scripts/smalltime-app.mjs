@@ -634,8 +634,9 @@ Hooks.on('renderSettingsConfig', (obj) => {
     const options = Helpers.getDateFormatOptions();
     const hasCurrentValue = options.some((option) => option.value === currentValue);
     const selectedValue = hasCurrentValue ? currentValue : 0;
-    const builtInOptions = options.filter((option) => option.value < 12);
-    const systemOptions = options.filter((option) => option.value >= 12);
+    const builtInOptions = options.filter((option) => option.source === 'smalltime' || option.value < 12);
+    const systemOptions = options.filter((option) => option.source === 'system');
+    const moduleOptions = options.filter((option) => option.source === 'module');
 
     dateFormatSelect.innerHTML = '';
 
@@ -661,6 +662,13 @@ Hooks.on('renderSettingsConfig', (obj) => {
       systemGroup.label = 'System-added formats';
       appendOptions(systemGroup, systemOptions);
       dateFormatSelect.append(systemGroup);
+    }
+
+    if (moduleOptions.length) {
+      const moduleGroup = document.createElement('optgroup');
+      moduleGroup.label = 'Module-added formats';
+      appendOptions(moduleGroup, moduleOptions);
+      dateFormatSelect.append(moduleGroup);
     }
   }
 
@@ -799,6 +807,12 @@ Hooks.on('renderPlayerList', handlePlayersRender);
 // Listen for changes to the worldTime from elsewhere.
 Hooks.on('updateWorldTime', () => {
   Helpers.handleTimeChange(Helpers.getWorldTimeAsDayTime());
+});
+
+// Calendaria initializes asynchronously and can replace the active calendar after SmallTime renders.
+// Refresh once when it signals ready so module-backed date formats show immediately.
+Hooks.on('calendaria.ready', () => {
+  SmallTimeApp.updateDate();
 });
 
 // Handle toggling of time separator flash when game is paused/unpaused.
