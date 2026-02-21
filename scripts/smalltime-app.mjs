@@ -194,6 +194,15 @@ Hooks.on('init', () => {
     default: false,
   });
 
+  game.settings.register('smalltime', 'moon-tint', {
+    name: game.i18n.localize('SMLTME.Moon_Tint'),
+    hint: game.i18n.localize('SMLTME.Moon_Tint_Hint'),
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: false,
+  });
+
   game.settings.register('smalltime', 'phase-impact', {
     name: game.i18n.localize('SMLTME.Phase_Impact'),
     hint: game.i18n.localize('SMLTME.Phase_Impact_Hint'),
@@ -266,6 +275,7 @@ Hooks.on('setup', () => {
 Hooks.on('canvasInit', () => {
   // Start by resetting the Darkness color to the core value.
   CONFIG.Canvas.darknessColor = ST_Config.coreDarknessColor;
+  ST_Config.activeDarknessColor = ST_Config.coreDarknessColor;
   // Re-draw the canvas with the new Darkness color.
   if (game.release.generation < 12) {
     canvas.colorManager.initialize();
@@ -442,9 +452,8 @@ Hooks.on('renderSceneConfig', async (obj) => {
 
   // Set the Player Vis dropdown as appropriate.
   const visChoice = Number(obj.document.getFlag('smalltime', 'player-vis'));
-  // Set the Darkness and Moonlight checkboxes as appropriate.
+  // Set the Darkness checkbox as appropriate.
   const darknessChecked = !!obj.document.getFlag('smalltime', 'darkness-link');
-  const moonlightChecked = !!obj.document.getFlag('smalltime', 'moonlight');
 
   // Build our new options.
   const visibilityLabel = game.i18n.localize('SMLTME.Player_Visibility');
@@ -455,9 +464,6 @@ Hooks.on('renderSceneConfig', async (obj) => {
 
   const controlLabel = game.i18n.localize('SMLTME.Darkness_Control');
   const controlHint = game.i18n.localize('SMLTME.Darkness_Control_Hint');
-  const moonlightLabel = game.i18n.localize('SMLTME.Moonlight_Adjust');
-  const moonlightHint = game.i18n.localize('SMLTME.Moonlight_Adjust_Hint');
-  const moonlightDisabledPF2e = game.system.id === 'pf2e' && game.settings.get('pf2e', 'automation.rulesBasedVision');
 
   const buildSceneConfigGroup = (labelText, controlElement, hintText) => {
     const group = document.createElement('div');
@@ -511,13 +517,6 @@ Hooks.on('renderSceneConfig', async (obj) => {
   darknessInput.checked = darknessChecked;
   injection.append(buildSceneConfigGroup(controlLabel, darknessInput, controlHint));
 
-  const moonlightInput = document.createElement('input');
-  moonlightInput.type = 'checkbox';
-  moonlightInput.name = 'flags.smalltime.moonlight';
-  moonlightInput.checked = moonlightChecked;
-  moonlightInput.disabled = moonlightDisabledPF2e;
-  injection.append(buildSceneConfigGroup(moonlightLabel, moonlightInput, moonlightHint));
-
   // Inject the SmallTime controls into the config window for the current scene,
   // but only if they haven't already been inserted.
   if (!root.querySelector('.st-scene-config')) {
@@ -545,29 +544,6 @@ Hooks.on('renderSceneConfig', async (obj) => {
   }
   // Re-auto-size the app window.
   obj.setPosition();
-
-  if (obj.document?.getFlag('smalltime', 'moonlight')) {
-    const currentThreshold = foundry.utils.getProperty(obj.document, 'environment.globalLight.darkness.max') ?? 1;
-    const coreThresholdCheckbox = root.querySelector('input[name="hasGlobalThreshold"]');
-    if (coreThresholdCheckbox) coreThresholdCheckbox.checked = true;
-
-    const coreThresholdSlider = root.querySelector('input[name="globalLightThreshold"]');
-    if (coreThresholdSlider) {
-      if (coreThresholdSlider.dataset.stMoonlightOverride !== '1') {
-        coreThresholdSlider.classList.add('smalltime-threshold-override');
-        coreThresholdSlider.setAttribute('aria-label', game.i18n.localize('SMLTME.Threshold_Override_Tooltip'));
-        coreThresholdSlider.setAttribute('data-balloon-pos', 'up');
-        coreThresholdSlider.disabled = true;
-        coreThresholdSlider.dataset.stMoonlightOverride = '1';
-      }
-      coreThresholdSlider.value = String(currentThreshold);
-
-      const coreThresholdField = coreThresholdSlider.parentElement?.querySelector('span');
-      if (coreThresholdField) {
-        coreThresholdField.textContent = String(currentThreshold);
-      }
-    }
-  }
 });
 
 Hooks.on('renderSettingsConfig', (obj) => {
@@ -812,6 +788,7 @@ Hooks.on('updateWorldTime', () => {
 // Calendaria initializes asynchronously and can replace the active calendar after SmallTime renders.
 // Refresh once when it signals ready so module-backed date formats show immediately.
 Hooks.on('calendaria.ready', () => {
+  SmallTimeApp.timeTransition(Helpers.getWorldTimeAsDayTime(), { persistDarkness: false });
   SmallTimeApp.updateDate();
 });
 
@@ -1058,7 +1035,8 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
     // Handle cycling through the moon phases on Shift-clicks.
     timeSliderEl?.addEventListener('click', async (ev) => {
       if (ev.shiftKey && game.modules.get('smalltime').controlAuth) {
-        const startingPhase = game.settings.get('smalltime', 'moon-phase');
+        if (Helpers.getProvidedMoonPhaseIndex() !== null) return;
+        const startingPhase = Helpers.getCurrentMoonPhaseIndex();
         const newPhase = (startingPhase + 1) % ST_Config.MoonPhases.length;
 
         document.documentElement.style.setProperty('--SMLTME-phaseURL', `url('../images/moon-phases/${ST_Config.MoonPhases[newPhase]}.webp')`);
@@ -1066,7 +1044,6 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
         // Set and broadcast the change.
         if (game.user.isGM) {
           await game.settings.set('smalltime', 'moon-phase', newPhase);
-          Helpers.adjustMoonlight([newPhase]);
         } else {
           SmallTimeApp.emitSocket('changeSetting', {
             scope: 'smalltime',
@@ -1224,7 +1201,7 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
 
     // Swap out the moon for the sun during daytime,
     // changing phase as appropriate.
-    const currentPhase = game.settings.get('smalltime', 'moon-phase');
+    const currentPhase = Helpers.getCurrentMoonPhaseIndex();
 
     const timeSliderElement = document.getElementById('timeSlider');
     if (timeNow >= sunriseEnd && timeNow < sunsetStart) {
@@ -1235,6 +1212,8 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
       timeSliderElement?.classList.add('moon');
       document.documentElement.style.setProperty('--SMLTME-phaseURL', `url('../images/moon-phases/${ST_Config.MoonPhases[currentPhase]}.webp')`);
     }
+
+    await Helpers.applyMoonTint(currentPhase, timeNow);
 
     // If requested, adjust the scene's Darkness level.
     const currentScene = canvas.scene;

@@ -15,6 +15,7 @@ ST_Config.PhaseValues = {
 
 // Saving the default core Darkness color for reference.
 ST_Config.coreDarknessColor = 2368584;
+ST_Config.activeDarknessColor = ST_Config.coreDarknessColor;
 
 // Default offset from the Player List window when pinned,
 // an Epoch offset for game systems that don't start at midnight,
@@ -410,6 +411,141 @@ export class Helpers {
     const currentWorldTime = game.time.worldTime + ST_Config.EpochOffset;
     const normalized = ((currentWorldTime % 86400) + 86400) % 86400;
     return Math.trunc(normalized);
+  }
+
+  static getProvidedMoonPhaseIndex() {
+    const calendariaApi = Helpers.getCalendariaApi();
+    const moonPhase = calendariaApi?.getMoonPhase?.(0);
+    if (!moonPhase) return null;
+
+    if (Number.isInteger(moonPhase.phaseIndex)) {
+      const normalized = ((moonPhase.phaseIndex % ST_Config.MoonPhases.length) + ST_Config.MoonPhases.length) % ST_Config.MoonPhases.length;
+      return normalized;
+    }
+
+    if (typeof moonPhase.position === 'number' && Number.isFinite(moonPhase.position)) {
+      const normalizedPosition = ((moonPhase.position % 1) + 1) % 1;
+      return Math.min(ST_Config.MoonPhases.length - 1, Math.floor(normalizedPosition * ST_Config.MoonPhases.length));
+    }
+
+    return null;
+  }
+
+  static getCurrentMoonPhaseIndex() {
+    const providedPhase = Helpers.getProvidedMoonPhaseIndex();
+    if (providedPhase !== null) return providedPhase;
+    return game.settings.get('smalltime', 'moon-phase');
+  }
+
+  static normalizeHexColor(color) {
+    if (typeof color !== 'string') return null;
+    const trimmed = color.trim();
+    const withHash = trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
+    return /^#[0-9a-fA-F]{6}$/.test(withHash) ? withHash.toLowerCase() : null;
+  }
+
+  static mixHexColors(baseHex, tintHex, amount) {
+    const base = Helpers.normalizeHexColor(baseHex);
+    const tint = Helpers.normalizeHexColor(tintHex);
+    if (!base || !tint) return baseHex;
+
+    const clampedAmount = Math.min(Math.max(Number(amount) || 0, 0), 1);
+    const parse = (hex, offset) => parseInt(hex.slice(offset, offset + 2), 16);
+    const lerp = (a, b, t) => Math.round(a + (b - a) * t);
+
+    const r = lerp(parse(base, 1), parse(tint, 1), clampedAmount);
+    const g = lerp(parse(base, 3), parse(tint, 3), clampedAmount);
+    const b = lerp(parse(base, 5), parse(tint, 5), clampedAmount);
+    return `#${[r, g, b]
+      .map((value) => value.toString(16).padStart(2, '0'))
+      .join('')}`;
+  }
+
+  static getProviderMoonColor() {
+    const calendariaApi = Helpers.getCalendariaApi();
+    const calendar = calendariaApi?.getActiveCalendar?.();
+    const firstMoon = calendar?.moonsArray?.[0] ?? Object.values(calendar?.moons ?? {})[0];
+    return Helpers.normalizeHexColor(firstMoon?.color ?? null);
+  }
+
+  static getMoonIlluminationFromPosition(position) {
+    if (typeof position !== 'number' || !Number.isFinite(position)) return 0;
+    const normalized = ((position % 1) + 1) % 1;
+    // New moon ~= 0.0, full moon ~= 0.5
+    return (1 - Math.cos(normalized * Math.PI * 2)) / 2;
+  }
+
+  static getCalendariaMoonTintData() {
+    const calendariaApi = Helpers.getCalendariaApi();
+    if (!calendariaApi) return null;
+
+    const calendar = calendariaApi.getActiveCalendar?.();
+    const moons = calendar?.moonsArray ?? Object.values(calendar?.moons ?? {});
+    if (!moons?.length) return null;
+
+    let weightedR = 0;
+    let weightedG = 0;
+    let weightedB = 0;
+    let totalWeight = 0;
+
+    for (let index = 0; index < moons.length; index++) {
+      const moonColor = Helpers.normalizeHexColor(moons[index]?.color ?? null);
+      if (!moonColor) continue;
+
+      const phaseData = calendariaApi.getMoonPhase?.(index);
+      const illumination = Helpers.getMoonIlluminationFromPosition(phaseData?.position);
+      if (illumination <= 0) continue;
+
+      const r = parseInt(moonColor.slice(1, 3), 16);
+      const g = parseInt(moonColor.slice(3, 5), 16);
+      const b = parseInt(moonColor.slice(5, 7), 16);
+
+      weightedR += r * illumination;
+      weightedG += g * illumination;
+      weightedB += b * illumination;
+      totalWeight += illumination;
+    }
+
+    if (totalWeight <= 0) return null;
+
+    const blendedHex = `#${[weightedR / totalWeight, weightedG / totalWeight, weightedB / totalWeight]
+      .map((value) => Math.round(value).toString(16).padStart(2, '0'))
+      .join('')}`;
+
+    const averageIllumination = totalWeight / moons.length;
+    return {
+      color: blendedHex,
+      illumination: Math.min(Math.max(averageIllumination, 0), 1),
+    };
+  }
+
+  static async applyMoonTint(currentPhase, timeNow) {
+    const scene = canvas.scene ?? game.scenes.viewed;
+    if (!scene) return;
+
+    const isNight = !(timeNow >= game.settings.get('smalltime', 'sunrise-end') && timeNow < game.settings.get('smalltime', 'sunset-start'));
+    const hasMoonTintSetting = game.settings.get('smalltime', 'moon-tint');
+    const hasDarknessLink = !!scene.getFlag('smalltime', 'darkness-link');
+    const calendariaMoonTint = Helpers.getCalendariaMoonTintData();
+    const moonColor = calendariaMoonTint?.color ?? Helpers.getProviderMoonColor();
+
+    let nextDarknessColor = ST_Config.coreDarknessColor;
+    if (hasMoonTintSetting && hasDarknessLink && isNight && moonColor) {
+      const baseHex = `#${ST_Config.coreDarknessColor.toString(16).padStart(6, '0')}`;
+      const phaseWeight = calendariaMoonTint?.illumination ?? ST_Config.PhaseValues[currentPhase] ?? 0;
+      const impactWeight = Math.min(Math.max(game.settings.get('smalltime', 'phase-impact') ?? 0, 0), 1);
+      const tintAmount = Math.min(0.6, phaseWeight * impactWeight);
+      const mixedHex = Helpers.mixHexColors(baseHex, moonColor, tintAmount);
+      nextDarknessColor = parseInt(mixedHex.slice(1), 16);
+    }
+
+    if (nextDarknessColor === ST_Config.activeDarknessColor) return;
+    ST_Config.activeDarknessColor = nextDarknessColor;
+    CONFIG.Canvas.darknessColor = nextDarknessColor;
+
+    if (canvas?.environment?.initialize) {
+      canvas.environment.initialize({ environment: { darknessLevel: canvas.environment.darknessLevel } });
+    }
   }
 
   // Convert worldTime (seconds elapsed) into an integer time of day.
@@ -931,44 +1067,6 @@ export class Helpers {
     let newHex = rgb2hex(newRgbIntensityFloat);
 
     return newHex;
-  }
-
-  // Overriding the Vision Limitation Threshold value for the scene if requested.
-  // Values span from 0.0 to 1.0 to mimic brightness levels of the various phases.
-  static async adjustMoonlight(phases) {
-    // Only perform this adjustment if the setting is enabled.
-    if (!game.scenes.viewed.getFlag('smalltime', 'moonlight') || !phases.length) return;
-    let newThreshold = 0;
-    phases.forEach((phase) => {
-      switch (phase) {
-        case 0: // new
-          newThreshold += 0;
-          break;
-        case 1: // waxing crescent
-        case 7: // waning crescent
-          newThreshold += 0.25;
-          break;
-        case 2: // first quarter
-        case 6: // last quarter
-          newThreshold += 0.5;
-          break;
-        case 3: // waxing gibbous
-        case 5: // waning gibbous
-          newThreshold += 0.75;
-          break;
-        case 4: // full
-          newThreshold += 1;
-          break;
-      }
-    });
-
-    newThreshold = Math.round((newThreshold / phases.length) * 100) / 100;
-
-    const currentThreshold = foundry.utils.getProperty(game.scenes.viewed, 'environment.globalLight.darkness.max');
-    if (newThreshold === currentThreshold) {
-      return true;
-    }
-    await canvas.scene.update({ environment: { globalLight: { darkness: { max: newThreshold } } } });
   }
 
   // Sun & moon icons by Freepik on flaticon.com
