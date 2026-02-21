@@ -33,6 +33,9 @@ ST_Config.MaxDarknessDefault = 1;
 ST_Config.MinDarknessDefault = 0;
 
 export class Helpers {
+  static #cachedSystemDateFormats = null;
+  static #cachedSystemDateFormatsKey = '';
+
   static getDarknessBackingFieldNames() {
     return [
       'smalltime.max-darkness',
@@ -386,19 +389,38 @@ export class Helpers {
     return displayObj.hours + ':' + displayObj.minutes;
   }
 
+  static getPF2eWorldClockSecondsOfDay() {
+    if (game.system?.id !== 'pf2e') return null;
+
+    const worldTime = game.pf2e?.worldClock?.worldTime;
+    if (!worldTime) return null;
+
+    const hour = typeof worldTime.hour === 'number' ? worldTime.hour : null;
+    const minute = typeof worldTime.minute === 'number' ? worldTime.minute : null;
+    const second = typeof worldTime.second === 'number' ? worldTime.second : 0;
+    if (hour === null || minute === null) return null;
+
+    return hour * 3600 + minute * 60 + second;
+  }
+
+  static getWorldTimeSecondsOfDay() {
+    const pf2eSeconds = Helpers.getPF2eWorldClockSecondsOfDay();
+    if (pf2eSeconds !== null) return pf2eSeconds;
+
+    const currentWorldTime = game.time.worldTime + ST_Config.EpochOffset;
+    const normalized = ((currentWorldTime % 86400) + 86400) % 86400;
+    return Math.trunc(normalized);
+  }
+
   // Convert worldTime (seconds elapsed) into an integer time of day.
   static getWorldTimeAsDayTime() {
-    const currentWorldTime = game.time.worldTime + ST_Config.EpochOffset;
-    const dayTime = Math.abs(Math.trunc((currentWorldTime % 86400) / 60));
-    if (currentWorldTime < 0) {
-      return 1440 - dayTime;
-    } else return dayTime;
+    const secondsOfDay = Helpers.getWorldTimeSecondsOfDay();
+    return Math.trunc(secondsOfDay / 60);
   }
 
   // Advance/retreat the elapsed worldTime based on changes made.
   static async setWorldTime(newTime) {
-    const currentWorldTime = game.time.worldTime + ST_Config.EpochOffset;
-    const dayTime = Helpers.getWorldTimeAsDayTime(currentWorldTime);
+    const dayTime = Helpers.getWorldTimeAsDayTime();
     const delta = newTime - dayTime;
     game.time.advance(delta * 60);
   }
@@ -413,13 +435,7 @@ export class Helpers {
 
     // Calculate and show the current seconds if required.
     if (game.settings.get('smalltime', 'time-format') == 24 && game.settings.get('smalltime', 'show-seconds') == true) {
-      const currentWorldTime = game.time.worldTime + ST_Config.EpochOffset;
-      let seconds;
-      if (currentWorldTime < 0) {
-        seconds = 60 - Math.abs(Math.trunc(((currentWorldTime % 86400) % 3600) % 60));
-      } else {
-        seconds = Math.abs(Math.trunc(((currentWorldTime % 86400) % 3600) % 60));
-      }
+      let seconds = Helpers.getWorldTimeSecondsOfDay() % 60;
       if (seconds < 10) seconds = '0' + seconds;
       if (seconds == 60) seconds = '00';
       const secondStringElement = document.getElementById('secondString');
@@ -438,6 +454,13 @@ export class Helpers {
   }
 
   static getDate(variant) {
+    const numericVariant = Number(variant);
+    const customVariant = Number.isFinite(numericVariant) ? numericVariant - 12 : -1;
+    if (customVariant >= 0) {
+      const customDate = Helpers.getSystemDateByVariant(customVariant);
+      if (customDate) return customDate;
+    }
+
     let day;
     let monthName;
     let month;
@@ -448,8 +471,19 @@ export class Helpers {
     let ordinalSuffix;
     let displayDate = [];
 
-    const calendar = game.time?.calendar;
-    if (calendar) {
+    const pf2eDateParts = Helpers.getPF2eDateParts();
+    if (pf2eDateParts) {
+      day = pf2eDateParts.day;
+      monthName = pf2eDateParts.monthName;
+      month = pf2eDateParts.month;
+      date = pf2eDateParts.date;
+      year = pf2eDateParts.year;
+      ordinalSuffix = '';
+      yearPrefix = undefined;
+      yearPostfix = pf2eDateParts.era;
+    } else {
+      const calendar = game.time?.calendar;
+      if (calendar) {
       const components = calendar.timeToComponents(game.time.worldTime);
       const weekdayData = calendar.days?.values?.[components.dayOfWeek];
       const monthData = calendar.months?.values?.[components.month];
@@ -461,8 +495,9 @@ export class Helpers {
       ordinalSuffix = '';
       yearPrefix = undefined;
       yearPostfix = undefined;
-    } else {
-      year = '';
+      } else {
+        year = '';
+      }
     }
 
     // Thursday, August 12th, 2021 C.E.
@@ -517,7 +552,105 @@ export class Helpers {
     // 2021 / 8 / 12
     displayDate.push(Helpers.stringAfter(year, ' / ') + Helpers.stringAfter(month, ' / ') + date);
 
-    return displayDate[variant];
+    return displayDate[numericVariant] ?? displayDate[0];
+  }
+
+  static getPF2eDateParts() {
+    if (game.system?.id !== 'pf2e') return null;
+
+    const worldClock = game.pf2e?.worldClock;
+    const worldTime = worldClock?.worldTime;
+    if (!worldClock || !worldTime) return null;
+
+    const monthNumber = typeof worldTime.month === 'number' ? worldTime.month : undefined;
+    const dayOfMonth = typeof worldTime.day === 'number' ? worldTime.day : undefined;
+    const displayYear = typeof worldClock.year === 'number' ? worldClock.year : undefined;
+    if (monthNumber === undefined || dayOfMonth === undefined || displayYear === undefined) return null;
+
+    return {
+      day: typeof worldClock.weekday === 'string' ? worldClock.weekday : undefined,
+      monthName: typeof worldClock.month === 'string' ? worldClock.month : undefined,
+      month: monthNumber,
+      date: dayOfMonth,
+      year: displayYear,
+      era: typeof worldClock.era === 'string' ? worldClock.era : undefined,
+    };
+  }
+
+  static getDateFormatOptions() {
+    const options = [];
+    for (let i = 0; i <= 11; i++) {
+      options.push({
+        value: i,
+        label: Helpers.getDate(i),
+      });
+    }
+
+    const systemDateFormats = Helpers.getSystemDateFormatters();
+    systemDateFormats.forEach((format, index) => {
+      const preview = Helpers.getSystemDateByVariant(index) ?? Helpers.getDate(0);
+      options.push({
+        value: 12 + index,
+        label: `${preview} (${game.i18n.localize(format.label)})`,
+      });
+    });
+
+    return options;
+  }
+
+  static getSystemDateByVariant(variant) {
+    const calendar = game.time?.calendar;
+    if (!calendar) return null;
+    const format = Helpers.getSystemDateFormatters()[variant];
+    if (!format?.formatter) return null;
+
+    try {
+      const components = calendar.timeToComponents(game.time.worldTime);
+      return calendar.format(components, format.formatter);
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  static getSystemDateFormatters() {
+    const calendar = game.time?.calendar;
+    const cacheKey = `${game.system?.id ?? ''}::${calendar?.constructor?.name ?? ''}`;
+    if (Helpers.#cachedSystemDateFormats && Helpers.#cachedSystemDateFormatsKey === cacheKey) {
+      return Helpers.#cachedSystemDateFormats;
+    }
+
+    const systemConfig = Helpers.getSystemCalendarConfig();
+    const formatters = Array.isArray(systemConfig?.formatters) ? systemConfig.formatters : [];
+    const dateFormatters = formatters.filter((entry) => {
+      if (!entry?.formatter || !entry?.label) return false;
+
+      const group = String(entry.group ?? '').toLowerCase();
+      const value = String(entry.value ?? '').toLowerCase();
+      const formatter = String(entry.formatter ?? '').toLowerCase();
+      return group.includes('date') || value.includes('date') || value.includes('day') || formatter.includes('date') || formatter.includes('day');
+    });
+
+    Helpers.#cachedSystemDateFormats = dateFormatters;
+    Helpers.#cachedSystemDateFormatsKey = cacheKey;
+    return dateFormatters;
+  }
+
+  static getSystemCalendarConfig() {
+    const systemId = String(game.system?.id ?? '');
+    if (!systemId) return null;
+
+    const normalizedSystemId = systemId.replace(/[^a-z0-9]/gi, '').toUpperCase();
+    for (const [key, configValue] of Object.entries(CONFIG)) {
+      const normalizedKey = key.replace(/[^a-z0-9]/gi, '').toUpperCase();
+      if (normalizedKey !== normalizedSystemId) continue;
+      if (configValue?.calendar) return configValue.calendar;
+    }
+
+    for (const configValue of Object.values(CONFIG)) {
+      if (configValue?.calendar?.formatters) return configValue.calendar;
+    }
+
+    return null;
   }
 
   static stringAfter(stringText, afterString = ' ') {

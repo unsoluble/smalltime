@@ -55,7 +55,7 @@
   padding: 0;
   background: none;
   margin: 0;
-  overflow-y: auto;
+  overflow-y: hidden;
   overflow-x: hidden;
   box-shadow: none;
   border: none;

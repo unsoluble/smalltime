@@ -1,5 +1,8 @@
 import { Helpers, ST_Config } from './helpers.mjs';
 
+const DATE_FORMAT_OPTION_COUNT = 64;
+const DATE_FORMAT_CHOICES = Object.fromEntries(Array.from({ length: DATE_FORMAT_OPTION_COUNT }, (_, index) => [index, String(index)]));
+
 Hooks.on('init', () => {
   game.keybindings.register('smalltime', 'toggle-hotkey', {
     name: game.i18n.localize('SMLTME.Toggle_Hotkey'),
@@ -93,20 +96,7 @@ Hooks.on('init', () => {
     config: true,
     type: Number,
     // These strings are replaced dynamically later.
-    choices: {
-      0: '0',
-      1: '1',
-      2: '2',
-      3: '3',
-      4: '4',
-      5: '5',
-      6: '6',
-      7: '7',
-      8: '8',
-      9: '9',
-      10: '10',
-      11: '11',
-    },
+    choices: DATE_FORMAT_CHOICES,
     default: 0,
   });
 
@@ -424,12 +414,7 @@ const applyMainAppLayoutState = (appElement) => {
   timeDisplayElement?.classList.remove('hide-for-players');
   appElement.style.height = '58px';
 
-  if (game.settings.get('smalltime', 'date-showing')) {
-    appElement.classList.add('show-date');
-    appElement.style.height = '79px';
-  } else {
-    appElement.classList.remove('show-date');
-  }
+  SmallTimeApp.applyDateTrayState(appElement, game.settings.get('smalltime', 'date-showing'));
 };
 
 Hooks.on('renderSmallTimeApp', () => {
@@ -645,8 +630,37 @@ Hooks.on('renderSettingsConfig', (obj) => {
 
   const dateFormatSelect = findSettingInput('smalltime.date-format');
   if (dateFormatSelect) {
-    for (const option of dateFormatSelect.querySelectorAll('option')) {
-      option.text = Helpers.getDate(Number(option.value));
+    const currentValue = Number(game.settings.get('smalltime', 'date-format'));
+    const options = Helpers.getDateFormatOptions();
+    const hasCurrentValue = options.some((option) => option.value === currentValue);
+    const selectedValue = hasCurrentValue ? currentValue : 0;
+    const builtInOptions = options.filter((option) => option.value < 12);
+    const systemOptions = options.filter((option) => option.value >= 12);
+
+    dateFormatSelect.innerHTML = '';
+
+    const appendOptions = (target, entries) => {
+      for (const optionData of entries) {
+        const option = document.createElement('option');
+        option.value = String(optionData.value);
+        option.textContent = optionData.label;
+        option.selected = optionData.value === selectedValue;
+        target.append(option);
+      }
+    };
+
+    if (builtInOptions.length) {
+      const builtInGroup = document.createElement('optgroup');
+      builtInGroup.label = 'SmallTime formats';
+      appendOptions(builtInGroup, builtInOptions);
+      dateFormatSelect.append(builtInGroup);
+    }
+
+    if (systemOptions.length) {
+      const systemGroup = document.createElement('optgroup');
+      systemGroup.label = 'System-added formats';
+      appendOptions(systemGroup, systemOptions);
+      dateFormatSelect.append(systemGroup);
     }
   }
 
@@ -827,6 +841,9 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
     SmallTimeApp._isOpen = true;
 
     applyMainAppLayoutState(this.element);
+    setTimeout(() => {
+      SmallTimeApp.applyDateTrayState(this.element, game.settings.get('smalltime', 'date-showing'));
+    }, 0);
 
     this.activateListeners();
   }
@@ -883,6 +900,28 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
 
     this._dragHandle = dragHandle;
     this._dragHandle.addEventListener('pointerdown', this._boundOnDragStart);
+  }
+
+  static applyDateTrayState(appElement, showDate) {
+    if (!appElement) return;
+    const dateDisplayElement = appElement.querySelector('#dateDisplay');
+    if (showDate) {
+      appElement.classList.add('show-date');
+      appElement.style.height = '79px';
+      if (dateDisplayElement) {
+        dateDisplayElement.style.display = 'block';
+        dateDisplayElement.style.visibility = 'visible';
+        dateDisplayElement.style.transform = 'scaleY(1)';
+      }
+    } else {
+      appElement.classList.remove('show-date');
+      appElement.style.height = '58px';
+      if (dateDisplayElement) {
+        dateDisplayElement.style.display = 'none';
+        dateDisplayElement.style.visibility = 'hidden';
+        dateDisplayElement.style.transform = 'scaleY(0)';
+      }
+    }
   }
 
   computePinZone(clientX, clientY) {
@@ -991,6 +1030,7 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
     // updated since a settings change for some reason.
     SmallTimeApp.timeTransition(this.currentTime);
     SmallTimeApp.updateDate();
+    SmallTimeApp.applyDateTrayState(appElement, game.settings.get('smalltime', 'date-showing'));
 
     const timeSliderEl = appElement.querySelector('#timeSlider');
     const hourStringEl = appElement.querySelector('#hourString');
@@ -1052,17 +1092,16 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
 
     // Toggle the date display div.
     timeDisplayEl?.addEventListener('click', async (ev) => {
-      if (!game.settings.get('smalltime', 'date-showing')) {
-        appElement.classList.add('show-date');
-        appElement.style.height = '79px';
+      const isShowing = appElement.classList.contains('show-date');
+      if (!isShowing) {
+        SmallTimeApp.applyDateTrayState(appElement, true);
         if (game.settings.get('smalltime', 'pinned')) {
           SmallTimeApp.unPinApp();
           SmallTimeApp.pinApp(this);
         }
         await game.settings.set('smalltime', 'date-showing', true);
       } else {
-        appElement.classList.remove('show-date');
-        appElement.style.height = '59px';
+        SmallTimeApp.applyDateTrayState(appElement, false);
         if (game.settings.get('smalltime', 'pinned')) {
           SmallTimeApp.unPinApp();
           SmallTimeApp.pinApp(this);
