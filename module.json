@@ -3,7 +3,7 @@
   "id": "smalltime",
   "description": "A small module for displaying and controlling the current time of day.",
   "compatibility": {
-    "minimum": 10,
+    "minimum": 13,
     "verified": 13
   },
   "version": "1.0.0",
