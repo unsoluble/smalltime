@@ -1,5 +1,4 @@
 {
-  "name": "smalltime",
   "id": "smalltime",
   "title": "SmallTime",
   "description": "A small module for displaying and controlling the current time of day.",
@@ -7,19 +6,15 @@
   "readme": "https://github.com/unsoluble/smalltime/blob/main/README.md",
   "bugs": "https://github.com/unsoluble/smalltime/issues",
   "changelog": "https://github.com/unsoluble/smalltime/releases",
-  "author": "unsoluble",
   "authors": [
     {
       "name": "unsoluble",
       "discord": "unsoluble#5084"
     }
   ],
-  "minimumCoreVersion": "10",
-  "compatibleCoreVersion": "11",
   "compatibility": {
-    "minimum": 10,
-    "verified": 11,
-    "maximum": 12
+    "minimum": 13,
+    "verified": 13
   },
   "media": [
     {

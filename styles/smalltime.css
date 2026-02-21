@@ -75,6 +75,8 @@
 #smalltime-app .window-content > form {
   padding: 0;
   font-size: 0.8rem;
+  position: relative;
+  height: 100%;
 }
 
 #smalltime-app input {
@@ -101,7 +103,7 @@
   position: relative;
   top: 1px;
   left: -2px;
-  //text-shadow: 0px 2px 2px rgba(0, 0, 0, 0.15);
+  /* text-shadow: 0px 2px 2px rgba(0, 0, 0, 0.15); */
 }
 
 #smalltime-darkness-config {
@@ -149,22 +151,22 @@
   z-index: 0;
 }
 .sunrise-start-bounds {
-  // border: 1px solid red;
+  /* border: 1px solid red; */
   left: 8px;
   width: 230px;
 }
 .sunrise-end-bounds {
-  // border: 1px solid green;
+  /* border: 1px solid green; */
   left: 28px;
   width: 230px;
 }
 .sunset-start-bounds {
-  // border: 1px solid blue;
+  /* border: 1px solid blue; */
   left: 242px;
   width: 250px;
 }
 .sunset-end-bounds {
-  // border: 1px solid purple;
+  /* border: 1px solid purple; */
   left: 262px;
   width: 250px;
 }
@@ -451,7 +453,17 @@
   transition: transform 0.1s ease-out;
 }
 
+#dragHandle,
 #smalltime-app #dragHandle {
+  display: block;
+  width: 100%;
+  height: 10px;
+  cursor: move;
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  z-index: 4;
+  pointer-events: auto;
   background: url('../images/denim-dark-090.png') repeat;
   background-blend-mode: screen;
   background-color: rgba(0, 0, 0, 1);

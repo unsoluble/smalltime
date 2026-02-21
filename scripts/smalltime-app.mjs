@@ -782,24 +782,45 @@ Hooks.on('calendaria.dateTimeChange', (data) => {
   Helpers.updateGradientStops();
 });
 
-class SmallTimeApp extends FormApplication {
+class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2) {
   static _isOpen = false;
 
-  async _render(force = false, options = {}) {
-    await super._render(force, options);
+  static DEFAULT_OPTIONS = {
+    id: 'smalltime-app',
+    classes: ['form'],
+    window: {
+      title: 'SmallTime',
+      minimizable: false,
+      resizable: false,
+    },
+    position: {
+      width: 200,
+      height: 'auto',
+    },
+  };
+
+  static PARTS = {
+    app: {
+      template: 'modules/smalltime/templates/smalltime.html',
+    },
+  };
+
+  async _onRender(context, options) {
+    await super._onRender(context, options);
+
     if (game.settings.get('smalltime', 'pinned')) {
       SmallTimeApp.pinApp();
     }
     SmallTimeApp._isOpen = true;
-    // Remove the window from candidates for closing via Escape.
-    delete ui.windows[this.appId];
+
+    this.activateListeners();
   }
 
   // Override original #close method inherited from parent class.
   async close(options = {}) {
-    // If called by SmallTime, record that it is not longer visible.
-    if (options.smallTime) {
-      SmallTimeApp._isOpen = false;
+    // Record visibility regardless of close source to keep internal state in sync.
+    SmallTimeApp._isOpen = false;
+    if (game.settings.get('smalltime', 'visible')) {
       game.settings.set('smalltime', 'visible', false);
     }
     return super.close(options);
@@ -810,38 +831,15 @@ class SmallTimeApp extends FormApplication {
     this.currentTime = Helpers.getWorldTimeAsDayTime();
   }
 
-  static get defaultOptions() {
-    const playerApp = document.getElementById('players-inactive');
-    const playerAppPos = playerApp.getBoundingClientRect();
-
-    this.initialPosition = game.settings.get('smalltime', 'position');
-
-    return foundry.utils.mergeObject(super.defaultOptions, {
-      classes: ['form'],
-      popOut: true,
-      submitOnChange: true,
-      closeOnSubmit: false,
-      minimizable: false,
-      template: 'modules/smalltime/templates/smalltime.html',
-      id: 'smalltime-app',
-      title: 'SmallTime',
-      top: this.initialPosition.top,
-      left: this.initialPosition.left,
-    });
+  _initializeApplicationOptions(options = {}) {
+    const initialPosition = game.settings.get('smalltime', 'position');
+    options.position = options.position || {};
+    options.position.top = initialPosition.top;
+    options.position.left = initialPosition.left;
+    return super._initializeApplicationOptions(options);
   }
 
-  async _updateObject(event, formData) {
-    // Get the slider value.
-    const newTime = formData.timeSlider;
-    // Save the new time.
-    if (game.user.isGM) {
-      await Helpers.setWorldTime(newTime);
-    } else {
-      SmallTimeApp.emitSocket('changeTime', newTime);
-    }
-  }
-
-  getData() {
+  async _prepareContext() {
     // Send values to the HTML template.
     return {
       timeValue: this.currentTime,
@@ -851,11 +849,15 @@ class SmallTimeApp extends FormApplication {
     };
   }
 
-  activateListeners(html) {
-    super.activateListeners(html);
+  activateListeners() {
+    const html = $(this.element);
 
-    const dragHandle = html.find('#dragHandle')[0];
-    const drag = new foundry.applications.ux.Draggable.implementation(this, this.element[0], dragHandle, false);
+    const dragHandle = this.element.querySelector('#dragHandle');
+    if (!dragHandle) {
+      console.warn('SmallTime: drag handle element was not found.');
+      return;
+    }
+    const drag = new foundry.applications.ux.Draggable.implementation(this, this.element, dragHandle, false);
 
     // Pin zone is the "jiggle area" in which the app will be locked
     // to a pinned position if dropped. pinZone stores whether or not
@@ -940,8 +942,8 @@ class SmallTimeApp extends FormApplication {
     SmallTimeApp.updateDate();
 
     // Handle cycling through the moon phases on Shift-clicks.
-    $('#timeSlider').on('click', async function () {
-      if (event.shiftKey && game.modules.get('smalltime').controlAuth) {
+    $('#timeSlider').on('click', async function (ev) {
+      if (ev.shiftKey && game.modules.get('smalltime').controlAuth) {
         const startingPhase = game.settings.get('smalltime', 'moon-phase');
         const newPhase = (startingPhase + 1) % ST_Config.MoonPhases.length;
 
@@ -966,21 +968,19 @@ class SmallTimeApp extends FormApplication {
     });
 
     // Handle live feedback while dragging the sun/moon slider.
-    $(document).on(
-      'input',
-      '#timeSlider',
-      foundry.utils.debounce(async function () {
-        $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).hours);
-        $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).minutes);
-        SmallTimeApp.timeTransition($(this).val());
-        if (game.user.isGM) {
-          SmallTimeApp.emitSocket('changeTime', $(this).val());
-        }
-      }, 100),
-    );
+    const sliderInputHandler = foundry.utils.debounce(async function () {
+      $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).hours);
+      $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).minutes);
+      SmallTimeApp.timeTransition($(this).val());
+      if (game.user.isGM) {
+        SmallTimeApp.emitSocket('changeTime', $(this).val());
+      }
+    }, 100);
+
+    html.find('#timeSlider').on('input', sliderInputHandler);
 
     // Wait for the actual change event to do the time set.
-    $(document).on('change', '#timeSlider', async function () {
+    html.find('#timeSlider').on('change', async function () {
       if (game.user.isGM) {
         Helpers.setWorldTime($(this).val());
       } else {
@@ -991,8 +991,8 @@ class SmallTimeApp extends FormApplication {
     // Toggle the date display div, if a calendar provider is enabled.
     // The inline CSS overrides are a bit hacky, but were the
     // only way I could get the desired behaviour.
-    html.find('#timeDisplay').on('click', async function () {
-      if (event.shiftKey && game.modules.get('smalltime').controlAuth && !game.paused && game.modules.get('foundryvtt-simple-calendar')?.active) {
+    html.find('#timeDisplay').on('click', async function (ev) {
+      if (ev.shiftKey && game.modules.get('smalltime').controlAuth && !game.paused && game.modules.get('foundryvtt-simple-calendar')?.active) {
         if (SimpleCalendar.api.clockStatus().started) {
           SimpleCalendar.api.stopClock();
         } else {
@@ -1034,10 +1034,10 @@ class SmallTimeApp extends FormApplication {
     let largeStep = game.settings.get('smalltime', 'large-step');
     let stepAmount;
 
-    html.find('#decrease-small').on('click', () => {
-      if (event.shiftKey) {
+    html.find('#decrease-small').on('click', (ev) => {
+      if (ev.shiftKey) {
         stepAmount = -Math.abs(smallStep * 2);
-      } else if (event.altKey) {
+      } else if (ev.altKey) {
         stepAmount = Math.floor(-Math.abs(smallStep / 2));
       } else {
         stepAmount = -Math.abs(smallStep);
@@ -1045,10 +1045,10 @@ class SmallTimeApp extends FormApplication {
       this.timeRatchet(stepAmount);
     });
 
-    html.find('#decrease-large').on('click', () => {
-      if (event.shiftKey) {
+    html.find('#decrease-large').on('click', (ev) => {
+      if (ev.shiftKey) {
         stepAmount = -Math.abs(largeStep * 2);
-      } else if (event.altKey) {
+      } else if (ev.altKey) {
         stepAmount = Math.floor(-Math.abs(largeStep / 2));
       } else {
         stepAmount = -Math.abs(largeStep);
@@ -1056,10 +1056,10 @@ class SmallTimeApp extends FormApplication {
       this.timeRatchet(stepAmount);
     });
 
-    html.find('#increase-small').on('click', () => {
-      if (event.shiftKey) {
+    html.find('#increase-small').on('click', (ev) => {
+      if (ev.shiftKey) {
         stepAmount = smallStep * 2;
-      } else if (event.altKey) {
+      } else if (ev.altKey) {
         stepAmount = Math.floor(smallStep / 2);
       } else {
         stepAmount = smallStep;
@@ -1067,10 +1067,10 @@ class SmallTimeApp extends FormApplication {
       this.timeRatchet(stepAmount);
     });
 
-    html.find('#increase-large').on('click', () => {
-      if (event.shiftKey) {
+    html.find('#increase-large').on('click', (ev) => {
+      if (ev.shiftKey) {
         stepAmount = largeStep * 2;
-      } else if (event.altKey) {
+      } else if (ev.altKey) {
         stepAmount = Math.floor(largeStep / 2);
       } else {
         stepAmount = largeStep;
@@ -1247,19 +1247,19 @@ class SmallTimeApp extends FormApplication {
   // Pin the app above the Players list inside the ui-left container.
   static async pinApp() {
     const app = game.modules.get('smalltime').myApp;
-    if (app && !app.element.hasClass('pinned')) {
-      $('#players').before(app.element);
-      app.element.addClass('pinned');
+    if (app && !app.element.classList.contains('pinned')) {
+      document.getElementById('players')?.insertAdjacentElement('beforebegin', app.element);
+      app.element.classList.add('pinned');
     }
   }
 
   // Un-pin the app.
   static unPinApp() {
     const app = game.modules.get('smalltime').myApp;
-    if (app && app.element.hasClass('pinned')) {
+    if (app && app.element.classList.contains('pinned')) {
       const element = app.element;
-      $('body').append(element);
-      element.removeClass('pinned');
+      document.body.append(element);
+      element.classList.remove('pinned');
 
       return true;
     }
@@ -1285,11 +1285,15 @@ class SmallTimeApp extends FormApplication {
         if (SmallTimeApp._isOpen) {
           game.modules.get('smalltime').myApp.close({ smallTime: true });
         }
-        game.modules.get('smalltime').myApp = await new SmallTimeApp().render(true);
+        const app = new SmallTimeApp();
+        await app.render({ force: true });
+        game.modules.get('smalltime').myApp = app;
         game.settings.set('smalltime', 'visible', true);
       }
     } else if (game.settings.get('smalltime', 'visible') === true) {
-      game.modules.get('smalltime').myApp = await new SmallTimeApp().render(true);
+      const app = new SmallTimeApp();
+      await app.render({ force: true });
+      game.modules.get('smalltime').myApp = app;
     }
   }
 
