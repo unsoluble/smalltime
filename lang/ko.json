@@ -10,8 +10,6 @@
   "SMLTME.Small_Step_Hint": "앞/뒤로 움직일 시간의 규모입니다. < 와 > 버튼으로 움직입니다. 시프트 키를 누른 채로 조절하면 두 배만큼 움직일 수 있습니다.",
   "SMLTME.Large_Step": "대량 조정",
   "SMLTME.Large_Step_Hint": "앞/뒤로 움직일 시간의 규모입니다. << 와 >> 버튼으로 움직입니다. 시프트 키를 누른 채로 조절하면 두 배만큼 움직일 수 있습니다.",
-  "SMLTME.Resting_Opacity": "투명도 조정",
-  "SMLTME.Resting_Opacity_Hint": "스몰 타임 창을 건드리지 않을 때의 투명도입니다. ",
   "SMLTME.Darkness_Default": "기본값으로 어둠 조절",
   "SMLTME.Darkness_Default_Hint": "장면 설정에서 스몰 타임 어둠 조정 설정을 기본값으로 설정합니다.",
   "SMLTME.Darkness_Control": "어둠 조정",

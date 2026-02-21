@@ -10,8 +10,6 @@
   "SMLTME.Small_Step_Hint": "Number of minutes to adjust the time with the < and > buttons. Hold Shift to double, Alt to halve.",
   "SMLTME.Large_Step": "Large Step Amount",
   "SMLTME.Large_Step_Hint": "Number of minutes to adjust the time with the << and >> buttons. Hold Shift to double, Alt to halve.",
-  "SMLTME.Resting_Opacity": "Resting Opacity",
-  "SMLTME.Resting_Opacity_Hint": "Opacity of the SmallTime window when you're not interacting with it.",
   "SMLTME.Darkness_Default": "Affect Darkness by Default",
   "SMLTME.Darkness_Default_Hint": "Default setting for the Darkness Control setting in Scene Config. Only applies to new scenes.",
   "SMLTME.Darkness_Control": "Darkness Control",

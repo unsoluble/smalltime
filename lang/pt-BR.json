@@ -10,8 +10,6 @@
   "SMLTME.Small_Step_Hint": "Número de minutos adicionados/removidos a partir de < e >. Segure shift para dobrá-los.",
   "SMLTME.Large_Step": "Longo Salto Tempo",
   "SMLTME.Large_Step_Hint": "Número de minutos adicionados/removidos a partir de << e >>. Segure shift para dobrá-los.",
-  "SMLTME.Resting_Opacity": "Opacidade em Modo de Repouso",
-  "SMLTME.Resting_Opacity_Hint": "Opacidade da janela do SmallTime quando você não está interagindo com ela.",
   "SMLTME.Darkness_Default": "Alterar Escuridão por Padrão",
   "SMLTME.Darkness_Default_Hint": "Vincular o SmallTime ao Nível de Escurdião nas Configurações de Cena.",
   "SMLTME.Darkness_Control": "Controle de Escuridão",

@@ -10,8 +10,6 @@
   "SMLTME.Small_Step_Hint": "Počet minut, o kolik se úpraví čas tlačítkem < a >. Když podržíš Shift, tak o dvojnásobek. Když Alt, tak o polovinu.",
   "SMLTME.Large_Step": "Velký krok",
   "SMLTME.Large_Step_Hint": "Počet minut, o kolik se úpraví čas tlačítkem << a >>. Když podržíš Shift, tak o dvojnásobek. Když Alt, tak o polovinu.",
-  "SMLTME.Resting_Opacity": "Neaktivní průhlednost",
-  "SMLTME.Resting_Opacity_Hint": "Průhlednost okna SmallTime, když se s ním neinteraguje.",
   "SMLTME.Darkness_Default": "Nastavovat výchozí nastavení ovlivnění tmy?",
   "SMLTME.Darkness_Default_Hint": "Po zaškrtnutí nastaví výchozí nastavení pro ovládání tmy v nastavení nových scén.",
   "SMLTME.Darkness_Control": "Ovládat tmu?",

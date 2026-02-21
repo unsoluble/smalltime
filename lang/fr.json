@@ -10,8 +10,6 @@
   "SMLTME.Small_Step_Hint": "Nombre de minutes à rajouter/retirer de l'horloge avec les boutons < et >. Appuyez sur Maj pour doubler.",
   "SMLTME.Large_Step": "Pas horaire (grand)",
   "SMLTME.Large_Step_Hint": "Nombre de minutes à rajouter/retirer de l'horloge avec les boutons << et >>. Appuyez sur Maj pour doubler.",
-  "SMLTME.Resting_Opacity": "Opacité au repos",
-  "SMLTME.Resting_Opacity_Hint": "l'opacité de la fenêtre SmallTime quand vous n'interagissez pas avec.",
   "SMLTME.Darkness_Default": "Affecter le niveau d'obscurité (valeur par défaut)",
   "SMLTME.Darkness_Default_Hint": "Paramétrage par défaut dans la configuration des scènes pour le niveau d'obscurité.",
   "SMLTME.Darkness_Control": "Contrôle de l'obscurité",

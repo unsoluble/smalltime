@@ -11,8 +11,6 @@
   "SMLTME.Small_Step_Hint": "「<」「>」ボタンで進む／戻る時間を分単位で指定します。［Shift］キー押下時は2倍です。",
   "SMLTME.Large_Step": "ボタンによる時間変化（大）",
   "SMLTME.Large_Step_Hint": "「<<」「>>」ボタンで進む／戻る時間を分単位で指定します。［Shift］キー押下時は2倍です。",
-  "SMLTME.Resting_Opacity": "待機時の不透明度",
-  "SMLTME.Resting_Opacity_Hint": "操作していないときのSmallTimeウィンドウの不透明度を指定します。",
   "SMLTME.Darkness_Default": "照明制御をデフォルトにする",
   "SMLTME.Darkness_Default_Hint": "シーン設定内にある「SmallTimeによる照明制御」をデフォルトで有効にします。",
   "SMLTME.Darkness_Control": "SmallTimeによる照明制御",

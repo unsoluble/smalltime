@@ -157,24 +157,6 @@ Hooks.on('init', () => {
     default: 60,
   });
 
-  game.settings.register('smalltime', 'opacity', {
-    name: game.i18n.localize('SMLTME.Resting_Opacity'),
-    hint: game.i18n.localize('SMLTME.Resting_Opacity_Hint'),
-    scope: 'client',
-    config: true,
-    type: Number,
-    range: {
-      min: 0,
-      max: 1,
-      step: 0.1,
-    },
-    default: 0.8,
-    // Realtime preview of the opacity setting.
-    onChange: (value) => {
-      document.documentElement.style.setProperty('--SMLTME-opacity', value);
-    },
-  });
-
   game.settings.register('smalltime', 'max-darkness', {
     scope: 'world',
     config: true,
@@ -370,10 +352,6 @@ Hooks.on('canvasReady', () => {
   } else {
     document.documentElement.style.setProperty('--SMLTME-display-vis', 'flex');
   }
-  // Render at opacity per user prefs.
-  const userOpacity = game.settings.get('smalltime', 'opacity');
-  document.documentElement.style.setProperty('--SMLTME-opacity', userOpacity);
-
   if (game.modules.get('smalltime').controlAuth) {
     const darknessDefault = game.settings.get('smalltime', 'darkness-default');
     const visDefault = game.settings.get('smalltime', 'player-visibility-default');
@@ -409,19 +387,38 @@ Hooks.on('ready', () => {
   });
 
   async function doSocket(data) {
+    const hasSocketControlPermission = (sender) => {
+      if (!sender) return false;
+      const isAssistantOrGM = sender.role >= CONST.USER_ROLES.ASSISTANT;
+      const isTrustedAllowed = game.settings.get('smalltime', 'allow-trusted') && sender.role === CONST.USER_ROLES.TRUSTED;
+      return isAssistantOrGM || isTrustedAllowed;
+    };
+
     const canApplySocketSetting = (payload) => {
       if (!payload || payload.scope !== 'smalltime') return false;
 
       const sender = payload.userId ? game.users.get(payload.userId) : null;
-      if (!sender) return false;
-
-      const isAssistantOrGM = sender.role >= CONST.USER_ROLES.ASSISTANT;
-      const isTrustedAllowed = game.settings.get('smalltime', 'allow-trusted') && sender.role === CONST.USER_ROLES.TRUSTED;
-      if (!(isAssistantOrGM || isTrustedAllowed)) return false;
+      if (!hasSocketControlPermission(sender)) return false;
 
       if (payload.key !== 'moon-phase') return false;
       if (!Number.isInteger(payload.value)) return false;
       return payload.value >= 0 && payload.value < ST_Config.MoonPhases.length;
+    };
+
+    const canApplySocketDarkness = (payload) => {
+      if (!payload) return false;
+
+      const sender = payload.userId ? game.users.get(payload.userId) : null;
+      if (!hasSocketControlPermission(sender)) return false;
+
+      if (typeof payload.sceneID !== 'string' || !payload.sceneID) return false;
+      if (typeof payload.darkness !== 'number' || Number.isNaN(payload.darkness)) return false;
+      if (payload.darkness < 0 || payload.darkness > 1) return false;
+
+      const currentScene = game.scenes.get(payload.sceneID);
+      if (!currentScene) return false;
+      if (!currentScene.getFlag('smalltime', 'darkness-link')) return false;
+      return true;
     };
 
     if (data.type === 'changeTime') {
@@ -436,9 +433,9 @@ Hooks.on('ready', () => {
       }
     }
     if (data.type === 'changeDarkness') {
-      if (game.user.isGM) {
+      if (game.user.isGM && canApplySocketDarkness(data.payload)) {
         const currentScene = game.scenes.get(data.payload.sceneID);
-        await currentScene.update({ darkness: data.payload.darkness });
+        await currentScene.update({ environment: { darknessLevel: data.payload.darkness } });
       }
     }
     if (data.type === 'handleRealtime') {
@@ -453,27 +450,47 @@ Hooks.on('ready', () => {
 
 // Wait for the app to be rendered, then adjust the CSS to
 // account for the date display, if showing.
-Hooks.on('renderSmallTimeApp', () => {
-  // Disable controls for non-GMs.
+const applyMainAppLayoutState = (appElement) => {
+  if (!appElement) return;
+
+  const controlsToHide = ['#decrease-large', '#decrease-small', '#increase-large', '#increase-small'];
+  const displayContainerElement = appElement.querySelector('#displayContainer');
+  const timeDisplayElement = appElement.querySelector('#timeDisplay');
+
   if (!game.modules.get('smalltime').controlAuth) {
     document.documentElement.style.setProperty('--SMLTME-pointer-events', 'none');
-    $('#decrease-large').addClass('hide-for-players');
-    $('#decrease-small').addClass('hide-for-players');
-    $('#increase-large').addClass('hide-for-players');
-    $('#increase-small').addClass('hide-for-players');
-  }
-  // Also manage the height of the app window to match the contents.
-  if (!game.modules.get('smalltime').clockAuth) {
-    $('#timeDisplay').addClass('hide-for-players');
-    $('#smalltime-app').css({ height: '35px' });
+    controlsToHide.forEach((selector) => appElement.querySelector(selector)?.classList.add('hide-for-players'));
   } else {
-    $('#timeDisplay').removeClass('hide-for-players');
-    $('#smalltime-app').css({ height: '58px' });
+    document.documentElement.style.setProperty('--SMLTME-pointer-events', 'auto');
+    controlsToHide.forEach((selector) => appElement.querySelector(selector)?.classList.remove('hide-for-players'));
   }
+
+  if (!game.modules.get('smalltime').clockAuth) {
+    document.documentElement.style.setProperty('--SMLTME-display-vis', 'none');
+    appElement.classList.add('clock-restricted');
+    displayContainerElement?.style.setProperty('display', 'none');
+    timeDisplayElement?.classList.add('hide-for-players');
+    appElement.classList.remove('show-date');
+    appElement.style.height = '35px';
+    return;
+  }
+
+  document.documentElement.style.setProperty('--SMLTME-display-vis', 'flex');
+  appElement.classList.remove('clock-restricted');
+  displayContainerElement?.style.setProperty('display', 'flex');
+  timeDisplayElement?.classList.remove('hide-for-players');
+  appElement.style.height = '58px';
+
   if (game.settings.get('smalltime', 'date-showing') && game.modules.get('smalltime').dateAvailable) {
-    $('#smalltime-app').addClass('show-date');
-    $('#smalltime-app').css({ height: '79px' });
+    appElement.classList.add('show-date');
+    appElement.style.height = '79px';
+  } else {
+    appElement.classList.remove('show-date');
   }
+};
+
+Hooks.on('renderSmallTimeApp', () => {
+  applyMainAppLayoutState(document.getElementById('smalltime-app'));
   Helpers.handleTimeChange(Helpers.getWorldTimeAsDayTime());
 });
 
@@ -602,7 +619,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
   obj.setPosition();
 
   if (obj.document?.getFlag('smalltime', 'moonlight')) {
-    const currentThreshold = foundry.utils.getProperty(obj.document, 'environment.globalLight.darkness.max') ?? obj.document.globalLightThreshold ?? 1;
+    const currentThreshold = foundry.utils.getProperty(obj.document, 'environment.globalLight.darkness.max') ?? 1;
     const coreThresholdCheckbox = root.querySelector('input[name="hasGlobalThreshold"]');
     if (coreThresholdCheckbox) coreThresholdCheckbox.checked = true;
 
@@ -696,14 +713,14 @@ Hooks.on('renderSettingsConfig', (obj) => {
     if (settingGroup) settingGroup.style.display = 'none';
   }
 
-  const opacityTitleElement = findSettingGroup('smalltime.opacity')?.querySelector('label');
+  const positionResetLabel = findSettingGroup('smalltime.player-visibility-default')?.querySelector('label');
   let popupDirection = 'right';
   if (game.modules.get('tidy-ui_game-settings')?.active) popupDirection = 'up';
-  const opacityTooltipAnchor = ensureTooltipAnchor(opacityTitleElement);
-  if (opacityTooltipAnchor) {
-    opacityTooltipAnchor.setAttribute('aria-label', game.i18n.localize('SMLTME.Position_Reset'));
-    opacityTooltipAnchor.setAttribute('data-balloon-pos', popupDirection);
-    bindOnce(opacityTitleElement, 'OpacityResetClick', 'click', async (event) => {
+  const positionResetAnchor = ensureTooltipAnchor(positionResetLabel);
+  if (positionResetAnchor) {
+    positionResetAnchor.setAttribute('aria-label', game.i18n.localize('SMLTME.Position_Reset'));
+    positionResetAnchor.setAttribute('data-balloon-pos', popupDirection);
+    bindOnce(positionResetLabel, 'PositionResetClick', 'click', async (event) => {
       if (!event.shiftKey) return;
       await game.settings.set('smalltime', 'pinned', true);
       window.location.reload(false);
@@ -789,26 +806,9 @@ Hooks.on('renderSettingsConfig', (obj) => {
 
   Helpers.grabSceneSlice();
   Helpers.setupDragHandles(root);
-
-  const opacityInput = findSettingInput('smalltime.opacity');
-  bindOnce(opacityInput, 'OpacityInput', 'input', (event) => {
-    const smallTimeElement = document.getElementById('smalltime-app');
-    if (!smallTimeElement) return;
-    smallTimeElement.style.opacity = event.currentTarget.value;
-    smallTimeElement.style.transitionDelay = 'none';
-    smallTimeElement.style.transition = 'none';
-  });
 });
 
-// Undo the opacity preview settings.
 Hooks.on('closeSettingsConfig', async () => {
-  const smallTimeElement = document.getElementById('smalltime-app');
-  if (smallTimeElement) {
-    smallTimeElement.style.opacity = '';
-    smallTimeElement.style.transitionDelay = '';
-    smallTimeElement.style.transition = '';
-  }
-
   // Update the stops on the sunrise/sunset gradient, in case
   // there's been changes to the positions. Also update the
   // rise/set times in case of a change to sync toggle.
@@ -892,6 +892,8 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
       }
     }
     SmallTimeApp._isOpen = true;
+
+    applyMainAppLayoutState(this.element);
 
     this.activateListeners();
   }
@@ -1271,18 +1273,20 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
     let bgOffset = Math.round((timeNow / midnight) * 2000);
 
     // Set the offset accordingly.
-    $('#slideContainer').css('background-position', `0px -${bgOffset}px`);
+    const slideContainerElement = document.getElementById('slideContainer');
+    slideContainerElement?.style.setProperty('background-position', `0px -${bgOffset}px`);
 
     // Swap out the moon for the sun during daytime,
     // changing phase as appropriate.
     const currentPhase = game.settings.get('smalltime', 'moon-phase');
 
+    const timeSliderElement = document.getElementById('timeSlider');
     if (timeNow >= sunriseEnd && timeNow < sunsetStart) {
-      $('#timeSlider').removeClass('moon');
-      $('#timeSlider').addClass('sun');
+      timeSliderElement?.classList.remove('moon');
+      timeSliderElement?.classList.add('sun');
     } else {
-      $('#timeSlider').removeClass('sun');
-      $('#timeSlider').addClass('moon');
+      timeSliderElement?.classList.remove('sun');
+      timeSliderElement?.classList.add('moon');
       document.documentElement.style.setProperty('--SMLTME-phaseURL', `url('../images/moon-phases/${ST_Config.MoonPhases[currentPhase]}.webp')`);
     }
 
@@ -1334,7 +1338,7 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
       if (persistDarkness) {
         // Perform the Darkness update, and send it out to other clients.
         if (game.user.isGM) {
-          await currentScene.update({ darkness: darknessValue });
+          await currentScene.update({ environment: { darknessLevel: darknessValue } });
         } else {
           SmallTimeApp.emitSocket('changeDarkness', {
             darkness: darknessValue,
@@ -1414,15 +1418,16 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
     if (!game.modules.get('smalltime').viewAuth) return;
     if (mode === 'toggle') {
       if (game.settings.get('smalltime', 'visible') === true) {
-        // Stop any currently-running animations, and then animate the app
-        // away before close(), to avoid the stock close() animation.
-        $('#smalltime-app').stop();
-        $('#smalltime-app').css({ animation: 'close 0.2s', opacity: '0' });
+        const appElement = document.getElementById('smalltime-app');
+        if (appElement) {
+          appElement.classList.remove('is-opening');
+          appElement.classList.add('is-closing');
+        }
         setTimeout(function () {
           // Pass an object to .close() to indicate that it came from SmallTime,
           // and not from an Escape keypress.
           game.modules.get('smalltime').myApp.close({ smallTime: true });
-        }, 200);
+        }, 170);
       } else {
         // Make sure there isn't already an instance of the app rendered.
         // Fire off a close() just in case, clears up some stuck states.
@@ -1434,6 +1439,11 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
         game.modules.get('smalltime').myApp = app;
         if (game.settings.get('smalltime', 'pinned')) {
           SmallTimeApp.pinApp(app);
+        }
+        if (app.element) {
+          app.element.classList.add('is-opening');
+          app.element.classList.remove('is-closing');
+          app.element.addEventListener('animationend', () => app.element?.classList.remove('is-opening'), { once: true });
         }
         game.settings.set('smalltime', 'visible', true);
       }
@@ -1451,7 +1461,8 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
   static async updateDate() {
     let displayDate = Helpers.getDate(game.settings.get('smalltime', 'calendar-provider'), game.settings.get('smalltime', 'date-format'));
 
-    $('#dateDisplay').html(displayDate);
+    const dateDisplayElement = document.getElementById('dateDisplay');
+    if (dateDisplayElement) dateDisplayElement.textContent = displayDate;
 
     // Save this string so we can display it on initial load-in,
     // before the calendar provider is ready.
