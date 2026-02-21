@@ -423,7 +423,11 @@ export class Helpers {
     // If the provider is set to a module or system that isn't available, use the
     // first available provider by default.
     if (providerSetting === 'cd' && !game.modules.get('calendaria')?.active) {
-      game.settings.set('smalltime', 'calendar-provider', Helpers.getCalendarProviders()[0]);
+      const providers = Helpers.getCalendarProviders();
+      const fallbackProvider = Object.keys(providers)[0];
+      if (fallbackProvider) {
+        game.settings.set('smalltime', 'calendar-provider', fallbackProvider);
+      }
     }
   }
 

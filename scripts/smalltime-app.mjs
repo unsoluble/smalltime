@@ -152,7 +152,7 @@ Hooks.on('init', () => {
       20: '20',
       30: '30',
       60: '60',
-      240: '120',
+      120: '120',
     },
     default: 60,
   });
@@ -570,91 +570,102 @@ Hooks.on('renderSceneConfig', async (obj) => {
 });
 
 Hooks.on('renderSettingsConfig', (obj) => {
-  // Everything here is GM-only.
   if (!game.user.isGM) return;
 
-  // Tweak the Client Settings window's size to account for specific
-  // styling in some systems.
+  const root = obj.form ?? obj.element?.[0];
+  if (!root) return;
+
+  const findSettingInput = (name) => root.querySelector(`[name="${name}"]`);
+  const findSettingGroup = (name) => findSettingInput(name)?.closest('.form-group');
+
+  const ensureTooltipAnchor = (labelElement) => {
+    if (!labelElement) return null;
+    let anchor = labelElement.querySelector('.st-tooltip-anchor');
+    if (anchor) return anchor;
+
+    anchor = document.createElement('span');
+    anchor.classList.add('st-tooltip-anchor');
+    while (labelElement.firstChild) {
+      anchor.append(labelElement.firstChild);
+    }
+    labelElement.append(anchor);
+    return anchor;
+  };
+
   if (game.system.id === 'wfrp4e') {
-    $('#client-settings').css('width', '990px');
+    const clientSettings = document.getElementById('client-settings');
+    if (clientSettings) clientSettings.style.width = '990px';
   }
   if (game.system.id === 'dsa5') {
-    $('#client-settings').css('width', '800px');
+    const clientSettings = document.getElementById('client-settings');
+    if (clientSettings) clientSettings.style.width = '800px';
   }
 
-  // Hide the Show Seconds setting if we're not using 24hr time.
-  if (game.settings.get('smalltime', 'time-format') == 12) {
-    $('input[name="smalltime.show-seconds"]').parent().parent().css('display', 'none');
-  }
+  const showSecondsGroup = findSettingGroup('smalltime.show-seconds');
+  const setShowSecondsVisibility = (timeFormatValue) => {
+    if (!showSecondsGroup) return;
+    showSecondsGroup.style.display = Number(timeFormatValue) === 24 ? 'flex' : 'none';
+  };
+  setShowSecondsVisibility(game.settings.get('smalltime', 'time-format'));
 
-  // Toggle the Show Seconds setting with changes to the time format.
-  $('select[name="smalltime.time-format"]').on('change', function () {
-    if (this.value == 24) {
-      $('input[name="smalltime.show-seconds"]').parent().parent().css('display', 'flex');
-    } else {
-      $('input[name="smalltime.show-seconds"]').parent().parent().css('display', 'none');
-    }
-  });
-
-  // Live toggle the seconds display.
-  $('input[name="smalltime.show-seconds"]').on('change', function () {
-    if (this.checked) {
-      $('#secondsSpan').css('display', 'inline');
-    } else {
-      $('#secondsSpan').css('display', 'none');
-    }
-  });
-
-  // Pull the current date and format it in various ways for the selection.
-  $('select[name="smalltime.date-format"]')
-    .children('option')
-    .each(function () {
-      this.text = Helpers.getDate(game.settings.get('smalltime', 'calendar-provider'), this.value);
+  const timeFormatSelect = findSettingInput('smalltime.time-format');
+  if (timeFormatSelect) {
+    timeFormatSelect.addEventListener('change', (event) => {
+      setShowSecondsVisibility(event.currentTarget.value);
     });
+  }
 
-  // Hide the elements for the threshold settings; we'll be changing
-  // these elsewhere, but still want them here for the save workflow.
-  $('input[name="smalltime.max-darkness"]').parent().parent().css('display', 'none');
-  $('input[name="smalltime.min-darkness"]').parent().parent().css('display', 'none');
-  $('input[name="smalltime.sunrise-start"]').parent().parent().css('display', 'none');
-  $('input[name="smalltime.sunrise-end"]').parent().parent().css('display', 'none');
-  $('input[name="smalltime.sunset-start"]').parent().parent().css('display', 'none');
+  const showSecondsInput = findSettingInput('smalltime.show-seconds');
+  if (showSecondsInput) {
+    showSecondsInput.addEventListener('change', (event) => {
+      const secondsSpan = document.getElementById('secondsSpan');
+      if (!secondsSpan) return;
+      secondsSpan.style.display = event.currentTarget.checked ? 'inline' : 'none';
+    });
+  }
 
-  // Add a reset-position popup to the setting title.
-  const opacityTitleElement = $('label:contains(' + game.i18n.localize('SMLTME.Resting_Opacity') + ')');
+  const dateFormatSelect = findSettingInput('smalltime.date-format');
+  if (dateFormatSelect) {
+    for (const option of dateFormatSelect.querySelectorAll('option')) {
+      option.text = Helpers.getDate(game.settings.get('smalltime', 'calendar-provider'), option.value);
+    }
+  }
+
+  const hiddenSettingNames = [
+    'smalltime.max-darkness',
+    'smalltime.min-darkness',
+    'smalltime.sunrise-start',
+    'smalltime.sunrise-end',
+    'smalltime.sunset-start',
+  ];
+  for (const settingName of hiddenSettingNames) {
+    const settingGroup = findSettingGroup(settingName);
+    if (settingGroup) settingGroup.style.display = 'none';
+  }
+
+  const opacityTitleElement = findSettingGroup('smalltime.opacity')?.querySelector('label');
   let popupDirection = 'right';
   if (game.modules.get('tidy-ui_game-settings')?.active) popupDirection = 'up';
-  if (!opacityTitleElement.find('.st-tooltip-anchor').length) {
-    opacityTitleElement.wrapInner('<span class="st-tooltip-anchor"></span>');
-  }
-  opacityTitleElement.find('.st-tooltip-anchor').attr({
-    'aria-label': game.i18n.localize('SMLTME.Position_Reset'),
-    'data-balloon-pos': popupDirection,
-  });
-
-  // Reset to pinned position on Shift-click, and refresh the page.
-  $(opacityTitleElement).on('click', async function (event) {
-    if (event.shiftKey) {
+  const opacityTooltipAnchor = ensureTooltipAnchor(opacityTitleElement);
+  if (opacityTooltipAnchor) {
+    opacityTooltipAnchor.setAttribute('aria-label', game.i18n.localize('SMLTME.Position_Reset'));
+    opacityTooltipAnchor.setAttribute('data-balloon-pos', popupDirection);
+    opacityTitleElement.addEventListener('click', async (event) => {
+      if (!event.shiftKey) return;
       await game.settings.set('smalltime', 'pinned', true);
       window.location.reload(false);
-    }
-  });
+    });
+  }
 
-  // Add a reset-to-defaults popup to the setting title.
-  const darknessTitleElement = $('label:contains(' + game.i18n.localize('SMLTME.Darkness_Config') + ')');
+  const darknessTitleElement = findSettingGroup('smalltime.sunset-end')?.querySelector('label');
   popupDirection = 'right';
   if (game.modules.get('tidy-ui_game-settings')?.active) popupDirection = 'up';
-  if (!darknessTitleElement.find('.st-tooltip-anchor').length) {
-    darknessTitleElement.wrapInner('<span class="st-tooltip-anchor"></span>');
-  }
-  darknessTitleElement.find('.st-tooltip-anchor').attr({
-    'aria-label': game.i18n.localize('SMLTME.Darkness_Reset'),
-    'data-balloon-pos': popupDirection,
-  });
-
-  // Reset to defaults on Shift-click, and close the window.
-  $(darknessTitleElement).on('click', async function (event) {
-    if (event.shiftKey) {
+  const darknessTooltipAnchor = ensureTooltipAnchor(darknessTitleElement);
+  if (darknessTooltipAnchor) {
+    darknessTooltipAnchor.setAttribute('aria-label', game.i18n.localize('SMLTME.Darkness_Reset'));
+    darknessTooltipAnchor.setAttribute('data-balloon-pos', popupDirection);
+    darknessTitleElement.addEventListener('click', async (event) => {
+      if (!event.shiftKey) return;
       await Promise.all([
         game.settings.set('smalltime', 'sunrise-start', ST_Config.SunriseStartDefault),
         game.settings.set('smalltime', 'sunrise-end', ST_Config.SunriseEndDefault),
@@ -671,15 +682,11 @@ Hooks.on('renderSettingsConfig', (obj) => {
           await obj.render(true);
         }
       }
-    }
-  });
+    });
+  }
 
-  // Create and insert a div for the Darkness Configuration tool.
-  const insertionElement = $('input[name="smalltime.sunset-end"]');
-  insertionElement.css('display', 'none');
-
-  const notesElement = insertionElement.parent().next();
-
+  const insertionElement = findSettingInput('smalltime.sunset-end');
+  if (insertionElement) insertionElement.style.display = 'none';
   const injection = `
     <div id="smalltime-darkness-config" class="notes">
         <div class="handles">
@@ -694,34 +701,39 @@ Hooks.on('renderSettingsConfig', (obj) => {
         <div class="sunset-end-bounds"></div>
     </div>`;
 
-  // Only inject if it isn't already there.
-  if (!$('#smalltime-darkness-config').length) {
-    notesElement.after(injection);
+  if (!root.querySelector('#smalltime-darkness-config')) {
+    const sunsetEndGroup = findSettingGroup('smalltime.sunset-end');
+    const insertionAnchor =
+      insertionElement?.parentElement?.nextElementSibling
+      || sunsetEndGroup?.querySelector(':scope > p.notes, :scope > p.hint');
+
+    if (insertionAnchor && insertionAnchor.parentElement) {
+      insertionAnchor.insertAdjacentHTML('afterend', injection);
+    } else if (sunsetEndGroup) {
+      sunsetEndGroup.insertAdjacentHTML('beforeend', injection);
+    }
   }
 
-  // Re-auto-size the app window.
   obj.setPosition();
 
-  // Get the current Darkness overlay color.
   const currentDarknessColor = Helpers.convertHexToRGB(CONFIG.Canvas.darknessColor.toString(16));
   document.documentElement.style.setProperty('--SMLTME-darkness-r', currentDarknessColor.r);
   document.documentElement.style.setProperty('--SMLTME-darkness-g', currentDarknessColor.g);
   document.documentElement.style.setProperty('--SMLTME-darkness-b', currentDarknessColor.b);
 
-  // Refresh the current scene BG for the settings dialog.
   Helpers.grabSceneSlice();
-
-  // Build the Darkness Config interface.
   Helpers.setupDragHandles();
 
-  // Live render the opacity changes as a preview.
-  $('input[name="smalltime.opacity"]').on('input', () => {
-    $('#smalltime-app').css({
-      opacity: $('input[name="smalltime.opacity"]').val(),
-      'transition-delay': 'none',
-      transition: 'none',
+  const opacityInput = findSettingInput('smalltime.opacity');
+  if (opacityInput) {
+    opacityInput.addEventListener('input', (event) => {
+      const smallTimeElement = document.getElementById('smalltime-app');
+      if (!smallTimeElement) return;
+      smallTimeElement.style.opacity = event.currentTarget.value;
+      smallTimeElement.style.transitionDelay = 'none';
+      smallTimeElement.style.transition = 'none';
     });
-  });
+  }
 });
 
 // Undo the opacity preview settings.
