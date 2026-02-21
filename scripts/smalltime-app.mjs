@@ -738,33 +738,14 @@ Hooks.on('getSceneControlButtons', (controls) => {
   }
 });
 
-// Adjust the position of the window when the size of the PlayerList changes.
-Hooks.on('renderPlayerList', () => {
-  const element = document.getElementById('players');
-  const playerAppPos = element.getBoundingClientRect();
+// Re-assert pinning whenever the Players UI re-renders.
+const handlePlayersRender = () => {
+  if (!game.settings.get('smalltime', 'pinned')) return;
+  SmallTimeApp.pinApp();
+};
 
-  // The ST_Config.PinOffset here is the ideal distance between the top of the
-  // Players list and the top of SmallTime. The +21 accounts
-  // for the date dropdown if enabled; the -23 accounts for the clock row
-  // being disabled in some cases.
-  let bottomOffset = playerAppPos.height + ST_Config.PinOffset;
-
-  if (game.settings.get('smalltime', 'date-showing')) {
-    bottomOffset += 21;
-  }
-  if (!game.modules.get('smalltime').clockAuth) {
-    bottomOffset -= 23;
-  }
-  // Custom offset for Item Piles, which adds a button into the Players app.
-  if (game.modules.get('item-piles')?.active) {
-    bottomOffset += 30;
-  }
-  let leftOffset = 15;
-
-  if (game.settings.get('smalltime', 'pinned')) {
-    SmallTimeApp.pinApp();
-  }
-});
+Hooks.on('renderPlayers', handlePlayersRender);
+Hooks.on('renderPlayerList', handlePlayersRender);
 
 // Listen for changes to the worldTime from elsewhere.
 Hooks.on('updateWorldTime', () => {
@@ -856,92 +837,131 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
     };
   }
 
-  activateListeners() {
-    const html = $(this.element);
-
+  bindDragHandle() {
     const dragHandle = this.element.querySelector('#dragHandle');
     if (!dragHandle) {
       console.warn('SmallTime: drag handle element was not found.');
       return;
     }
-    const drag = new foundry.applications.ux.Draggable.implementation(this, this.element, dragHandle, false);
 
-    // Pin zone is the "jiggle area" in which the app will be locked
-    // to a pinned position if dropped. pinZone stores whether or not
-    // we're currently in that area.
-    let pinZone = false;
+    this._boundOnDragStart ??= this.onDragStart.bind(this);
+    this._boundOnDragMove ??= this.onDragMove.bind(this);
+    this._boundOnDragEnd ??= this.onDragEnd.bind(this);
 
-    // Have to override this because of the non-standard drag handle, and
-    // also to manage the pin lock zone and animation effects.
-    drag._onDragMouseMove = function _newOnDragMouseMove(event) {
-      event.preventDefault();
+    if (this._dragHandle) {
+      this._dragHandle.removeEventListener('pointerdown', this._boundOnDragStart);
+    }
 
-      const playerApp = document.getElementById('players-inactive') || document.getElementById('players');
-      if (!playerApp) return;
-      const playerAppPos = playerApp.getBoundingClientRect();
-      const appElement = this.app.element;
+    this._dragHandle = dragHandle;
+    this._dragHandle.addEventListener('pointerdown', this._boundOnDragStart);
+  }
 
-      // Limit dragging to 60 updates per second.
-      const now = Date.now();
-      if (now - this._moveTime < 1000 / 60) return;
-      this._moveTime = now;
+  computePinZone(clientX, clientY) {
+    const playerApp = document.getElementById('players-inactive') || document.getElementById('players');
+    if (!playerApp) return false;
 
-      // When unpinning, make the drag track from the existing location in screen space
-      const { left, top } = this.element.getBoundingClientRect();
-      if (SmallTimeApp.unPinApp()) {
-        Object.assign(this.position, { left, top });
-      }
+    const playerAppPos = playerApp.getBoundingClientRect();
+    const playerAppUpperBound = playerAppPos.top - 50;
+    const playerAppLowerBound = playerAppPos.top + 50;
 
-      // Follow the mouse.
-      this.app.setPosition({
-        left: this.position.left + (event.clientX - this._initial.x),
-        top: this.position.top + (event.clientY - this._initial.y),
-      });
+    return (
+      clientX > playerAppPos.left &&
+      clientX < playerAppPos.left + playerAppPos.width &&
+      clientY > playerAppUpperBound &&
+      clientY < playerAppLowerBound
+    );
+  }
 
-      // Defining a region above the PlayerList that will trigger the jiggle.
-      let playerAppUpperBound = playerAppPos.top - 50;
-      let playerAppLowerBound = playerAppPos.top + 50;
+  onDragStart(event) {
+    if (event.button !== 0) return;
+    event.preventDefault();
 
-      pinZone =
-        event.clientX > playerAppPos.left &&
-        event.clientX < playerAppPos.left + playerAppPos.width &&
-        event.clientY > playerAppUpperBound &&
-        event.clientY < playerAppLowerBound;
+    const dragHandle = event.currentTarget;
+    dragHandle.setPointerCapture(event.pointerId);
 
-      appElement.style.animation = pinZone ? 'jiggle 0.2s infinite' : '';
+    const appRect = this.element.getBoundingClientRect();
+
+    this._dragState = {
+      pointerId: event.pointerId,
+      startPointer: { x: event.clientX, y: event.clientY },
+      startAppPos: {
+        left: appRect.left,
+        top: appRect.top,
+      },
+      wasPinnedAtStart: this.element.classList.contains('pinned'),
+      hasUnpinnedOnThisDrag: false,
+      pinZone: false,
+      dragHandle,
     };
 
-    drag._onDragMouseUp = async function _newOnDragMouseUp(event) {
-      event.preventDefault();
+    window.addEventListener('pointermove', this._boundOnDragMove);
+    window.addEventListener('pointerup', this._boundOnDragEnd);
+    window.addEventListener('pointercancel', this._boundOnDragEnd);
+  }
 
-      window.removeEventListener(...this.handlers.dragMove);
-      window.removeEventListener(...this.handlers.dragUp);
+  onDragMove(event) {
+    const dragState = this._dragState;
+    if (!dragState || event.pointerId !== dragState.pointerId) return;
+    event.preventDefault();
 
-      const playerApp = document.getElementById('players-inactive') || document.getElementById('players');
-      if (!playerApp) return;
-      const playerAppPos = playerApp.getBoundingClientRect();
-      const playerAppUpperBound = playerAppPos.top - 50;
-      const playerAppLowerBound = playerAppPos.top + 50;
-
-      const droppedInPinZone =
-        event.clientX > playerAppPos.left &&
-        event.clientX < playerAppPos.left + playerAppPos.width &&
-        event.clientY > playerAppUpperBound &&
-        event.clientY < playerAppLowerBound;
-
-      // If the mouseup happens inside the Pin zone, pin the app.
-      if (droppedInPinZone || pinZone) {
-        SmallTimeApp.pinApp(this.app);
-        await game.settings.set('smalltime', 'pinned', true);
-      } else {
-        const newPos = { top: this.app.position.top, left: this.app.position.left };
-        await game.settings.set('smalltime', 'position', newPos);
-        await game.settings.set('smalltime', 'pinned', false);
+    if (dragState.wasPinnedAtStart && !dragState.hasUnpinnedOnThisDrag) {
+      const deltaX = event.clientX - dragState.startPointer.x;
+      const deltaY = event.clientY - dragState.startPointer.y;
+      if (Math.abs(deltaX) + Math.abs(deltaY) > 0) {
+        const { left, top } = this.element.getBoundingClientRect();
+        if (!SmallTimeApp.unPinApp()) return;
+        dragState.hasUnpinnedOnThisDrag = true;
+        this.setPosition({ left, top });
+        dragState.startAppPos = { left, top };
+        dragState.startPointer = { x: event.clientX, y: event.clientY };
       }
+    }
 
-      // Kill the jiggle animation on mouseUp.
-      this.app.element.style.animation = '';
-    };
+    const moveX = event.clientX - dragState.startPointer.x;
+    const moveY = event.clientY - dragState.startPointer.y;
+
+    this.setPosition({
+      left: dragState.startAppPos.left + moveX,
+      top: dragState.startAppPos.top + moveY,
+    });
+
+    dragState.pinZone = this.computePinZone(event.clientX, event.clientY);
+    this.element.style.animation = dragState.pinZone ? 'jiggle 0.2s infinite' : '';
+  }
+
+  async onDragEnd(event) {
+    const dragState = this._dragState;
+    if (!dragState || event.pointerId !== dragState.pointerId) return;
+    event.preventDefault();
+
+    const dragHandle = dragState.dragHandle;
+    if (dragHandle.hasPointerCapture(event.pointerId)) {
+      dragHandle.releasePointerCapture(event.pointerId);
+    }
+
+    window.removeEventListener('pointermove', this._boundOnDragMove);
+    window.removeEventListener('pointerup', this._boundOnDragEnd);
+    window.removeEventListener('pointercancel', this._boundOnDragEnd);
+
+    const droppedInPinZone = this.computePinZone(event.clientX, event.clientY) || dragState.pinZone;
+
+    if (droppedInPinZone) {
+      SmallTimeApp.pinApp(this);
+      await game.settings.set('smalltime', 'pinned', true);
+    } else {
+      const newPos = { top: this.position.top, left: this.position.left };
+      await game.settings.set('smalltime', 'position', newPos);
+      await game.settings.set('smalltime', 'pinned', false);
+    }
+
+    this.element.style.animation = '';
+    this._dragState = null;
+  }
+
+  activateListeners() {
+    const html = $(this.element);
+
+    this.bindDragHandle();
 
     // An initial set of the sun/moon/bg/time/date display in case it hasn't been
     // updated since a settings change for some reason.
@@ -1256,7 +1276,7 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
     const app = appInstance || game.modules.get('smalltime').myApp;
     if (!app) return false;
 
-    const playersAnchor = document.getElementById('players') || document.getElementById('players-inactive');
+    const playersAnchor = SmallTimeApp.getPlayersPinAnchor();
     if (!playersAnchor) return false;
 
     if (app.element.nextElementSibling !== playersAnchor) {
@@ -1264,6 +1284,10 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
     }
     app.element.classList.add('pinned');
     return true;
+  }
+
+  static getPlayersPinAnchor() {
+    return document.getElementById('players-active') || document.getElementById('players') || document.getElementById('players-inactive');
   }
 
   // Un-pin the app.
