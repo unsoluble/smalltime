@@ -959,7 +959,7 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
   }
 
   activateListeners() {
-    const html = $(this.element);
+    const appElement = this.element;
 
     this.bindDragHandle();
 
@@ -968,8 +968,18 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
     SmallTimeApp.timeTransition(this.currentTime);
     SmallTimeApp.updateDate();
 
+    const timeSliderEl = appElement.querySelector('#timeSlider');
+    const hourStringEl = appElement.querySelector('#hourString');
+    const minuteStringEl = appElement.querySelector('#minuteString');
+    const timeDisplayEl = appElement.querySelector('#timeDisplay');
+    const dateDisplayEl = appElement.querySelector('#dateDisplay');
+    const decreaseSmallEl = appElement.querySelector('#decrease-small');
+    const decreaseLargeEl = appElement.querySelector('#decrease-large');
+    const increaseSmallEl = appElement.querySelector('#increase-small');
+    const increaseLargeEl = appElement.querySelector('#increase-large');
+
     // Handle cycling through the moon phases on Shift-clicks.
-    $('#timeSlider').on('click', async function (ev) {
+    timeSliderEl?.addEventListener('click', async (ev) => {
       if (ev.shiftKey && game.modules.get('smalltime').controlAuth) {
         const startingPhase = game.settings.get('smalltime', 'moon-phase');
         const newPhase = (startingPhase + 1) % ST_Config.MoonPhases.length;
@@ -987,38 +997,40 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
             value: newPhase,
           });
         }
+        const sliderValue = Number(timeSliderEl.value);
         if (game.user.isGM) {
-          await Helpers.setWorldTime($(this).val());
+          await Helpers.setWorldTime(sliderValue);
         }
-        SmallTimeApp.emitSocket('changeTime', $(this).val());
+        SmallTimeApp.emitSocket('changeTime', sliderValue);
       }
     });
 
     // Handle live feedback while dragging the sun/moon slider.
-    const sliderInputHandler = foundry.utils.debounce(async function () {
-      $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).hours);
-      $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay($(this).val()).minutes);
-      SmallTimeApp.timeTransition($(this).val());
-      if (game.user.isGM) {
-        SmallTimeApp.emitSocket('changeTime', $(this).val());
-      }
+    const sliderInputHandler = foundry.utils.debounce(async (sliderValue) => {
+      if (hourStringEl) hourStringEl.textContent = SmallTimeApp.convertTimeIntegerToDisplay(sliderValue).hours;
+      if (minuteStringEl) minuteStringEl.textContent = SmallTimeApp.convertTimeIntegerToDisplay(sliderValue).minutes;
+      // Preview while dragging: update local visuals without persisting scene Darkness/world time yet.
+      SmallTimeApp.timeTransition(sliderValue, { persistDarkness: false });
     }, 100);
 
-    html.find('#timeSlider').on('input', sliderInputHandler);
+    timeSliderEl?.addEventListener('input', (ev) => {
+      sliderInputHandler(Number(ev.currentTarget.value));
+    });
 
     // Wait for the actual change event to do the time set.
-    html.find('#timeSlider').on('change', async function () {
+    timeSliderEl?.addEventListener('change', async (ev) => {
+      const sliderValue = Number(ev.currentTarget.value);
       if (game.user.isGM) {
-        Helpers.setWorldTime($(this).val());
+        Helpers.setWorldTime(sliderValue);
       } else {
-        SmallTimeApp.emitSocket('changeTime', $(this).val());
+        SmallTimeApp.emitSocket('changeTime', sliderValue);
       }
     });
 
     // Toggle the date display div, if a calendar provider is enabled.
     // The inline CSS overrides are a bit hacky, but were the
     // only way I could get the desired behaviour.
-    html.find('#timeDisplay').on('click', async function (ev) {
+    timeDisplayEl?.addEventListener('click', async (ev) => {
       if (ev.shiftKey && game.modules.get('smalltime').controlAuth && !game.paused && game.modules.get('foundryvtt-simple-calendar')?.active) {
         if (SimpleCalendar.api.clockStatus().started) {
           SimpleCalendar.api.stopClock();
@@ -1031,19 +1043,19 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
         SmallTimeApp.emitSocket('handleRealtime');
       } else {
         if (!game.settings.get('smalltime', 'date-showing') && game.modules.get('smalltime').dateAvailable) {
-          $('#smalltime-app').addClass('show-date');
-          $('#smalltime-app').animate({ height: '79px' }, 80);
+          appElement.classList.add('show-date');
+          appElement.style.height = '79px';
           if (game.settings.get('smalltime', 'pinned')) {
             SmallTimeApp.unPinApp();
-            SmallTimeApp.pinApp();
+            SmallTimeApp.pinApp(this);
           }
           await game.settings.set('smalltime', 'date-showing', true);
         } else {
-          $('#smalltime-app').removeClass('show-date');
-          $('#smalltime-app').animate({ height: '59px' }, 80);
+          appElement.classList.remove('show-date');
+          appElement.style.height = '59px';
           if (game.settings.get('smalltime', 'pinned')) {
             SmallTimeApp.unPinApp();
-            SmallTimeApp.pinApp();
+            SmallTimeApp.pinApp(this);
           }
           await game.settings.set('smalltime', 'date-showing', false);
         }
@@ -1051,7 +1063,7 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
     });
 
     // Open the Simple Calendar interface on date clicks.
-    html.find('#dateDisplay').on('click', async function () {
+    dateDisplayEl?.addEventListener('click', async () => {
       if (game.settings.get('smalltime', 'calendar-provider') === 'sc' && game.modules.get('foundryvtt-simple-calendar')?.active)
         SimpleCalendar.api.showCalendar();
     });
@@ -1061,7 +1073,7 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
     let largeStep = game.settings.get('smalltime', 'large-step');
     let stepAmount;
 
-    html.find('#decrease-small').on('click', (ev) => {
+    decreaseSmallEl?.addEventListener('click', (ev) => {
       if (ev.shiftKey) {
         stepAmount = -Math.abs(smallStep * 2);
       } else if (ev.altKey) {
@@ -1072,7 +1084,7 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
       this.timeRatchet(stepAmount);
     });
 
-    html.find('#decrease-large').on('click', (ev) => {
+    decreaseLargeEl?.addEventListener('click', (ev) => {
       if (ev.shiftKey) {
         stepAmount = -Math.abs(largeStep * 2);
       } else if (ev.altKey) {
@@ -1083,7 +1095,7 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
       this.timeRatchet(stepAmount);
     });
 
-    html.find('#increase-small').on('click', (ev) => {
+    increaseSmallEl?.addEventListener('click', (ev) => {
       if (ev.shiftKey) {
         stepAmount = smallStep * 2;
       } else if (ev.altKey) {
@@ -1094,7 +1106,7 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
       this.timeRatchet(stepAmount);
     });
 
-    html.find('#increase-large').on('click', (ev) => {
+    increaseLargeEl?.addEventListener('click', (ev) => {
       if (ev.shiftKey) {
         stepAmount = largeStep * 2;
       } else if (ev.altKey) {
@@ -1156,7 +1168,7 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
   }
 
   // Render changes to the sun/moon slider, and handle Darkness link.
-  static async timeTransition(timeNow) {
+  static async timeTransition(timeNow, { persistDarkness = true } = {}) {
     let sunriseStart = game.settings.get('smalltime', 'sunrise-start');
     let sunriseEnd = game.settings.get('smalltime', 'sunrise-end');
     let sunsetStart = game.settings.get('smalltime', 'sunset-start');
@@ -1187,7 +1199,7 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
     // If requested, adjust the scene's Darkness level.
     const currentScene = canvas.scene;
     if (currentScene.getFlag('smalltime', 'darkness-link') && game.modules.get('smalltime').controlAuth) {
-      let darknessValue = canvas.darknessLevel;
+      let darknessValue = canvas.environment.darknessLevel;
       const maxD = game.settings.get('smalltime', 'max-darkness');
       const minD = game.settings.get('smalltime', 'min-darkness');
 
@@ -1229,14 +1241,19 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
       // Truncate long decimals.
       darknessValue = Math.round(darknessValue * 10) / 10;
 
-      // Perform the Darkness update, and send it out to other clients.
-      if (game.user.isGM) {
-        await currentScene.update({ darkness: darknessValue });
-      } else {
-        SmallTimeApp.emitSocket('changeDarkness', {
-          darkness: darknessValue,
-          sceneID: currentScene.id,
-        });
+      if (persistDarkness) {
+        // Perform the Darkness update, and send it out to other clients.
+        if (game.user.isGM) {
+          await currentScene.update({ darkness: darknessValue });
+        } else {
+          SmallTimeApp.emitSocket('changeDarkness', {
+            darkness: darknessValue,
+            sceneID: currentScene.id,
+          });
+        }
+      } else if (game.user.isGM) {
+        // Drag preview only: render darkness locally without persisting scene data yet.
+        canvas.environment.initialize({ environment: { darknessLevel: darknessValue } });
       }
     }
   }
