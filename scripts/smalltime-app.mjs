@@ -398,8 +398,8 @@ Hooks.on('canvasReady', () => {
 });
 
 // Wait for Calendaria to have its seasons set up before checking rise/set times.
-Hooks.on('calendaria.ready', () => {
-  Helpers.updateSunriseSunsetTimes();
+Hooks.on('calendaria.ready', async () => {
+  await Helpers.updateSunriseSunsetTimes();
 });
 
 Hooks.on('ready', () => {
@@ -409,6 +409,21 @@ Hooks.on('ready', () => {
   });
 
   async function doSocket(data) {
+    const canApplySocketSetting = (payload) => {
+      if (!payload || payload.scope !== 'smalltime') return false;
+
+      const sender = payload.userId ? game.users.get(payload.userId) : null;
+      if (!sender) return false;
+
+      const isAssistantOrGM = sender.role >= CONST.USER_ROLES.ASSISTANT;
+      const isTrustedAllowed = game.settings.get('smalltime', 'allow-trusted') && sender.role === CONST.USER_ROLES.TRUSTED;
+      if (!(isAssistantOrGM || isTrustedAllowed)) return false;
+
+      if (payload.key !== 'moon-phase') return false;
+      if (!Number.isInteger(payload.value)) return false;
+      return payload.value >= 0 && payload.value < ST_Config.MoonPhases.length;
+    };
+
     if (data.type === 'changeTime') {
       if (game.user.isGM) {
         await Helpers.setWorldTime(data.payload);
@@ -416,7 +431,9 @@ Hooks.on('ready', () => {
       Helpers.handleTimeChange(data.payload);
     }
     if (data.type === 'changeSetting') {
-      if (game.user.isGM) await game.settings.set(data.payload.scope, data.payload.key, data.payload.value);
+      if (game.user.isGM && canApplySocketSetting(data.payload)) {
+        await game.settings.set(data.payload.scope, data.payload.key, data.payload.value);
+      }
     }
     if (data.type === 'changeDarkness') {
       if (game.user.isGM) {
@@ -462,6 +479,9 @@ Hooks.on('renderSmallTimeApp', () => {
 
 // Handle our changes to the Scene Config screen.
 Hooks.on('renderSceneConfig', async (obj) => {
+  const root = obj.form ?? obj.element?.[0];
+  if (!root) return;
+
   // Set defaults here (duplicate of what we did on canvasReady, in case the
   // scene config is being accessed for a non-rendered scene.
   const darknessDefault = game.settings.get('smalltime', 'darkness-default');
@@ -478,8 +498,8 @@ Hooks.on('renderSceneConfig', async (obj) => {
   // Set the Player Vis dropdown as appropriate.
   const visChoice = Number(obj.document.getFlag('smalltime', 'player-vis'));
   // Set the Darkness and Moonlight checkboxes as appropriate.
-  const darknessCheckStatus = obj.document.getFlag('smalltime', 'darkness-link') ? 'checked' : '';
-  const moonlightCheckStatus = obj.document.getFlag('smalltime', 'moonlight') ? 'checked' : '';
+  const darknessChecked = !!obj.document.getFlag('smalltime', 'darkness-link');
+  const moonlightChecked = !!obj.document.getFlag('smalltime', 'moonlight');
 
   // Build our new options.
   const visibilityLabel = game.i18n.localize('SMLTME.Player_Visibility');
@@ -488,84 +508,120 @@ Hooks.on('renderSceneConfig', async (obj) => {
   const vis1text = game.i18n.localize('SMLTME.Player_Vis_1');
   const vis2text = game.i18n.localize('SMLTME.Player_Vis_2');
 
-  let vis0 = '';
-  let vis1 = '';
-  let vis2 = '';
-  if (visChoice === 0) vis0 = 'selected';
-  if (visChoice === 1) vis1 = 'selected';
-  if (visChoice === 2) vis2 = 'selected';
-
   const controlLabel = game.i18n.localize('SMLTME.Darkness_Control');
   const controlHint = game.i18n.localize('SMLTME.Darkness_Control_Hint');
   const moonlightLabel = game.i18n.localize('SMLTME.Moonlight_Adjust');
   const moonlightHint = game.i18n.localize('SMLTME.Moonlight_Adjust_Hint');
-  let moonlightDisabledPF2e;
-  if (game.system.id === 'pf2e') {
-    moonlightDisabledPF2e = game.settings.get('pf2e', 'automation.rulesBasedVision') ? 'disabled' : '';
-  }
-  const injection = `
-    <fieldset class="st-scene-config">
-      <legend>
-        <img id="smalltime-config-icon" src="modules/smalltime/images/smalltime-icon.webp">
-        <span>SmallTime</span>
-      </legend>
-      <div class="form-group">
-        <label>${visibilityLabel}</label>
-        <select name="flags.smalltime.player-vis" data-dtype="number">
-          <option value="2" ${vis2}>${vis2text}</option>
-          <option value="1" ${vis1}>${vis1text}</option>
-          <option value="0" ${vis0}>${vis0text}</option>
-        </select>
-        <p class="hint">${visibilityHint}</p>
-      </div>
-      <div class="form-group">
-        <label>${controlLabel}</label>
-        <input
-          type="checkbox"
-          name="flags.smalltime.darkness-link"
-          ${darknessCheckStatus}>
-        <p class="hint">${controlHint}</p>
-      </div>
-      <div class="form-group">
-        <label>${moonlightLabel}</label>
-        <input ${moonlightDisabledPF2e}
-          type="checkbox"
-          name="flags.smalltime.moonlight"
-          ${moonlightCheckStatus}>
-        <p class="hint">${moonlightHint}</p>
-      </div>
-      </fieldset>`;
+  const moonlightDisabledPF2e = game.system.id === 'pf2e' && game.settings.get('pf2e', 'automation.rulesBasedVision');
+
+  const buildSceneConfigGroup = (labelText, controlElement, hintText) => {
+    const group = document.createElement('div');
+    group.classList.add('form-group');
+
+    const label = document.createElement('label');
+    label.textContent = labelText;
+    group.append(label);
+
+    group.append(controlElement);
+
+    const hint = document.createElement('p');
+    hint.classList.add('hint');
+    hint.textContent = hintText;
+    group.append(hint);
+    return group;
+  };
+
+  const injection = document.createElement('fieldset');
+  injection.classList.add('st-scene-config');
+
+  const legend = document.createElement('legend');
+  const legendIcon = document.createElement('img');
+  legendIcon.id = 'smalltime-config-icon';
+  legendIcon.src = 'modules/smalltime/images/smalltime-icon.webp';
+  legend.append(legendIcon);
+  const legendText = document.createElement('span');
+  legendText.textContent = 'SmallTime';
+  legend.append(legendText);
+  injection.append(legend);
+
+  const visSelect = document.createElement('select');
+  visSelect.name = 'flags.smalltime.player-vis';
+  visSelect.dataset.dtype = 'number';
+  [
+    { value: 2, label: vis2text },
+    { value: 1, label: vis1text },
+    { value: 0, label: vis0text },
+  ].forEach(({ value, label }) => {
+    const option = document.createElement('option');
+    option.value = String(value);
+    option.textContent = label;
+    option.selected = visChoice === value;
+    visSelect.append(option);
+  });
+  injection.append(buildSceneConfigGroup(visibilityLabel, visSelect, visibilityHint));
+
+  const darknessInput = document.createElement('input');
+  darknessInput.type = 'checkbox';
+  darknessInput.name = 'flags.smalltime.darkness-link';
+  darknessInput.checked = darknessChecked;
+  injection.append(buildSceneConfigGroup(controlLabel, darknessInput, controlHint));
+
+  const moonlightInput = document.createElement('input');
+  moonlightInput.type = 'checkbox';
+  moonlightInput.name = 'flags.smalltime.moonlight';
+  moonlightInput.checked = moonlightChecked;
+  moonlightInput.disabled = moonlightDisabledPF2e;
+  injection.append(buildSceneConfigGroup(moonlightLabel, moonlightInput, moonlightHint));
 
   // Inject the SmallTime controls into the config window for the current scene,
   // but only if they haven't already been inserted.
-  if ($(obj.form).find('.st-scene-config').length === 0) {
-    $(obj.form)
-      .find('p:contains("' + game.i18n.localize('SCENE.FIELDS.environment.darknessLock.hint') + '")')
-      .parent()
-      .after(injection);
+  if (!root.querySelector('.st-scene-config')) {
+    const anchorSelectors = [
+      '[name="environment.darknessLock"]',
+      '[name="darknessLock"]',
+      '[name="environment.darknessLevel"]',
+      '[name="darkness"]',
+      '[name="environment.globalLight.enabled"]',
+      '[name="globalLight"]',
+    ];
+    const anchorGroup =
+      anchorSelectors.map((selector) => root.querySelector(selector)?.closest('.form-group')).find((group) => !!group) ||
+      (() => {
+        const environmentTab = root.querySelector('[data-tab="environment"]') || root.querySelector('[data-application-part="environment"]');
+        if (!environmentTab) return null;
+        const groups = environmentTab.querySelectorAll('.form-group');
+        return groups.length ? groups[groups.length - 1] : null;
+      })() ||
+      root.querySelector('.tab.active .form-group:last-of-type') ||
+      root.querySelector('.form-group:last-of-type');
+
+    if (anchorGroup) anchorGroup.insertAdjacentElement('afterend', injection);
+    else console.warn("SmallTime: Couldn't find a place to insert scene config settings.");
   }
   // Re-auto-size the app window.
   obj.setPosition();
 
-  if (obj.object.getFlag('smalltime', 'moonlight')) {
-    const currentThreshold =
-      foundry.utils.getProperty(obj.document, 'environment.globalLight.darkness.max') ??
-      obj.document.globalLightThreshold ??
-      obj.object.globalLightThreshold;
-    const coreThresholdCheckbox = $('input[name="hasGlobalThreshold"]');
-    coreThresholdCheckbox.attr({
-      checked: '',
-    });
-    const coreThresholdSlider = $('input[name="globalLightThreshold"]');
-    coreThresholdSlider.attr({
-      class: 'smalltime-threshold-override',
-      'aria-label': game.i18n.localize('SMLTME.Threshold_Override_Tooltip'),
-      'data-balloon-pos': 'up',
-      disabled: '',
-      value: currentThreshold,
-    });
-    const coreThresholdField = $('input[name="globalLightThreshold"]').nextAll('span:first');
-    coreThresholdField.text(currentThreshold);
+  if (obj.document?.getFlag('smalltime', 'moonlight')) {
+    const currentThreshold = foundry.utils.getProperty(obj.document, 'environment.globalLight.darkness.max') ?? obj.document.globalLightThreshold ?? 1;
+    const coreThresholdCheckbox = root.querySelector('input[name="hasGlobalThreshold"]');
+    if (coreThresholdCheckbox) coreThresholdCheckbox.checked = true;
+
+    const coreThresholdSlider = root.querySelector('input[name="globalLightThreshold"]');
+    if (coreThresholdSlider) {
+      if (coreThresholdSlider.dataset.stMoonlightOverride !== '1') {
+        coreThresholdSlider.classList.add('smalltime-threshold-override');
+        coreThresholdSlider.setAttribute('aria-label', game.i18n.localize('SMLTME.Threshold_Override_Tooltip'));
+        coreThresholdSlider.setAttribute('data-balloon-pos', 'up');
+        coreThresholdSlider.disabled = true;
+        coreThresholdSlider.dataset.stMoonlightOverride = '1';
+      }
+      coreThresholdSlider.value = String(currentThreshold);
+
+      const coreThresholdField = coreThresholdSlider.parentElement?.querySelector('span');
+      if (coreThresholdField) {
+        coreThresholdField.textContent = String(currentThreshold);
+      }
+    }
   }
 });
 
@@ -577,6 +633,13 @@ Hooks.on('renderSettingsConfig', (obj) => {
 
   const findSettingInput = (name) => root.querySelector(`[name="${name}"]`);
   const findSettingGroup = (name) => findSettingInput(name)?.closest('.form-group');
+  const bindOnce = (element, key, eventName, handler) => {
+    if (!element) return;
+    const flag = `stBound${key}`;
+    if (element.dataset[flag] === '1') return;
+    element.addEventListener(eventName, handler);
+    element.dataset[flag] = '1';
+  };
 
   const ensureTooltipAnchor = (labelElement) => {
     if (!labelElement) return null;
@@ -609,20 +672,16 @@ Hooks.on('renderSettingsConfig', (obj) => {
   setShowSecondsVisibility(game.settings.get('smalltime', 'time-format'));
 
   const timeFormatSelect = findSettingInput('smalltime.time-format');
-  if (timeFormatSelect) {
-    timeFormatSelect.addEventListener('change', (event) => {
-      setShowSecondsVisibility(event.currentTarget.value);
-    });
-  }
+  bindOnce(timeFormatSelect, 'TimeFormatChange', 'change', (event) => {
+    setShowSecondsVisibility(event.currentTarget.value);
+  });
 
   const showSecondsInput = findSettingInput('smalltime.show-seconds');
-  if (showSecondsInput) {
-    showSecondsInput.addEventListener('change', (event) => {
-      const secondsSpan = document.getElementById('secondsSpan');
-      if (!secondsSpan) return;
-      secondsSpan.style.display = event.currentTarget.checked ? 'inline' : 'none';
-    });
-  }
+  bindOnce(showSecondsInput, 'ShowSecondsChange', 'change', (event) => {
+    const secondsSpan = document.getElementById('secondsSpan');
+    if (!secondsSpan) return;
+    secondsSpan.style.display = event.currentTarget.checked ? 'inline' : 'none';
+  });
 
   const dateFormatSelect = findSettingInput('smalltime.date-format');
   if (dateFormatSelect) {
@@ -631,13 +690,7 @@ Hooks.on('renderSettingsConfig', (obj) => {
     }
   }
 
-  const hiddenSettingNames = [
-    'smalltime.max-darkness',
-    'smalltime.min-darkness',
-    'smalltime.sunrise-start',
-    'smalltime.sunrise-end',
-    'smalltime.sunset-start',
-  ];
+  const hiddenSettingNames = Helpers.getDarknessBackingFieldNames().filter((name) => name !== 'smalltime.sunset-end');
   for (const settingName of hiddenSettingNames) {
     const settingGroup = findSettingGroup(settingName);
     if (settingGroup) settingGroup.style.display = 'none';
@@ -650,7 +703,7 @@ Hooks.on('renderSettingsConfig', (obj) => {
   if (opacityTooltipAnchor) {
     opacityTooltipAnchor.setAttribute('aria-label', game.i18n.localize('SMLTME.Position_Reset'));
     opacityTooltipAnchor.setAttribute('data-balloon-pos', popupDirection);
-    opacityTitleElement.addEventListener('click', async (event) => {
+    bindOnce(opacityTitleElement, 'OpacityResetClick', 'click', async (event) => {
       if (!event.shiftKey) return;
       await game.settings.set('smalltime', 'pinned', true);
       window.location.reload(false);
@@ -664,7 +717,7 @@ Hooks.on('renderSettingsConfig', (obj) => {
   if (darknessTooltipAnchor) {
     darknessTooltipAnchor.setAttribute('aria-label', game.i18n.localize('SMLTME.Darkness_Reset'));
     darknessTooltipAnchor.setAttribute('data-balloon-pos', popupDirection);
-    darknessTitleElement.addEventListener('click', async (event) => {
+    bindOnce(darknessTitleElement, 'DarknessResetClick', 'click', async (event) => {
       if (!event.shiftKey) return;
       await Promise.all([
         game.settings.set('smalltime', 'sunrise-start', ST_Config.SunriseStartDefault),
@@ -687,30 +740,43 @@ Hooks.on('renderSettingsConfig', (obj) => {
 
   const insertionElement = findSettingInput('smalltime.sunset-end');
   if (insertionElement) insertionElement.style.display = 'none';
-  const injection = `
-    <div id="smalltime-darkness-config" class="notes">
-        <div class="handles">
-          <div data-balloon-pos="up" class="handle sunrise-start"></div>
-          <div data-balloon-pos="up" class="handle sunrise-end"></div>
-          <div data-balloon-pos="up" class="handle sunset-start"></div>
-          <div data-balloon-pos="up" class="handle sunset-end"></div>
-        </div>
-        <div class="sunrise-start-bounds"></div>
-        <div class="sunrise-end-bounds"></div>
-        <div class="sunset-start-bounds"></div>
-        <div class="sunset-end-bounds"></div>
-    </div>`;
+
+  const buildDarknessConfigElement = () => {
+    const wrapper = document.createElement('div');
+    wrapper.id = 'smalltime-darkness-config';
+    wrapper.classList.add('notes');
+
+    const handles = document.createElement('div');
+    handles.classList.add('handles');
+
+    ['sunrise-start', 'sunrise-end', 'sunset-start', 'sunset-end'].forEach((cls) => {
+      const handle = document.createElement('div');
+      handle.classList.add('handle', cls);
+      handle.dataset.balloonPos = 'up';
+      handles.append(handle);
+    });
+    wrapper.append(handles);
+
+    ['sunrise-start-bounds', 'sunrise-end-bounds', 'sunset-start-bounds', 'sunset-end-bounds'].forEach((cls) => {
+      const bounds = document.createElement('div');
+      bounds.classList.add(cls);
+      wrapper.append(bounds);
+    });
+
+    return wrapper;
+  };
 
   if (!root.querySelector('#smalltime-darkness-config')) {
+    const injection = buildDarknessConfigElement();
     const sunsetEndGroup = findSettingGroup('smalltime.sunset-end');
-    const insertionAnchor =
-      insertionElement?.parentElement?.nextElementSibling
-      || sunsetEndGroup?.querySelector(':scope > p.notes, :scope > p.hint');
+    const insertionAnchor = insertionElement?.parentElement?.nextElementSibling || sunsetEndGroup?.querySelector(':scope > p.notes, :scope > p.hint');
 
     if (insertionAnchor && insertionAnchor.parentElement) {
-      insertionAnchor.insertAdjacentHTML('afterend', injection);
+      insertionAnchor.insertAdjacentElement('afterend', injection);
     } else if (sunsetEndGroup) {
-      sunsetEndGroup.insertAdjacentHTML('beforeend', injection);
+      sunsetEndGroup.insertAdjacentElement('beforeend', injection);
+    } else {
+      console.warn("SmallTime: Couldn't find a place to inject Darkness config.");
     }
   }
 
@@ -722,32 +788,31 @@ Hooks.on('renderSettingsConfig', (obj) => {
   document.documentElement.style.setProperty('--SMLTME-darkness-b', currentDarknessColor.b);
 
   Helpers.grabSceneSlice();
-  Helpers.setupDragHandles();
+  Helpers.setupDragHandles(root);
 
   const opacityInput = findSettingInput('smalltime.opacity');
-  if (opacityInput) {
-    opacityInput.addEventListener('input', (event) => {
-      const smallTimeElement = document.getElementById('smalltime-app');
-      if (!smallTimeElement) return;
-      smallTimeElement.style.opacity = event.currentTarget.value;
-      smallTimeElement.style.transitionDelay = 'none';
-      smallTimeElement.style.transition = 'none';
-    });
-  }
+  bindOnce(opacityInput, 'OpacityInput', 'input', (event) => {
+    const smallTimeElement = document.getElementById('smalltime-app');
+    if (!smallTimeElement) return;
+    smallTimeElement.style.opacity = event.currentTarget.value;
+    smallTimeElement.style.transitionDelay = 'none';
+    smallTimeElement.style.transition = 'none';
+  });
 });
 
 // Undo the opacity preview settings.
-Hooks.on('closeSettingsConfig', () => {
-  $('#smalltime-app').css({
-    opacity: '',
-    'transition-delay': '',
-    transition: '',
-  });
+Hooks.on('closeSettingsConfig', async () => {
+  const smallTimeElement = document.getElementById('smalltime-app');
+  if (smallTimeElement) {
+    smallTimeElement.style.opacity = '';
+    smallTimeElement.style.transitionDelay = '';
+    smallTimeElement.style.transition = '';
+  }
 
   // Update the stops on the sunrise/sunset gradient, in case
   // there's been changes to the positions. Also update the
   // rise/set times in case of a change to sync toggle.
-  Helpers.updateSunriseSunsetTimes();
+  await Helpers.updateSunriseSunsetTimes();
 });
 
 // Add a toggle button inside the Jounral Notes tool layer.
@@ -789,8 +854,8 @@ Hooks.on('calendaria.clockStartStop', () => {
   SmallTimeApp.emitSocket('handleRealtime');
 });
 
-Hooks.on('calendaria.dateTimeChange', (data) => {
-  Helpers.updateSunriseSunsetTimes();
+Hooks.on('calendaria.dateTimeChange', async (data) => {
+  await Helpers.updateSunriseSunsetTimes();
   Helpers.updateGradientStops();
 });
 
@@ -1164,9 +1229,10 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
 
   // Helper function for handling sockets.
   static emitSocket(type, payload) {
+    const enrichedPayload = payload && typeof payload === 'object' ? { ...payload, userId: game.user.id } : payload;
     game.socket.emit('module.smalltime', {
       type: type,
-      payload: payload,
+      payload: enrichedPayload,
     });
   }
 

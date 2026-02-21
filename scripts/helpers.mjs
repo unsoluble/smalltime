@@ -33,22 +33,56 @@ ST_Config.MaxDarknessDefault = 1;
 ST_Config.MinDarknessDefault = 0;
 
 export class Helpers {
-  static updateSunriseSunsetTimes() {
-    if (game.settings.get('smalltime', 'sun-sync') && game.modules.get('calendaria')?.active) {
-      const riseEnd = CALENDARIA.api.getSunrise() * 60;
-      const riseStart = riseEnd - ST_Config.DawnDuskSpread;
-      const setStart = CALENDARIA.api.getSunset() * 60;
-      const setEnd = setStart + ST_Config.DawnDuskSpread;
-      game.settings.set('smalltime', 'sunrise-start', riseStart);
-      game.settings.set('smalltime', 'sunrise-end', riseEnd);
-      game.settings.set('smalltime', 'sunset-start', setStart);
-      game.settings.set('smalltime', 'sunset-end', setEnd);
-    } else {
-      game.settings.set('smalltime', 'sunrise-start', ST_Config.SunriseStartDefault);
-      game.settings.set('smalltime', 'sunrise-end', ST_Config.SunriseEndDefault);
-      game.settings.set('smalltime', 'sunset-start', ST_Config.SunsetStartDefault);
-      game.settings.set('smalltime', 'sunset-end', ST_Config.SunsetEndDefault);
+  static getDarknessBackingFieldNames() {
+    return [
+      'smalltime.max-darkness',
+      'smalltime.min-darkness',
+      'smalltime.sunrise-start',
+      'smalltime.sunrise-end',
+      'smalltime.sunset-start',
+      'smalltime.sunset-end',
+    ];
+  }
+
+  static getDarknessBackingInputs(root = document) {
+    return {
+      maxDarkness: root.querySelector('input[name="smalltime.max-darkness"]'),
+      minDarkness: root.querySelector('input[name="smalltime.min-darkness"]'),
+      sunriseStart: root.querySelector('input[name="smalltime.sunrise-start"]'),
+      sunriseEnd: root.querySelector('input[name="smalltime.sunrise-end"]'),
+      sunsetStart: root.querySelector('input[name="smalltime.sunset-start"]'),
+      sunsetEnd: root.querySelector('input[name="smalltime.sunset-end"]'),
+    };
+  }
+
+  static syncDarknessBackingInputs(positions, max, min, root = document) {
+    const inputs = Helpers.getDarknessBackingInputs(root);
+
+    if (positions) {
+      if (inputs.sunriseStart) inputs.sunriseStart.value = Helpers.convertPositionToTimeInteger(positions.sunriseStart);
+      if (inputs.sunriseEnd) inputs.sunriseEnd.value = Helpers.convertPositionToTimeInteger(positions.sunriseEnd);
+      if (inputs.sunsetStart) inputs.sunsetStart.value = Helpers.convertPositionToTimeInteger(positions.sunsetStart);
+      if (inputs.sunsetEnd) inputs.sunsetEnd.value = Helpers.convertPositionToTimeInteger(positions.sunsetEnd);
     }
+
+    // Set the max or min Darkness, depending on which was passed.
+    if (min === false && inputs.maxDarkness) inputs.maxDarkness.value = max;
+    if (max === false && inputs.minDarkness) inputs.minDarkness.value = min;
+  }
+
+  static async updateSunriseSunsetTimes() {
+    if (!(game.settings.get('smalltime', 'sun-sync') && game.modules.get('calendaria')?.active)) return;
+
+    const riseEnd = CALENDARIA.api.getSunrise() * 60;
+    const riseStart = riseEnd - ST_Config.DawnDuskSpread;
+    const setStart = CALENDARIA.api.getSunset() * 60;
+    const setEnd = setStart + ST_Config.DawnDuskSpread;
+    await Promise.all([
+      game.settings.set('smalltime', 'sunrise-start', riseStart),
+      game.settings.set('smalltime', 'sunrise-end', riseEnd),
+      game.settings.set('smalltime', 'sunset-start', setStart),
+      game.settings.set('smalltime', 'sunset-end', setEnd),
+    ]);
   }
 
   static handleRealtimeState() {
@@ -108,20 +142,11 @@ export class Helpers {
     document.documentElement.style.setProperty('--SMLTME-sunset-end', Helpers.convertTimeIntegerToPercentage(game.settings.get('smalltime', 'sunset-end')));
   }
 
-  static async saveNewDarknessConfig(positions, max, min) {
-    // Set the hidden inputs for these settings to the new values,
-    // so that the form-saving workflow takes care of saving them.
-    $('input[name="smalltime.sunrise-start"]').val(Helpers.convertPositionToTimeInteger(positions.sunriseStart));
-    $('input[name="smalltime.sunrise-end"]').val(Helpers.convertPositionToTimeInteger(positions.sunriseEnd));
-    $('input[name="smalltime.sunset-start"]').val(Helpers.convertPositionToTimeInteger(positions.sunsetStart));
-    $('input[name="smalltime.sunset-end"]').val(Helpers.convertPositionToTimeInteger(positions.sunsetEnd));
-
-    // Set the max or min Darkness, depending on which was passed.
-    if (min === false) $('input[name="smalltime.max-darkness"]').val(max);
-    if (max === false) $('input[name="smalltime.min-darkness"]').val(min);
+  static async saveNewDarknessConfig(positions, max, min, root = document) {
+    Helpers.syncDarknessBackingInputs(positions, max, min, root);
   }
 
-  static setupDragHandles() {
+  static setupDragHandles(root = document) {
     // If sunrise/sunset are being synced from Simple Calendar, we'll lock
     // the drag handles on the X axis.
     const sunSync = game.settings.get('smalltime', 'sun-sync') && game.modules.get('calendaria')?.active;
@@ -158,42 +183,59 @@ export class Helpers {
 
     const offsetBetween = 20;
 
-    $('.sunrise-start').css('top', Helpers.convertDarknessToPostion(maxDarkness));
-    $('.sunrise-start').css('left', initialPositions.sunriseStart);
-    $('.sunrise-start').attr('aria-label', initialTimes.sunriseStart);
+    const sunriseStartElement = root.querySelector('.sunrise-start');
+    const sunriseEndElement = root.querySelector('.sunrise-end');
+    const sunsetStartElement = root.querySelector('.sunset-start');
+    const sunsetEndElement = root.querySelector('.sunset-end');
 
-    $('.sunrise-end').css('top', Helpers.convertDarknessToPostion(minDarkness) + 1);
-    $('.sunrise-end').css('left', initialPositions.sunriseEnd);
-    $('.sunrise-end').attr('aria-label', initialTimes.sunriseEnd);
+    if (!sunriseStartElement || !sunriseEndElement || !sunsetStartElement || !sunsetEndElement) return;
 
-    $('.sunset-start').css('top', Helpers.convertDarknessToPostion(minDarkness) + 1);
-    $('.sunset-start').css('left', initialPositions.sunsetStart);
-    $('.sunset-start').attr('aria-label', initialTimes.sunsetStart);
+    const setHandleTop = (element, top) => {
+      element.style.top = `${top}px`;
+    };
+    const setHandleLeft = (element, left) => {
+      element.style.left = `${left}px`;
+    };
+    const setHandleLabel = (element, label) => {
+      element.setAttribute('aria-label', label);
+    };
 
-    $('.sunset-end').css('top', Helpers.convertDarknessToPostion(maxDarkness));
-    $('.sunset-end').css('left', initialPositions.sunsetEnd);
-    $('.sunset-end').attr('aria-label', initialTimes.sunsetEnd);
+    setHandleTop(sunriseStartElement, Helpers.convertDarknessToPostion(maxDarkness));
+    setHandleLeft(sunriseStartElement, initialPositions.sunriseStart);
+    setHandleLabel(sunriseStartElement, initialTimes.sunriseStart);
+
+    setHandleTop(sunriseEndElement, Helpers.convertDarknessToPostion(minDarkness) + 1);
+    setHandleLeft(sunriseEndElement, initialPositions.sunriseEnd);
+    setHandleLabel(sunriseEndElement, initialTimes.sunriseEnd);
+
+    setHandleTop(sunsetStartElement, Helpers.convertDarknessToPostion(minDarkness) + 1);
+    setHandleLeft(sunsetStartElement, initialPositions.sunsetStart);
+    setHandleLabel(sunsetStartElement, initialTimes.sunsetStart);
+
+    setHandleTop(sunsetEndElement, Helpers.convertDarknessToPostion(maxDarkness));
+    setHandleLeft(sunsetEndElement, initialPositions.sunsetEnd);
+    setHandleLabel(sunsetEndElement, initialTimes.sunsetEnd);
 
     Helpers.updateGradientStops();
 
     // Create the drag handles.
-    const sunriseStartDrag = new Draggabilly('.sunrise-start', {
+    const sunriseStartDrag = new Draggabilly(sunriseStartElement, {
       containment: '.sunrise-start-bounds',
       grid: [snapX, snapY],
       // Lock off the X axis if we're syncing the sunrise/sunset times.
       axis: sunSync ? 'y' : null,
     });
-    const sunriseEndDrag = new Draggabilly('.sunrise-end', {
+    const sunriseEndDrag = new Draggabilly(sunriseEndElement, {
       containment: '.sunrise-end-bounds',
       grid: [snapX, snapY],
       axis: sunSync ? 'y' : null,
     });
-    const sunsetStartDrag = new Draggabilly('.sunset-start', {
+    const sunsetStartDrag = new Draggabilly(sunsetStartElement, {
       containment: '.sunset-start-bounds',
       grid: [snapX, snapY],
       axis: sunSync ? 'y' : null,
     });
-    const sunsetEndDrag = new Draggabilly('.sunset-end', {
+    const sunsetEndDrag = new Draggabilly(sunsetEndElement, {
       containment: '.sunset-end-bounds',
       grid: [snapX, snapY],
       axis: sunSync ? 'y' : null,
@@ -204,11 +246,11 @@ export class Helpers {
 
     sunriseStartDrag.on('dragMove', function () {
       // Match the paired handle.
-      $('.sunset-end').css('top', this.position.y + 'px');
+      setHandleTop(sunsetEndElement, this.position.y);
       // Update the tooltip. Append sync note if syncing.
       let displayTime = Helpers.convertPositionToDisplayTime(this.position.x);
       sunSync ? (displayTime += syncString) : null;
-      $('.sunrise-start').attr('aria-label', displayTime);
+      setHandleLabel(sunriseStartElement, displayTime);
 
       // Live update the darkness maximum.
       document.documentElement.style.setProperty('--SMLTME-darkness-max', Helpers.convertPositionToDarkness(this.position.y));
@@ -220,8 +262,8 @@ export class Helpers {
       // Shove other handle on collisions.
       if (this.position.x >= sunriseEndDrag.position.x - offsetBetween) {
         shovedPos = this.position.x + offsetBetween;
-        $('.sunrise-end').css('left', shovedPos);
-        $('.sunrise-end').attr('aria-label', Helpers.convertPositionToDisplayTime(shovedPos));
+        setHandleLeft(sunriseEndElement, shovedPos);
+        setHandleLabel(sunriseEndElement, Helpers.convertPositionToDisplayTime(shovedPos));
         sunriseEndDrag.setPosition(shovedPos);
         newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(shovedPos));
         document.documentElement.style.setProperty('--SMLTME-sunrise-end', newTransition);
@@ -230,11 +272,11 @@ export class Helpers {
 
     sunriseEndDrag.on('dragMove', function () {
       // Match the paired handle.
-      $('.sunset-start').css('top', this.position.y + 'px');
+      setHandleTop(sunsetStartElement, this.position.y);
       // Update the tooltip. Append sync note if syncing.
       let displayTime = Helpers.convertPositionToDisplayTime(this.position.x);
       sunSync ? (displayTime += syncString) : null;
-      $('.sunrise-end').attr('aria-label', displayTime);
+      setHandleLabel(sunriseEndElement, displayTime);
 
       // Live update the darkness minimum.
       document.documentElement.style.setProperty('--SMLTME-darkness-min', Helpers.convertPositionToDarkness(this.position.y));
@@ -246,8 +288,8 @@ export class Helpers {
       // Shove other handle on collisions.
       if (this.position.x <= sunriseStartDrag.position.x + offsetBetween) {
         shovedPos = this.position.x - offsetBetween;
-        $('.sunrise-start').css('left', shovedPos);
-        $('.sunrise-start').attr('aria-label', Helpers.convertPositionToDisplayTime(shovedPos));
+        setHandleLeft(sunriseStartElement, shovedPos);
+        setHandleLabel(sunriseStartElement, Helpers.convertPositionToDisplayTime(shovedPos));
         sunriseStartDrag.setPosition(shovedPos);
         newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(shovedPos));
         document.documentElement.style.setProperty('--SMLTME-sunrise-start', newTransition);
@@ -256,11 +298,11 @@ export class Helpers {
 
     sunsetStartDrag.on('dragMove', function () {
       // Match the paired handle.
-      $('.sunrise-end').css('top', this.position.y + 'px');
+      setHandleTop(sunriseEndElement, this.position.y);
       // Update the tooltip. Append sync note if syncing.
       let displayTime = Helpers.convertPositionToDisplayTime(this.position.x);
       sunSync ? (displayTime += syncString) : null;
-      $('.sunset-start').attr('aria-label', displayTime);
+      setHandleLabel(sunsetStartElement, displayTime);
 
       // Live update the darkness minimum.
       document.documentElement.style.setProperty('--SMLTME-darkness-min', Helpers.convertPositionToDarkness(this.position.y));
@@ -272,8 +314,8 @@ export class Helpers {
       // Shove other handle on collisions.
       if (this.position.x >= sunsetEndDrag.position.x - offsetBetween) {
         shovedPos = this.position.x + offsetBetween;
-        $('.sunset-end').css('left', shovedPos);
-        $('.sunset-end').attr('aria-label', Helpers.convertPositionToDisplayTime(shovedPos));
+        setHandleLeft(sunsetEndElement, shovedPos);
+        setHandleLabel(sunsetEndElement, Helpers.convertPositionToDisplayTime(shovedPos));
         sunsetEndDrag.setPosition(shovedPos);
         newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(shovedPos));
         document.documentElement.style.setProperty('--SMLTME-sunset-end', newTransition);
@@ -282,11 +324,11 @@ export class Helpers {
 
     sunsetEndDrag.on('dragMove', function () {
       // Match the paired handle.
-      $('.sunrise-start').css('top', this.position.y + 'px');
+      setHandleTop(sunriseStartElement, this.position.y);
       // Update the tooltip. Append sync note if syncing.
       let displayTime = Helpers.convertPositionToDisplayTime(this.position.x);
       sunSync ? (displayTime += syncString) : null;
-      $('.sunset-end').attr('aria-label', displayTime);
+      setHandleLabel(sunsetEndElement, displayTime);
 
       // Live update the darkness maximum.
       document.documentElement.style.setProperty('--SMLTME-darkness-max', Helpers.convertPositionToDarkness(this.position.y));
@@ -298,8 +340,8 @@ export class Helpers {
       // Shove other handle on collisions.
       if (this.position.x <= sunsetStartDrag.position.x + offsetBetween) {
         shovedPos = this.position.x - offsetBetween;
-        $('.sunset-start').css('left', shovedPos);
-        $('.sunset-start').attr('aria-label', Helpers.convertPositionToDisplayTime(shovedPos));
+        setHandleLeft(sunsetStartElement, shovedPos);
+        setHandleLabel(sunsetStartElement, Helpers.convertPositionToDisplayTime(shovedPos));
         sunsetStartDrag.setPosition(shovedPos);
         newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(shovedPos));
         document.documentElement.style.setProperty('--SMLTME-sunset-start', newTransition);
@@ -315,7 +357,7 @@ export class Helpers {
       };
       let newMaxDarkness = Helpers.convertPositionToDarkness(this.position.y);
       if (newMaxDarkness > 1) newMaxDarkness = 1;
-      Helpers.saveNewDarknessConfig(newPositions, newMaxDarkness, false);
+      Helpers.saveNewDarknessConfig(newPositions, newMaxDarkness, false, root);
     });
 
     sunriseEndDrag.on('dragEnd', async function () {
@@ -327,7 +369,7 @@ export class Helpers {
       };
       let newMinDarkness = Helpers.convertPositionToDarkness(this.position.y);
       if (newMinDarkness < 0) newMinDarkness = 0;
-      Helpers.saveNewDarknessConfig(newPositions, false, newMinDarkness);
+      Helpers.saveNewDarknessConfig(newPositions, false, newMinDarkness, root);
     });
 
     sunsetStartDrag.on('dragEnd', async function () {
@@ -339,7 +381,7 @@ export class Helpers {
       };
       let newMinDarkness = Helpers.convertPositionToDarkness(this.position.y);
       if (newMinDarkness < 0) newMinDarkness = 0;
-      Helpers.saveNewDarknessConfig(newPositions, false, newMinDarkness);
+      Helpers.saveNewDarknessConfig(newPositions, false, newMinDarkness, root);
     });
 
     sunsetEndDrag.on('dragEnd', async function () {
@@ -351,7 +393,7 @@ export class Helpers {
       };
       let newMaxDarkness = Helpers.convertPositionToDarkness(this.position.y);
       if (newMaxDarkness > 1) newMaxDarkness = 1;
-      Helpers.saveNewDarknessConfig(newPositions, newMaxDarkness, false);
+      Helpers.saveNewDarknessConfig(newPositions, newMaxDarkness, false, root);
     });
   }
 
@@ -434,8 +476,10 @@ export class Helpers {
   // Helper function for time-changing socket updates.
   static handleTimeChange(timeInteger) {
     SmallTimeApp.timeTransition(timeInteger);
-    $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay(timeInteger).hours);
-    $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay(timeInteger).minutes);
+    const hourStringElement = document.getElementById('hourString');
+    const minuteStringElement = document.getElementById('minuteString');
+    if (hourStringElement) hourStringElement.textContent = SmallTimeApp.convertTimeIntegerToDisplay(timeInteger).hours;
+    if (minuteStringElement) minuteStringElement.textContent = SmallTimeApp.convertTimeIntegerToDisplay(timeInteger).minutes;
 
     // Calculate and show the current seconds if required.
     if (game.settings.get('smalltime', 'time-format') == 24 && game.settings.get('smalltime', 'show-seconds') == true) {
@@ -448,13 +492,17 @@ export class Helpers {
       }
       if (seconds < 10) seconds = '0' + seconds;
       if (seconds == 60) seconds = '00';
-      $('#secondString').html(seconds);
-      $('#secondsSpan').css('display', 'inline');
+      const secondStringElement = document.getElementById('secondString');
+      const secondsSpanElement = document.getElementById('secondsSpan');
+      if (secondStringElement) secondStringElement.textContent = seconds;
+      if (secondsSpanElement) secondsSpanElement.style.display = 'inline';
     } else {
-      $('#secondsSpan').css('display', 'none');
+      const secondsSpanElement = document.getElementById('secondsSpan');
+      if (secondsSpanElement) secondsSpanElement.style.display = 'none';
     }
 
-    $('#timeSlider').val(timeInteger);
+    const timeSliderElement = document.getElementById('timeSlider');
+    if (timeSliderElement) timeSliderElement.value = String(timeInteger);
     Helpers.handleRealtimeState();
     SmallTimeApp.updateDate();
   }
@@ -712,10 +760,11 @@ export class Helpers {
 
     newThreshold = Math.round((newThreshold / phases.length) * 100) / 100;
 
-    if (newThreshold === game.scenes.viewed.globalLightThreshold) {
+    const currentThreshold = foundry.utils.getProperty(game.scenes.viewed, 'environment.globalLight.darkness.max');
+    if (newThreshold === currentThreshold) {
       return true;
     }
-    await canvas.scene.update({ globalLightThreshold: newThreshold });
+    await canvas.scene.update({ environment: { globalLight: { darkness: { max: newThreshold } } } });
   }
 
   // Sun & moon icons by Freepik on flaticon.com
