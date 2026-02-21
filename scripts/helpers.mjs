@@ -457,7 +457,7 @@ export class Helpers {
     const numericVariant = Number(variant);
     const customVariant = Number.isFinite(numericVariant) ? numericVariant - 12 : -1;
     if (customVariant >= 0) {
-      const customDate = Helpers.getSystemDateByVariant(customVariant);
+      const customDate = Helpers.getSystemDateByVariant(customVariant) ?? Helpers.getAdditionalSystemDateByVariant(customVariant);
       if (customDate) return customDate;
     }
 
@@ -595,6 +595,15 @@ export class Helpers {
       });
     });
 
+    const extraSystemFormats = Helpers.getAdditionalSystemDateFormats();
+    extraSystemFormats.forEach((format, index) => {
+      const preview = Helpers.getAdditionalSystemDateByVariant(systemDateFormats.length + index) ?? Helpers.getDate(0);
+      options.push({
+        value: 12 + systemDateFormats.length + index,
+        label: `${preview} (${format.label})`,
+      });
+    });
+
     return options;
   }
 
@@ -610,6 +619,82 @@ export class Helpers {
     } catch (_error) {
       return null;
     }
+  }
+
+  static getAdditionalSystemDateFormats() {
+    const formats = [];
+
+    if (game.system?.id === 'pf2e' && game.pf2e?.worldClock) {
+      const localizedWorldClockLabel =
+        game.i18n.has('PF2E.WorldClock.Title') ? game.i18n.localize('PF2E.WorldClock.Title') : game.i18n.localize('PF2E.SETTINGS.WorldClock.Name');
+      formats.push({
+        id: 'pf2e-world-clock',
+        label: localizedWorldClockLabel,
+      });
+    }
+
+    return formats;
+  }
+
+  static getAdditionalSystemDateByVariant(variant) {
+    const systemDateFormatterCount = Helpers.getSystemDateFormatters().length;
+    const offset = variant - systemDateFormatterCount;
+    if (offset < 0) return null;
+
+    const format = Helpers.getAdditionalSystemDateFormats()[offset];
+    if (!format) return null;
+
+    if (format.id === 'pf2e-world-clock') {
+      return Helpers.getPF2eWorldClockFormattedDate();
+    }
+
+    return null;
+  }
+
+  static getPF2eOrdinalDay(dayNumber) {
+    const day = Number(dayNumber);
+    if (!Number.isFinite(day)) return String(dayNumber ?? '');
+
+    try {
+      const ordinalCategory = new Intl.PluralRules(game.i18n.lang, { type: 'ordinal' }).select(day);
+      const suffixKey = `PF2E.OrdinalSuffixes.${ordinalCategory}`;
+      if (game.i18n.has(suffixKey) && game.i18n.has('PF2E.OrdinalNumber')) {
+        const suffix = game.i18n.localize(suffixKey);
+        return game.i18n.format('PF2E.OrdinalNumber', { value: day, suffix });
+      }
+    } catch (_error) {
+      // Fall through to plain number output below.
+    }
+
+    return String(day);
+  }
+
+  static getPF2eWorldClockFormattedDate() {
+    if (game.system?.id !== 'pf2e') return null;
+
+    const worldClock = game.pf2e?.worldClock;
+    const worldTime = worldClock?.worldTime;
+    if (!worldClock || !worldTime) return null;
+
+    if (worldClock.dateTheme === 'CE' && typeof worldTime.toLocaleString === 'function') {
+      const luxonDateTime = globalThis.DateTime;
+      if (luxonDateTime?.DATE_HUGE) {
+        return worldTime.toLocaleString(luxonDateTime.DATE_HUGE);
+      }
+    }
+
+    const templateKey = CONFIG?.PF2E?.worldClock?.Date;
+    const day = Helpers.getPF2eOrdinalDay(worldTime.day);
+    const month = typeof worldClock.month === 'string' ? worldClock.month : '';
+    const weekday = typeof worldClock.weekday === 'string' ? worldClock.weekday : '';
+    const year = typeof worldClock.year === 'number' ? worldClock.year : worldTime.year;
+    const era = typeof worldClock.era === 'string' ? worldClock.era : '';
+
+    if (templateKey) {
+      return game.i18n.format(templateKey, { era, year, month, day, weekday });
+    }
+
+    return `${weekday}, ${day} of ${month}, ${year}${era ? ` ${era}` : ''}`.trim();
   }
 
   static getSystemDateFormatters() {
