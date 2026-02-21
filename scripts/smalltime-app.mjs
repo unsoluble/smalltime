@@ -804,9 +804,11 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
     this.activateListeners();
   }
 
-  // Override original #close method inherited from parent class.
   async close(options = {}) {
-    // Record visibility regardless of close source to keep internal state in sync.
+    // Don't close on Escape.
+    if (options.closeKey) return this;
+
+    // Record visibility to keep internal state in sync.
     SmallTimeApp._isOpen = false;
     if (game.settings.get('smalltime', 'visible')) {
       game.settings.set('smalltime', 'visible', false);
@@ -864,12 +866,7 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
     const playerAppUpperBound = playerAppPos.top - 50;
     const playerAppLowerBound = playerAppPos.top + 50;
 
-    return (
-      clientX > playerAppPos.left &&
-      clientX < playerAppPos.left + playerAppPos.width &&
-      clientY > playerAppUpperBound &&
-      clientY < playerAppLowerBound
-    );
+    return clientX > playerAppPos.left && clientX < playerAppPos.left + playerAppPos.width && clientY > playerAppUpperBound && clientY < playerAppLowerBound;
   }
 
   onDragStart(event) {
