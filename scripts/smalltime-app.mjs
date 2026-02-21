@@ -476,7 +476,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
   }
 
   // Set the Player Vis dropdown as appropriate.
-  const visChoice = obj.document.getFlag('smalltime', 'player-vis');
+  const visChoice = Number(obj.document.getFlag('smalltime', 'player-vis'));
   // Set the Darkness and Moonlight checkboxes as appropriate.
   const darknessCheckStatus = obj.document.getFlag('smalltime', 'darkness-link') ? 'checked' : '';
   const moonlightCheckStatus = obj.document.getFlag('smalltime', 'moonlight') ? 'checked' : '';
@@ -491,9 +491,9 @@ Hooks.on('renderSceneConfig', async (obj) => {
   let vis0 = '';
   let vis1 = '';
   let vis2 = '';
-  if (visChoice === '0') vis0 = 'selected';
-  if (visChoice === '1') vis1 = 'selected';
-  if (visChoice === '2') vis2 = 'selected';
+  if (visChoice === 0) vis0 = 'selected';
+  if (visChoice === 1) vis1 = 'selected';
+  if (visChoice === 2) vis2 = 'selected';
 
   const controlLabel = game.i18n.localize('SMLTME.Darkness_Control');
   const controlHint = game.i18n.localize('SMLTME.Darkness_Control_Hint');
@@ -548,7 +548,10 @@ Hooks.on('renderSceneConfig', async (obj) => {
   obj.setPosition();
 
   if (obj.object.getFlag('smalltime', 'moonlight')) {
-    const currentThreshold = obj.object.data.globalLightThreshold;
+    const currentThreshold =
+      foundry.utils.getProperty(obj.document, 'environment.globalLight.darkness.max') ??
+      obj.document.globalLightThreshold ??
+      obj.object.globalLightThreshold;
     const coreThresholdCheckbox = $('input[name="hasGlobalThreshold"]');
     coreThresholdCheckbox.attr({
       checked: '',
@@ -621,15 +624,18 @@ Hooks.on('renderSettingsConfig', (obj) => {
   const opacityTitleElement = $('label:contains(' + game.i18n.localize('SMLTME.Resting_Opacity') + ')');
   let popupDirection = 'right';
   if (game.modules.get('tidy-ui_game-settings')?.active) popupDirection = 'up';
-  opacityTitleElement.attr({
+  if (!opacityTitleElement.find('.st-tooltip-anchor').length) {
+    opacityTitleElement.wrapInner('<span class="st-tooltip-anchor"></span>');
+  }
+  opacityTitleElement.find('.st-tooltip-anchor').attr({
     'aria-label': game.i18n.localize('SMLTME.Position_Reset'),
     'data-balloon-pos': popupDirection,
   });
 
   // Reset to pinned position on Shift-click, and refresh the page.
-  $(opacityTitleElement).on('click', function () {
+  $(opacityTitleElement).on('click', async function (event) {
     if (event.shiftKey) {
-      game.settings.set('smalltime', 'pinned', true);
+      await game.settings.set('smalltime', 'pinned', true);
       window.location.reload(false);
     }
   });
@@ -638,24 +644,33 @@ Hooks.on('renderSettingsConfig', (obj) => {
   const darknessTitleElement = $('label:contains(' + game.i18n.localize('SMLTME.Darkness_Config') + ')');
   popupDirection = 'right';
   if (game.modules.get('tidy-ui_game-settings')?.active) popupDirection = 'up';
-  darknessTitleElement.attr({
+  if (!darknessTitleElement.find('.st-tooltip-anchor').length) {
+    darknessTitleElement.wrapInner('<span class="st-tooltip-anchor"></span>');
+  }
+  darknessTitleElement.find('.st-tooltip-anchor').attr({
     'aria-label': game.i18n.localize('SMLTME.Darkness_Reset'),
     'data-balloon-pos': popupDirection,
   });
 
   // Reset to defaults on Shift-click, and close the window.
-  $(darknessTitleElement).on('click', function () {
+  $(darknessTitleElement).on('click', async function (event) {
     if (event.shiftKey) {
-      game.settings.set('smalltime', 'sunrise-start', ST_Config.SunriseStartDefault);
-      game.settings.set('smalltime', 'sunrise-end', ST_Config.SunriseEndDefault);
-      game.settings.set('smalltime', 'sunset-start', ST_Config.SunsetStartDefault);
-      game.settings.set('smalltime', 'sunset-end', ST_Config.SunsetEndDefault);
-      game.settings.set('smalltime', 'max-darkness', ST_Config.MaxDarknessDefault);
-      game.settings.set('smalltime', 'min-darkness', ST_Config.MinDarknessDefault);
+      await Promise.all([
+        game.settings.set('smalltime', 'sunrise-start', ST_Config.SunriseStartDefault),
+        game.settings.set('smalltime', 'sunrise-end', ST_Config.SunriseEndDefault),
+        game.settings.set('smalltime', 'sunset-start', ST_Config.SunsetStartDefault),
+        game.settings.set('smalltime', 'sunset-end', ST_Config.SunsetEndDefault),
+        game.settings.set('smalltime', 'max-darkness', ST_Config.MaxDarknessDefault),
+        game.settings.set('smalltime', 'min-darkness', ST_Config.MinDarknessDefault),
+      ]);
 
-      Object.values(ui.windows).forEach((app) => {
-        if (app.options.id === 'client-settings') app.close();
-      });
+      if (typeof obj.render === 'function') {
+        try {
+          await obj.render({ force: true });
+        } catch (error) {
+          await obj.render(true);
+        }
+      }
     }
   });
 
