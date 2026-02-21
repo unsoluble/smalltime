@@ -71,34 +71,11 @@ export class Helpers {
   }
 
   static async updateSunriseSunsetTimes() {
-    if (!(game.settings.get('smalltime', 'sun-sync') && game.modules.get('calendaria')?.active)) return;
-
-    const riseEnd = CALENDARIA.api.getSunrise() * 60;
-    const riseStart = riseEnd - ST_Config.DawnDuskSpread;
-    const setStart = CALENDARIA.api.getSunset() * 60;
-    const setEnd = setStart + ST_Config.DawnDuskSpread;
-    await Promise.all([
-      game.settings.set('smalltime', 'sunrise-start', riseStart),
-      game.settings.set('smalltime', 'sunrise-end', riseEnd),
-      game.settings.set('smalltime', 'sunset-start', setStart),
-      game.settings.set('smalltime', 'sunset-end', setEnd),
-    ]);
+    // Intentionally no-op: sunrise/sunset sync from third-party calendar modules was removed.
   }
 
   static handleRealtimeState() {
-    /* TODO: Requires realtime clock state from Calendaria.
-    if (game.modules.get('calendaria')?.active) {
-      // Need to insert a small delay here, to wait for Simple Calendar to finish
-      // setting its clockStatus.
-      setTimeout(function () {
-        if (game.paused || !SimpleCalendar.api.clockStatus().started) {
-          $('.timeSeparator').removeClass('blink');
-        } else if (!game.paused && SimpleCalendar.api.clockStatus().started) {
-          $('.timeSeparator').addClass('blink');
-        }
-      }, 500);
-    }
-    */
+    // Reserved for future realtime state integration.
   }
 
   static updateGradientStops() {
@@ -147,10 +124,6 @@ export class Helpers {
   }
 
   static setupDragHandles(root = document) {
-    // If sunrise/sunset are being synced from Simple Calendar, we'll lock
-    // the drag handles on the X axis.
-    const sunSync = game.settings.get('smalltime', 'sun-sync') && game.modules.get('calendaria')?.active;
-
     // Build the sun/moon drag handles for the darkness config UI.
     const maxDarkness = game.settings.get('smalltime', 'max-darkness');
     const minDarkness = game.settings.get('smalltime', 'min-darkness');
@@ -171,12 +144,6 @@ export class Helpers {
       sunsetStart: Helpers.convertPositionToDisplayTime(initialPositions.sunsetStart),
       sunsetEnd: Helpers.convertPositionToDisplayTime(initialPositions.sunsetEnd),
     };
-
-    // If syncing, append a note to the tooltips.
-    const syncString = ' (Calendaria)';
-    if (sunSync) {
-      Object.keys(initialTimes).forEach((key) => (initialTimes[key] += syncString));
-    }
 
     const snapX = 10;
     const snapY = 4;
@@ -222,23 +189,18 @@ export class Helpers {
     const sunriseStartDrag = new Draggabilly(sunriseStartElement, {
       containment: '.sunrise-start-bounds',
       grid: [snapX, snapY],
-      // Lock off the X axis if we're syncing the sunrise/sunset times.
-      axis: sunSync ? 'y' : null,
     });
     const sunriseEndDrag = new Draggabilly(sunriseEndElement, {
       containment: '.sunrise-end-bounds',
       grid: [snapX, snapY],
-      axis: sunSync ? 'y' : null,
     });
     const sunsetStartDrag = new Draggabilly(sunsetStartElement, {
       containment: '.sunset-start-bounds',
       grid: [snapX, snapY],
-      axis: sunSync ? 'y' : null,
     });
     const sunsetEndDrag = new Draggabilly(sunsetEndElement, {
       containment: '.sunset-end-bounds',
       grid: [snapX, snapY],
-      axis: sunSync ? 'y' : null,
     });
 
     let shovedPos = '';
@@ -247,9 +209,8 @@ export class Helpers {
     sunriseStartDrag.on('dragMove', function () {
       // Match the paired handle.
       setHandleTop(sunsetEndElement, this.position.y);
-      // Update the tooltip. Append sync note if syncing.
+      // Update the tooltip.
       let displayTime = Helpers.convertPositionToDisplayTime(this.position.x);
-      sunSync ? (displayTime += syncString) : null;
       setHandleLabel(sunriseStartElement, displayTime);
 
       // Live update the darkness maximum.
@@ -273,9 +234,8 @@ export class Helpers {
     sunriseEndDrag.on('dragMove', function () {
       // Match the paired handle.
       setHandleTop(sunsetStartElement, this.position.y);
-      // Update the tooltip. Append sync note if syncing.
+      // Update the tooltip.
       let displayTime = Helpers.convertPositionToDisplayTime(this.position.x);
-      sunSync ? (displayTime += syncString) : null;
       setHandleLabel(sunriseEndElement, displayTime);
 
       // Live update the darkness minimum.
@@ -299,9 +259,8 @@ export class Helpers {
     sunsetStartDrag.on('dragMove', function () {
       // Match the paired handle.
       setHandleTop(sunriseEndElement, this.position.y);
-      // Update the tooltip. Append sync note if syncing.
+      // Update the tooltip.
       let displayTime = Helpers.convertPositionToDisplayTime(this.position.x);
-      sunSync ? (displayTime += syncString) : null;
       setHandleLabel(sunsetStartElement, displayTime);
 
       // Live update the darkness minimum.
@@ -325,9 +284,8 @@ export class Helpers {
     sunsetEndDrag.on('dragMove', function () {
       // Match the paired handle.
       setHandleTop(sunriseStartElement, this.position.y);
-      // Update the tooltip. Append sync note if syncing.
+      // Update the tooltip.
       let displayTime = Helpers.convertPositionToDisplayTime(this.position.x);
-      sunSync ? (displayTime += syncString) : null;
       setHandleLabel(sunsetEndElement, displayTime);
 
       // Live update the darkness maximum.
@@ -445,34 +403,6 @@ export class Helpers {
     game.time.advance(delta * 60);
   }
 
-  static getCalendarProviders() {
-    let calendarProviders = new Object();
-
-    if (game.modules.get('calendaria')?.active) {
-      Object.assign(calendarProviders, { cd: 'Calendaria' });
-    }
-
-    return calendarProviders;
-  }
-
-  // If the calendar provider is set to a module that isn't currently enabled,
-  // fall back to using PF2E's calendar, if in PF2E.
-  static setCalendarFallback() {
-    const providerSetting = game.settings.get('smalltime', 'calendar-provider');
-
-    if (!game.user.isGM) return;
-
-    // If the provider is set to a module or system that isn't available, use the
-    // first available provider by default.
-    if (providerSetting === 'cd' && !game.modules.get('calendaria')?.active) {
-      const providers = Helpers.getCalendarProviders();
-      const fallbackProvider = Object.keys(providers)[0];
-      if (fallbackProvider) {
-        game.settings.set('smalltime', 'calendar-provider', fallbackProvider);
-      }
-    }
-  }
-
   // Helper function for time-changing socket updates.
   static handleTimeChange(timeInteger) {
     SmallTimeApp.timeTransition(timeInteger);
@@ -507,7 +437,7 @@ export class Helpers {
     SmallTimeApp.updateDate();
   }
 
-  static getDate(provider, variant) {
+  static getDate(variant) {
     let day;
     let monthName;
     let month;
@@ -518,19 +448,22 @@ export class Helpers {
     let ordinalSuffix;
     let displayDate = [];
 
-    /*
-    if (game.modules.get('calendaria')?.active && provider === 'cd') {
-      let SCobject = SimpleCalendar.api.timestampToDate(game.time.worldTime).display;
-      day = SimpleCalendar.api.timestampToDate(game.time.worldTime).showWeekdayHeadings ? SCobject.weekday : undefined;
-      monthName = SCobject.monthName;
-      month = SCobject.month;
-      date = SCobject.day;
-      ordinalSuffix = SCobject.daySuffix;
-      year = SCobject.year;
-      yearPrefix = SCobject.yearPrefix || undefined;
-      yearPostfix = SCobject.yearPostfix || undefined;
+    const calendar = game.time?.calendar;
+    if (calendar) {
+      const components = calendar.timeToComponents(game.time.worldTime);
+      const weekdayData = calendar.days?.values?.[components.dayOfWeek];
+      const monthData = calendar.months?.values?.[components.month];
+      day = weekdayData ? game.i18n.localize(weekdayData.name) : undefined;
+      monthName = monthData ? game.i18n.localize(monthData.name) : undefined;
+      month = monthData?.ordinal ?? components.month + 1;
+      date = components.dayOfMonth + 1;
+      year = components.year + (calendar.years?.yearZero ?? 0);
+      ordinalSuffix = '';
+      yearPrefix = undefined;
+      yearPostfix = undefined;
+    } else {
+      year = '';
     }
-    */
 
     // Thursday, August 12th, 2021 C.E.
     displayDate.push(

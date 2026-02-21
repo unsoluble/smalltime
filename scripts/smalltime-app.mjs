@@ -87,15 +87,10 @@ Hooks.on('init', () => {
     default: false,
   });
 
-  // If there is one or more available source of calendar information,
-  // add them to the list of providers to choose from in Settings.
-  const calendarProviders = Helpers.getCalendarProviders();
-  const calendarAvailable = Object.keys(calendarProviders).length > 0 ? true : false;
-
   game.settings.register('smalltime', 'date-format', {
     name: game.i18n.localize('SMLTME.Date_Format'),
     scope: 'world',
-    config: calendarAvailable,
+    config: true,
     type: Number,
     // These strings are replaced dynamically later.
     choices: {
@@ -113,16 +108,6 @@ Hooks.on('init', () => {
       11: '11',
     },
     default: 0,
-  });
-
-  game.settings.register('smalltime', 'calendar-provider', {
-    name: game.i18n.localize('SMLTME.Calendar_Provider'),
-    hint: game.i18n.localize('SMLTME.Calendar_Provider_Hint'),
-    scope: 'world',
-    config: calendarAvailable,
-    type: String,
-    choices: calendarProviders,
-    default: 'cd',
   });
 
   game.settings.register('smalltime', 'small-step', {
@@ -201,15 +186,6 @@ Hooks.on('init', () => {
     default: ST_Config.SunsetEndDefault,
   });
 
-  game.settings.register('smalltime', 'sun-sync', {
-    name: game.i18n.localize('SMLTME.Sun_Sync'),
-    hint: game.i18n.localize('SMLTME.Sun_Sync_Hint'),
-    scope: 'world',
-    config: game.modules.get('calendaria')?.active,
-    type: Boolean,
-    default: false,
-  });
-
   game.settings.register('smalltime', 'darkness-default', {
     name: game.i18n.localize('SMLTME.Darkness_Default'),
     hint: game.i18n.localize('SMLTME.Darkness_Default_Hint'),
@@ -224,15 +200,6 @@ Hooks.on('init', () => {
     hint: game.i18n.localize('SMLTME.Moon_Darkness_Hint'),
     scope: 'world',
     config: true,
-    type: Boolean,
-    default: false,
-  });
-
-  game.settings.register('smalltime', 'moon-tint', {
-    name: game.i18n.localize('SMLTME.Moon_Tint'),
-    hint: game.i18n.localize('SMLTME.Moon_Tint_Hint'),
-    scope: 'world',
-    config: game.modules.get('calendaria')?.active,
     type: Boolean,
     default: false,
   });
@@ -271,12 +238,6 @@ Hooks.on('init', () => {
 });
 
 Hooks.on('setup', () => {
-  // Only allow the date display to show if there's a calendar provider available.
-  game.modules.get('smalltime').dateAvailable = false;
-  if (game.modules.get('calendaria')?.active) {
-    game.modules.get('smalltime').dateAvailable = true;
-  }
-
   // Check and set the correct level of authorization for the current user.
   game.modules.get('smalltime').viewAuth = false;
   game.modules.get('smalltime').clockAuth = false;
@@ -315,18 +276,6 @@ Hooks.on('setup', () => {
 Hooks.on('canvasInit', () => {
   // Start by resetting the Darkness color to the core value.
   CONFIG.Canvas.darknessColor = ST_Config.coreDarknessColor;
-
-  if (game.modules.get('foundryvtt-simple-calendar')?.active && game.settings.get('smalltime', 'moon-tint')) {
-    if (game.scenes.viewed.getFlag('smalltime', 'darkness-link')) {
-      // Set the global Darkness color to the color of the first moon in Simple Calendar, if configured.
-      // The pSBC function drops the brightness to an appropriate level.
-      // Ignore if the moon is set to its default color of white.
-      if (SimpleCalendar.api.getAllMoons()[0].color != '#ffffff') {
-        const darknessColorFromMoon = Helpers.pSBC(-0.9, SimpleCalendar.api.getAllMoons()[0].color);
-        CONFIG.Canvas.darknessColor = darknessColorFromMoon;
-      }
-    }
-  }
   // Re-draw the canvas with the new Darkness color.
   if (game.release.generation < 12) {
     canvas.colorManager.initialize();
@@ -373,11 +322,6 @@ Hooks.on('canvasReady', () => {
     // Refresh the current scene BG for the settings dialog.
     Helpers.grabSceneSlice();
   }
-});
-
-// Wait for Calendaria to have its seasons set up before checking rise/set times.
-Hooks.on('calendaria.ready', async () => {
-  await Helpers.updateSunriseSunsetTimes();
 });
 
 Hooks.on('ready', () => {
@@ -445,7 +389,6 @@ Hooks.on('ready', () => {
   // Update the stops on the sunrise/sunset gradient, in case
   // there's been changes to the positions.
   Helpers.updateGradientStops();
-  Helpers.setCalendarFallback();
 });
 
 // Wait for the app to be rendered, then adjust the CSS to
@@ -481,7 +424,7 @@ const applyMainAppLayoutState = (appElement) => {
   timeDisplayElement?.classList.remove('hide-for-players');
   appElement.style.height = '58px';
 
-  if (game.settings.get('smalltime', 'date-showing') && game.modules.get('smalltime').dateAvailable) {
+  if (game.settings.get('smalltime', 'date-showing')) {
     appElement.classList.add('show-date');
     appElement.style.height = '79px';
   } else {
@@ -703,7 +646,7 @@ Hooks.on('renderSettingsConfig', (obj) => {
   const dateFormatSelect = findSettingInput('smalltime.date-format');
   if (dateFormatSelect) {
     for (const option of dateFormatSelect.querySelectorAll('option')) {
-      option.text = Helpers.getDate(game.settings.get('smalltime', 'calendar-provider'), option.value);
+      option.text = Helpers.getDate(Number(option.value));
     }
   }
 
@@ -847,16 +790,6 @@ Hooks.on('updateWorldTime', () => {
 // Handle toggling of time separator flash when game is paused/unpaused.
 Hooks.on('pauseGame', () => {
   Helpers.handleRealtimeState();
-});
-
-// Listen for changes to the realtime clock state.
-Hooks.on('calendaria.clockStartStop', () => {
-  SmallTimeApp.emitSocket('handleRealtime');
-});
-
-Hooks.on('calendaria.dateTimeChange', async (data) => {
-  await Helpers.updateSunriseSunsetTimes();
-  Helpers.updateGradientStops();
 });
 
 class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(foundry.applications.api.ApplicationV2) {
@@ -1063,7 +996,6 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
     const hourStringEl = appElement.querySelector('#hourString');
     const minuteStringEl = appElement.querySelector('#minuteString');
     const timeDisplayEl = appElement.querySelector('#timeDisplay');
-    const dateDisplayEl = appElement.querySelector('#dateDisplay');
     const decreaseSmallEl = appElement.querySelector('#decrease-small');
     const decreaseLargeEl = appElement.querySelector('#decrease-large');
     const increaseSmallEl = appElement.querySelector('#increase-small');
@@ -1118,45 +1050,25 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
       }
     });
 
-    // Toggle the date display div, if a calendar provider is enabled.
-    // The inline CSS overrides are a bit hacky, but were the
-    // only way I could get the desired behaviour.
+    // Toggle the date display div.
     timeDisplayEl?.addEventListener('click', async (ev) => {
-      if (ev.shiftKey && game.modules.get('smalltime').controlAuth && !game.paused && game.modules.get('foundryvtt-simple-calendar')?.active) {
-        if (SimpleCalendar.api.clockStatus().started) {
-          SimpleCalendar.api.stopClock();
-        } else {
-          SimpleCalendar.api.startClock();
+      if (!game.settings.get('smalltime', 'date-showing')) {
+        appElement.classList.add('show-date');
+        appElement.style.height = '79px';
+        if (game.settings.get('smalltime', 'pinned')) {
+          SmallTimeApp.unPinApp();
+          SmallTimeApp.pinApp(this);
         }
-        if (game.user.isGM) {
-          Helpers.handleRealtimeState();
-        }
-        SmallTimeApp.emitSocket('handleRealtime');
+        await game.settings.set('smalltime', 'date-showing', true);
       } else {
-        if (!game.settings.get('smalltime', 'date-showing') && game.modules.get('smalltime').dateAvailable) {
-          appElement.classList.add('show-date');
-          appElement.style.height = '79px';
-          if (game.settings.get('smalltime', 'pinned')) {
-            SmallTimeApp.unPinApp();
-            SmallTimeApp.pinApp(this);
-          }
-          await game.settings.set('smalltime', 'date-showing', true);
-        } else {
-          appElement.classList.remove('show-date');
-          appElement.style.height = '59px';
-          if (game.settings.get('smalltime', 'pinned')) {
-            SmallTimeApp.unPinApp();
-            SmallTimeApp.pinApp(this);
-          }
-          await game.settings.set('smalltime', 'date-showing', false);
+        appElement.classList.remove('show-date');
+        appElement.style.height = '59px';
+        if (game.settings.get('smalltime', 'pinned')) {
+          SmallTimeApp.unPinApp();
+          SmallTimeApp.pinApp(this);
         }
+        await game.settings.set('smalltime', 'date-showing', false);
       }
-    });
-
-    // Open the Simple Calendar interface on date clicks.
-    dateDisplayEl?.addEventListener('click', async () => {
-      if (game.settings.get('smalltime', 'calendar-provider') === 'sc' && game.modules.get('foundryvtt-simple-calendar')?.active)
-        SimpleCalendar.api.showCalendar();
     });
 
     // Handle the increment/decrement buttons.
@@ -1208,25 +1120,6 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
       this.timeRatchet(stepAmount);
     });
 
-    // Listen for moon phase changes from Simple Calendar.
-    if (game.modules.get('foundryvtt-simple-calendar')?.active && game.user.isGM) {
-      Hooks.on(SimpleCalendar.Hooks.DateTimeChange, async function (data) {
-        if (typeof data.moons[0] === 'undefined') {
-          return;
-        }
-        const newPhases = [];
-        data.moons.forEach((m) => {
-          const newPhase = ST_Config.MoonPhases.findIndex(function (phase) {
-            return phase === m.currentPhase.icon;
-          });
-          newPhases.push(newPhase);
-        });
-
-        await game.settings.set('smalltime', 'moon-phase', newPhases[0]);
-        SmallTimeApp.timeTransition(Helpers.getWorldTimeAsDayTime());
-        Helpers.adjustMoonlight(newPhases);
-      });
-    }
   }
 
   // Helper function for handling sockets.
@@ -1457,15 +1350,14 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
     }
   }
 
-  // Get the date from various calendar providers.
+  // Get the date from the core Foundry calendar.
   static async updateDate() {
-    let displayDate = Helpers.getDate(game.settings.get('smalltime', 'calendar-provider'), game.settings.get('smalltime', 'date-format'));
+    let displayDate = Helpers.getDate(game.settings.get('smalltime', 'date-format'));
 
     const dateDisplayElement = document.getElementById('dateDisplay');
     if (dateDisplayElement) dateDisplayElement.textContent = displayDate;
 
-    // Save this string so we can display it on initial load-in,
-    // before the calendar provider is ready.
+    // Save this string so we can display it on initial load-in.
     if (game.user.isGM) await game.settings.set('smalltime', 'current-date', displayDate);
   }
 }
