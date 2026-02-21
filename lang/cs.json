@@ -41,5 +41,6 @@
   "SMLTME.Moon_Darkness": "Mají fáze měsíce ovlivňovat tmu?",
   "SMLTME.Moon_Darkness_Hint": "Po zaškrtnutí bude automaticky přizpůsobovat maximální úroveň tmy na základě aktuální fáze měsíce.",
   "SMLTME.Toggle_Hotkey": "Přepínač viditelnosti",
-  "SMLTME.Toggle_Hotkey_Hint": "Přepne viditelnost okna SmallTime."
+  "SMLTME.Toggle_Hotkey_Hint": "Přepne viditelnost okna SmallTime.",
+  "SMLTME.Sun_Sync_Lock_Tooltip": "(Synchronizováno z {source})"
 }

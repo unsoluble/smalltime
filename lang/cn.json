@@ -37,5 +37,10 @@
   "SMLTME.Moon_Darkness": "月相影响暗度",
   "SMLTME.Moon_Darkness_Hint": "根据当前月相自动调整最大暗度。",
   "SMLTME.Toggle_Hotkey": "可见开关",
-  "SMLTME.Toggle_Hotkey_Hint": "打开或关闭 SmallTime 窗口。"
+  "SMLTME.Toggle_Hotkey_Hint": "打开或关闭 SmallTime 窗口。",
+  "SMLTME.Sun_Sync_Lock_Tooltip": "（与{source}同步）",
+  "SMLTME.Moon_Tint": "使用月亮颜色为黑暗着色",
+  "SMLTME.Moon_Tint_Hint": "当 SmallTime 控制场景黑暗等级时，将使用提供月亮数据的模块所配置的当前月相颜色进行着色。",
+  "SMLTME.Phase_Impact": "月相影响强度",
+  "SMLTME.Phase_Impact_Hint": "调整月相对当前黑暗等级亮度影响的强度（需要刷新）。"
 }

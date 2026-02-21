@@ -31,5 +31,17 @@
   "SMLTME.Darkness_Reset": "Umschalttaste+Klick für Standardeinstellungen",
   "SMLTME.Position_Reset": "Shift-click zum Zurücksetzen der Fensterposition",
   "SMLTME.Sun_Sync": "Sonnenauf-/untergang synchronisieren",
-  "SMLTME.Sun_Sync_Hint": "Zeiten für Sonnenauf-/untergang aus Simple Calendar laden."
+  "SMLTME.Sun_Sync_Hint": "Zeiten für Sonnenauf-/untergang aus Simple Calendar laden.",
+  "SMLTME.Sun_Sync_Lock_Tooltip": "(Synchronisiert von {source})",
+  "SMLTME.Threshold_Override_Tooltip": "SmallTime passt dies basierend auf der Mondphase an",
+  "SMLTME.Moonlight_Adjust": "Mondlicht-Anpassung",
+  "SMLTME.Moonlight_Adjust_Hint": "Passt den globalen Beleuchtungsschwellenwert basierend auf der aktuellen Mondphase an.",
+  "SMLTME.Moon_Tint": "Dunkelheit mit Mondfarbe einfärben",
+  "SMLTME.Moon_Tint_Hint": "Szenen, in denen SmallTime die Dunkelheitsstufe steuert, werden mit der Farbe der aktuellen Mondphasen eingefärbt, wie sie vom mondbereitstellenden Modul konfiguriert sind.",
+  "SMLTME.Phase_Impact": "Phasenwirkung",
+  "SMLTME.Phase_Impact_Hint": "Skaliert, wie stark die Mondphase die aktuelle Dunkelheitsstufe beeinflusst (erfordert Neuladen).",
+  "SMLTME.Moon_Darkness": "Mondphase beeinflusst Dunkelheit",
+  "SMLTME.Moon_Darkness_Hint": "Passt die maximale Dunkelheitsstufe automatisch anhand der aktuellen Mondphase an.",
+  "SMLTME.Toggle_Hotkey": "Sichtbarkeits-Umschalter",
+  "SMLTME.Toggle_Hotkey_Hint": "Schaltet das SmallTime-Fenster ein oder aus."
 }

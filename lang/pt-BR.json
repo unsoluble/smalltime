@@ -31,5 +31,17 @@
   "SMLTME.Darkness_Reset": "Shift e clique para reiniciar para o horário padrão",
   "SMLTME.Position_Reset": "Shift-click to reset the SmallTime window postion",
   "SMLTME.Sun_Sync": "Synchronize Sunrise/Sunset",
-  "SMLTME.Sun_Sync_Hint": "Acquire sunrise & sunset times from Simple Calendar."
+  "SMLTME.Sun_Sync_Hint": "Acquire sunrise & sunset times from Simple Calendar.",
+  "SMLTME.Sun_Sync_Lock_Tooltip": "(Sincronizado de {source})",
+  "SMLTME.Threshold_Override_Tooltip": "O SmallTime está ajustando isto com base na fase da lua",
+  "SMLTME.Moonlight_Adjust": "Ajuste de luar",
+  "SMLTME.Moonlight_Adjust_Hint": "Ajusta o limite de iluminação global com base na fase atual da lua.",
+  "SMLTME.Moon_Tint": "Tingir escuridão com a cor da lua",
+  "SMLTME.Moon_Tint_Hint": "Cenas nas quais o SmallTime controla o nível de escuridão serão tingidas com a cor das fases lunares atuais, conforme configurado pelo módulo que fornece luas.",
+  "SMLTME.Phase_Impact": "Impacto da fase",
+  "SMLTME.Phase_Impact_Hint": "Ajusta quanto a fase da lua impacta o nível atual de escuridão (requer recarregar).",
+  "SMLTME.Moon_Darkness": "Fase da lua afeta a escuridão",
+  "SMLTME.Moon_Darkness_Hint": "Adapta automaticamente o nível máximo de escuridão com base na fase atual da lua.",
+  "SMLTME.Toggle_Hotkey": "Alternar visibilidade",
+  "SMLTME.Toggle_Hotkey_Hint": "Alterna a janela do SmallTime entre visível e oculta."
 }

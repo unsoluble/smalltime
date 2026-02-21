@@ -324,7 +324,7 @@ Hooks.on('canvasReady', () => {
   }
 });
 
-Hooks.on('ready', () => {
+Hooks.on('ready', async () => {
   // Send incoming socket emissions through the async function.
   game.socket.on(`module.smalltime`, (data) => {
     doSocket(data);
@@ -386,6 +386,7 @@ Hooks.on('ready', () => {
       if (!game.user.isGM) Helpers.handleRealtimeState();
     }
   }
+  await Helpers.updateSunriseSunsetTimes();
   // Update the stops on the sunrise/sunset gradient, in case
   // there's been changes to the positions.
   Helpers.updateGradientStops();
@@ -546,7 +547,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
   obj.setPosition();
 });
 
-Hooks.on('renderSettingsConfig', (obj) => {
+Hooks.on('renderSettingsConfig', async (obj) => {
   if (!game.user.isGM) return;
 
   const root = obj.form ?? obj.element?.[0];
@@ -746,6 +747,7 @@ Hooks.on('renderSettingsConfig', (obj) => {
   document.documentElement.style.setProperty('--SMLTME-darkness-b', currentDarknessColor.b);
 
   Helpers.grabSceneSlice();
+  await Helpers.updateSunriseSunsetTimes();
   Helpers.setupDragHandles(root);
 });
 
@@ -781,13 +783,15 @@ Hooks.on('renderPlayers', handlePlayersRender);
 Hooks.on('renderPlayerList', handlePlayersRender);
 
 // Listen for changes to the worldTime from elsewhere.
-Hooks.on('updateWorldTime', () => {
+Hooks.on('updateWorldTime', async () => {
+  await Helpers.updateSunriseSunsetTimes();
   Helpers.handleTimeChange(Helpers.getWorldTimeAsDayTime());
 });
 
 // Calendaria initializes asynchronously and can replace the active calendar after SmallTime renders.
 // Refresh once when it signals ready so module-backed date formats show immediately.
-Hooks.on('calendaria.ready', () => {
+Hooks.on('calendaria.ready', async () => {
+  await Helpers.updateSunriseSunsetTimes();
   SmallTimeApp.timeTransition(Helpers.getWorldTimeAsDayTime(), { persistDarkness: false });
   SmallTimeApp.updateDate();
 });
