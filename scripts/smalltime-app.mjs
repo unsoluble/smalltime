@@ -176,6 +176,15 @@ Hooks.on('init', () => {
     default: ST_Config.SunsetEndDefault,
   });
 
+  game.settings.register('smalltime', 'sun-sync', {
+    name: game.i18n.localize('SMLTME.Sun_Sync'),
+    hint: game.i18n.localize('SMLTME.Sun_Sync_Hint'),
+    scope: 'world',
+    config: true,
+    type: Boolean,
+    default: true,
+  });
+
   game.settings.register('smalltime', 'darkness-default', {
     name: game.i18n.localize('SMLTME.Darkness_Default'),
     hint: game.i18n.localize('SMLTME.Darkness_Default_Hint'),

@@ -30,7 +30,7 @@
   "SMLTME.Darkness_Reset": "Shift-click to reset times to defaults",
   "SMLTME.Position_Reset": "Shift-click to reset the SmallTime window postion",
   "SMLTME.Sun_Sync": "Synchronize Sunrise/Sunset",
-  "SMLTME.Sun_Sync_Hint": "Acquire sunrise & sunset times from Calendaria.",
+  "SMLTME.Sun_Sync_Hint": "Acquire sunrise & sunset times from available calendar provider. Disable to edit manually.",
   "SMLTME.Sun_Sync_Lock_Tooltip": "(Synced from {source})",
   "SMLTME.Threshold_Override_Tooltip": "SmallTime is adjusting this based on the moon's phase",
   "SMLTME.Moonlight_Adjust": "Moonlight Adjustment",

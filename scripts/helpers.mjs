@@ -270,6 +270,13 @@ export class Helpers {
     let shovedPos = '';
     let newTransition = '';
 
+    const getCurrentPositions = () => ({
+      sunriseStart: lockTimeAxis ? initialPositions.sunriseStart : sunriseStartDrag.position.x,
+      sunriseEnd: lockTimeAxis ? initialPositions.sunriseEnd : sunriseEndDrag.position.x,
+      sunsetStart: lockTimeAxis ? initialPositions.sunsetStart : sunsetStartDrag.position.x,
+      sunsetEnd: lockTimeAxis ? initialPositions.sunsetEnd : sunsetEndDrag.position.x,
+    });
+
     sunriseStartDrag.on('dragMove', function () {
       // Match the paired handle.
       setHandleTop(sunsetEndElement, this.position.y);
@@ -379,48 +386,28 @@ export class Helpers {
     });
 
     sunriseStartDrag.on('dragEnd', async function () {
-      const newPositions = {
-        sunriseStart: lockTimeAxis ? initialPositions.sunriseStart : sunriseStartDrag.position.x,
-        sunriseEnd: lockTimeAxis ? initialPositions.sunriseEnd : sunriseEndDrag.position.x,
-        sunsetStart: lockTimeAxis ? initialPositions.sunsetStart : sunsetStartDrag.position.x,
-        sunsetEnd: lockTimeAxis ? initialPositions.sunsetEnd : sunsetEndDrag.position.x,
-      };
+      const newPositions = getCurrentPositions();
       let newMaxDarkness = Helpers.convertPositionToDarkness(this.position.y);
       if (newMaxDarkness > 1) newMaxDarkness = 1;
       Helpers.saveNewDarknessConfig(newPositions, newMaxDarkness, false, root);
     });
 
     sunriseEndDrag.on('dragEnd', async function () {
-      const newPositions = {
-        sunriseStart: lockTimeAxis ? initialPositions.sunriseStart : sunriseStartDrag.position.x,
-        sunriseEnd: lockTimeAxis ? initialPositions.sunriseEnd : sunriseEndDrag.position.x,
-        sunsetStart: lockTimeAxis ? initialPositions.sunsetStart : sunsetStartDrag.position.x,
-        sunsetEnd: lockTimeAxis ? initialPositions.sunsetEnd : sunsetEndDrag.position.x,
-      };
+      const newPositions = getCurrentPositions();
       let newMinDarkness = Helpers.convertPositionToDarkness(this.position.y);
       if (newMinDarkness < 0) newMinDarkness = 0;
       Helpers.saveNewDarknessConfig(newPositions, false, newMinDarkness, root);
     });
 
     sunsetStartDrag.on('dragEnd', async function () {
-      const newPositions = {
-        sunriseStart: lockTimeAxis ? initialPositions.sunriseStart : sunriseStartDrag.position.x,
-        sunriseEnd: lockTimeAxis ? initialPositions.sunriseEnd : sunriseEndDrag.position.x,
-        sunsetStart: lockTimeAxis ? initialPositions.sunsetStart : sunsetStartDrag.position.x,
-        sunsetEnd: lockTimeAxis ? initialPositions.sunsetEnd : sunsetEndDrag.position.x,
-      };
+      const newPositions = getCurrentPositions();
       let newMinDarkness = Helpers.convertPositionToDarkness(this.position.y);
       if (newMinDarkness < 0) newMinDarkness = 0;
       Helpers.saveNewDarknessConfig(newPositions, false, newMinDarkness, root);
     });
 
     sunsetEndDrag.on('dragEnd', async function () {
-      const newPositions = {
-        sunriseStart: lockTimeAxis ? initialPositions.sunriseStart : sunriseStartDrag.position.x,
-        sunriseEnd: lockTimeAxis ? initialPositions.sunriseEnd : sunriseEndDrag.position.x,
-        sunsetStart: lockTimeAxis ? initialPositions.sunsetStart : sunsetStartDrag.position.x,
-        sunsetEnd: lockTimeAxis ? initialPositions.sunsetEnd : sunsetEndDrag.position.x,
-      };
+      const newPositions = getCurrentPositions();
       let newMaxDarkness = Helpers.convertPositionToDarkness(this.position.y);
       if (newMaxDarkness > 1) newMaxDarkness = 1;
       Helpers.saveNewDarknessConfig(newPositions, newMaxDarkness, false, root);
@@ -477,6 +464,11 @@ export class Helpers {
     const moduleId = 'calendaria';
     const moduleTitle = game.modules?.get(moduleId)?.title ?? 'Calendaria';
     const systemTitle = game.system?.title ?? game.system?.id ?? 'System';
+    const syncEnabled = game.settings?.get?.('smalltime', 'sun-sync') !== false;
+
+    if (!syncEnabled) {
+      return { synced: false, source: 'manual', sourceLabel: 'manual' };
+    }
 
     const calendariaApi = Helpers.getCalendariaApi();
     const moduleSunrise = Helpers.#numberOrNull(calendariaApi?.getSunrise?.());
