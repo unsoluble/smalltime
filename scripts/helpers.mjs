@@ -13,16 +13,13 @@ ST_Config.PhaseValues = {
   7: 0.25,
 };
 
-// Saving the default core Darkness color for reference.
+// Saving the default core Darkness colour for reference.
 ST_Config.coreDarknessColor = 2368584;
 ST_Config.activeDarknessColor = ST_Config.coreDarknessColor;
 
 // Default offset from the Player List window when pinned,
-// an Epoch offset for game systems that don't start at midnight,
-// plus custom offsets for game systems that draw extra borders
-// around their windows. Also default values for sunrise/set.
+// and default values for sunrise/set.
 ST_Config.PinOffset = 83;
-ST_Config.EpochOffset = 0;
 
 ST_Config.SunriseStartDefault = 180;
 ST_Config.SunriseEndDefault = 420;
@@ -559,7 +556,7 @@ export class Helpers {
     const pf2eSeconds = Helpers.getPF2eWorldClockSecondsOfDay();
     if (pf2eSeconds !== null) return pf2eSeconds;
 
-    const currentWorldTime = game.time.worldTime + ST_Config.EpochOffset;
+    const currentWorldTime = game.time.worldTime;
     const normalized = ((currentWorldTime % 86400) + 86400) % 86400;
     return Math.trunc(normalized);
   }
@@ -607,9 +604,7 @@ export class Helpers {
     const r = lerp(parse(base, 1), parse(tint, 1), clampedAmount);
     const g = lerp(parse(base, 3), parse(tint, 3), clampedAmount);
     const b = lerp(parse(base, 5), parse(tint, 5), clampedAmount);
-    return `#${[r, g, b]
-      .map((value) => value.toString(16).padStart(2, '0'))
-      .join('')}`;
+    return `#${[r, g, b].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
   }
 
   static getProviderMoonColor() {
@@ -771,17 +766,17 @@ export class Helpers {
     } else {
       const calendar = game.time?.calendar;
       if (calendar) {
-      const components = calendar.timeToComponents(game.time.worldTime);
-      const weekdayData = calendar.days?.values?.[components.dayOfWeek];
-      const monthData = calendar.months?.values?.[components.month];
-      day = weekdayData ? game.i18n.localize(weekdayData.name) : undefined;
-      monthName = monthData ? game.i18n.localize(monthData.name) : undefined;
-      month = monthData?.ordinal ?? components.month + 1;
-      date = components.dayOfMonth + 1;
-      year = components.year + (calendar.years?.yearZero ?? 0);
-      ordinalSuffix = '';
-      yearPrefix = undefined;
-      yearPostfix = undefined;
+        const components = calendar.timeToComponents(game.time.worldTime);
+        const weekdayData = calendar.days?.values?.[components.dayOfWeek];
+        const monthData = calendar.months?.values?.[components.month];
+        day = weekdayData ? game.i18n.localize(weekdayData.name) : undefined;
+        monthName = monthData ? game.i18n.localize(monthData.name) : undefined;
+        month = monthData?.ordinal ?? components.month + 1;
+        date = components.dayOfMonth + 1;
+        year = components.year + (calendar.years?.yearZero ?? 0);
+        ordinalSuffix = '';
+        yearPrefix = undefined;
+        yearPostfix = undefined;
       } else {
         year = '';
       }
@@ -947,8 +942,9 @@ export class Helpers {
     }
 
     if (game.system?.id === 'pf2e' && game.pf2e?.worldClock) {
-      const localizedWorldClockLabel =
-        game.i18n.has('PF2E.WorldClock.Title') ? game.i18n.localize('PF2E.WorldClock.Title') : game.i18n.localize('PF2E.SETTINGS.WorldClock.Name');
+      const localizedWorldClockLabel = game.i18n.has('PF2E.WorldClock.Title')
+        ? game.i18n.localize('PF2E.WorldClock.Title')
+        : game.i18n.localize('PF2E.SETTINGS.WorldClock.Name');
       formats.push({
         id: 'pf2e-world-clock',
         label: localizedWorldClockLabel,
