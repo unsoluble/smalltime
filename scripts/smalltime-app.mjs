@@ -795,6 +795,15 @@ Hooks.on('calendaria.ready', async () => {
   await Helpers.updateSunriseSunsetTimes();
   SmallTimeApp.timeTransition(Helpers.getWorldTimeAsDayTime(), { persistDarkness: false });
   SmallTimeApp.updateDate();
+  Helpers.handleRealtimeState();
+});
+
+Hooks.on('calendaria.clockStartStop', ({ running } = {}) => {
+  Helpers.handleRealtimeState(running);
+});
+
+Hooks.on('calendaria.clockUpdate', ({ running } = {}) => {
+  Helpers.handleRealtimeState(running);
 });
 
 // Handle toggling of time separator flash when game is paused/unpaused.
@@ -1089,6 +1098,9 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
 
     // Toggle the date display div.
     timeDisplayEl?.addEventListener('click', async (ev) => {
+      // Realtime toggle integration intentionally disabled for now.
+      if (ev.shiftKey) return;
+
       const isShowing = appElement.classList.contains('show-date');
       if (!isShowing) {
         SmallTimeApp.applyDateTrayState(appElement, true);

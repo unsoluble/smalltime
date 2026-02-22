@@ -102,8 +102,35 @@ export class Helpers {
     return { ...provider, values: nextValues };
   }
 
-  static handleRealtimeState() {
-    // Reserved for future realtime state integration.
+  static isCalendariaRealtimeRunning() {
+    const module = game.modules?.get('calendaria');
+    if (!module?.active) return false;
+    return !!globalThis.CALENDARIA?.TimeClock?.running;
+  }
+
+  static async toggleCalendariaRealtime() {
+    const module = game.modules?.get('calendaria');
+    if (!module?.active) return false;
+
+    const timeClock = globalThis.CALENDARIA?.TimeClock;
+    if (timeClock?.toggle instanceof Function) {
+      await timeClock.toggle();
+      return true;
+    }
+
+    return false;
+  }
+
+  static handleRealtimeState(running = undefined) {
+    const isRunning = typeof running === 'boolean' ? running : Helpers.isCalendariaRealtimeRunning();
+    const separators = document.querySelectorAll('#smalltime-app .timeSeparator');
+    separators.forEach((separator) => separator.classList.toggle('blink', isRunning));
+
+    const timeDisplay = document.querySelector('#smalltime-app #timeDisplay');
+    if (timeDisplay) {
+      timeDisplay.removeAttribute('aria-label');
+      timeDisplay.removeAttribute('data-balloon-pos');
+    }
   }
 
   static updateGradientStops() {
