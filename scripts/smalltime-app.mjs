@@ -273,10 +273,10 @@ Hooks.on('setup', () => {
 });
 
 Hooks.on('canvasInit', () => {
-  // Start by resetting the Darkness color to the core value.
+  // Start by resetting the Darkness colour to the core value.
   CONFIG.Canvas.darknessColor = ST_Config.coreDarknessColor;
   ST_Config.activeDarknessColor = ST_Config.coreDarknessColor;
-  // Re-draw the canvas with the new Darkness color.
+  // Re-draw the canvas with the new Darkness colour.
   if (game.release.generation < 12) {
     canvas.colorManager.initialize();
   }
@@ -325,7 +325,7 @@ Hooks.on('canvasReady', () => {
 });
 
 Hooks.on('ready', async () => {
-  // Send incoming socket emissions through the async function.
+  // Send incoming socket emissions.
   game.socket.on(`module.smalltime`, (data) => {
     doSocket(data);
   });
@@ -759,7 +759,7 @@ Hooks.on('closeSettingsConfig', async () => {
   await Helpers.updateSunriseSunsetTimes();
 });
 
-// Add a toggle button inside the Jounral Notes tool layer.
+// Add a toggle button inside the Journal Notes tool layer.
 Hooks.on('getSceneControlButtons', (controls) => {
   if (game.modules.get('smalltime').viewAuth) {
     controls.notes.tools.smalltime = {
@@ -789,8 +789,8 @@ Hooks.on('updateWorldTime', async () => {
   Helpers.handleTimeChange(Helpers.getWorldTimeAsDayTime());
 });
 
-// Calendaria initializes asynchronously and can replace the active calendar after SmallTime renders.
-// Refresh once when it signals ready so module-backed date formats show immediately.
+// Calendaria isn't actually ready on Ready.
+// Refreshing once it is.
 Hooks.on('calendaria.ready', async () => {
   await Helpers.updateSunriseSunsetTimes();
   SmallTimeApp.timeTransition(Helpers.getWorldTimeAsDayTime(), { persistDarkness: false });
@@ -1078,7 +1078,7 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
     const sliderInputHandler = foundry.utils.debounce(async (sliderValue) => {
       if (hourStringEl) hourStringEl.textContent = SmallTimeApp.convertTimeIntegerToDisplay(sliderValue).hours;
       if (minuteStringEl) minuteStringEl.textContent = SmallTimeApp.convertTimeIntegerToDisplay(sliderValue).minutes;
-      // Preview while dragging: update local visuals without persisting scene Darkness/world time yet.
+      // Preview while dragging: update local client without updating actual Darkness/time yet.
       SmallTimeApp.timeTransition(sliderValue, { persistDarkness: false });
     }, 100);
 
@@ -1173,7 +1173,6 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
       }
       this.timeRatchet(stepAmount);
     });
-
   }
 
   // Helper function for handling sockets.
@@ -1299,7 +1298,7 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
           });
         }
       } else if (game.user.isGM) {
-        // Drag preview only: render darkness locally without persisting scene data yet.
+        // Render Darkness change locally only here.
         canvas.environment.initialize({ environment: { darknessLevel: darknessValue } });
       }
     }
