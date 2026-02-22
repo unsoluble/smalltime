@@ -179,31 +179,57 @@ export class Helpers {
     // Build the sun/moon drag handles for the darkness config UI.
     const maxDarkness = game.settings.get('smalltime', 'max-darkness');
     const minDarkness = game.settings.get('smalltime', 'min-darkness');
+    const syncState = Helpers.getSunriseSunsetSyncState();
+    const lockTimeAxis = !!syncState?.synced;
+    const snapX = 10;
+    const snapY = 4;
+    const offsetBetween = 20;
+    const tooltipOffsetXByHandleClass = {
+      'sunrise-start': snapX,
+      'sunrise-end': snapX * 3,
+      'sunset-start': snapX * 5,
+      'sunset-end': snapX * 7,
+    };
+    const handleKeys = ['sunrise-start', 'sunrise-end', 'sunset-start', 'sunset-end'];
+    const toCamel = (value) => value.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+    const roundToGrid = (value, gridSize, method = 'round') => {
+      if (!gridSize) return value;
+      return Math[method](value / gridSize) * gridSize;
+    };
+    const getHandleKey = (element) => handleKeys.find((cls) => element.classList.contains(cls)) ?? null;
+    const getHandleTooltipOffsetX = (elementOrKey) => {
+      const key = typeof elementOrKey === 'string' ? elementOrKey : getHandleKey(elementOrKey);
+      return key ? (tooltipOffsetXByHandleClass[key] ?? 0) : 0;
+    };
+    const canonicalTimeByKey = Object.fromEntries(handleKeys.map((key) => [key, game.settings.get('smalltime', key)]));
+    const initialCanonicalPositions = Object.fromEntries(
+      handleKeys.map((key) => [toCamel(key), Helpers.convertTimeIntegerToPosition(canonicalTimeByKey[key])])
+    );
+    const convertCanonicalTimeIntegerToHandlePosition = (timeInteger, handleKey) => {
+      return Helpers.convertTimeIntegerToPosition(timeInteger) - getHandleTooltipOffsetX(handleKey);
+    };
+    const convertHandlePositionToCanonicalTimeInteger = (position, element) => {
+      return Helpers.convertPositionToTimeInteger(position + getHandleTooltipOffsetX(element));
+    };
+    const formatTimeIntegerForTooltip = (timeInteger) =>
+      Helpers.convertDisplayObjToString(SmallTimeApp.convertTimeIntegerToDisplay(timeInteger));
 
     document.documentElement.style.setProperty('--SMLTME-darkness-max', maxDarkness);
     document.documentElement.style.setProperty('--SMLTME-darkness-min', minDarkness);
 
     const initialPositions = {
-      sunriseStart: Helpers.convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunrise-start')),
-      sunriseEnd: Helpers.convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunrise-end')),
-      sunsetStart: Helpers.convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunset-start')),
-      sunsetEnd: Helpers.convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunset-end')),
+      sunriseStart: convertCanonicalTimeIntegerToHandlePosition(canonicalTimeByKey['sunrise-start'], 'sunrise-start'),
+      sunriseEnd: convertCanonicalTimeIntegerToHandlePosition(canonicalTimeByKey['sunrise-end'], 'sunrise-end'),
+      sunsetStart: convertCanonicalTimeIntegerToHandlePosition(canonicalTimeByKey['sunset-start'], 'sunset-start'),
+      sunsetEnd: convertCanonicalTimeIntegerToHandlePosition(canonicalTimeByKey['sunset-end'], 'sunset-end'),
     };
 
     const initialTimes = {
-      sunriseStart: Helpers.convertPositionToDisplayTime(initialPositions.sunriseStart),
-      sunriseEnd: Helpers.convertPositionToDisplayTime(initialPositions.sunriseEnd),
-      sunsetStart: Helpers.convertPositionToDisplayTime(initialPositions.sunsetStart),
-      sunsetEnd: Helpers.convertPositionToDisplayTime(initialPositions.sunsetEnd),
+      sunriseStart: formatTimeIntegerForTooltip(canonicalTimeByKey['sunrise-start']),
+      sunriseEnd: formatTimeIntegerForTooltip(canonicalTimeByKey['sunrise-end']),
+      sunsetStart: formatTimeIntegerForTooltip(canonicalTimeByKey['sunset-start']),
+      sunsetEnd: formatTimeIntegerForTooltip(canonicalTimeByKey['sunset-end']),
     };
-
-    const syncState = Helpers.getSunriseSunsetSyncState();
-    const lockTimeAxis = !!syncState?.synced;
-
-    const snapX = 10;
-    const snapY = 4;
-
-    const offsetBetween = 20;
 
     const sunriseStartElement = root.querySelector('.sunrise-start');
     const sunriseEndElement = root.querySelector('.sunrise-end');
@@ -223,22 +249,62 @@ export class Helpers {
       element.setAttribute('aria-label', `${label}${syncSuffix}`);
     };
     const setHandleLabelFromX = (element, xPosition) => {
-      setHandleLabel(element, Helpers.convertPositionToDisplayTime(xPosition));
+      if (lockTimeAxis) {
+        const handleKey = getHandleKey(element);
+        if (handleKey && Number.isFinite(canonicalTimeByKey[handleKey])) {
+          setHandleLabel(element, formatTimeIntegerForTooltip(canonicalTimeByKey[handleKey]));
+          return;
+        }
+      }
+      setHandleLabel(element, formatTimeIntegerForTooltip(convertHandlePositionToCanonicalTimeInteger(xPosition, element)));
     };
     const initializeHandle = (element, top, left, label) => {
       setHandleTop(element, top);
       setHandleLeft(element, left);
       setHandleLabel(element, label);
     };
-    const setGradientTransitionFromX = (cssVarName, xPosition) => {
-      const newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(xPosition));
+    const setGradientTransitionFromX = (cssVarName, xPosition, element) => {
+      const canonicalTime = convertHandlePositionToCanonicalTimeInteger(xPosition, element);
+      const newTransition = Helpers.convertTimeIntegerToPercentage(canonicalTime);
       document.documentElement.style.setProperty(cssVarName, newTransition);
     };
-    const shoveHandleToX = (dragInstance, element, xPosition, gradientVar) => {
-      setHandleLeft(element, xPosition);
+    const clampShoveXWithDraggabillyContainment = (dragInstance, xPosition) => {
+      if (!dragInstance?.options?.containment) return xPosition;
+      if (typeof dragInstance._getPosition !== 'function' || typeof dragInstance.measureContainment !== 'function') return xPosition;
+
+      dragInstance._getPosition();
+      dragInstance.measureContainment();
+
+      const currentX = dragInstance.position?.x;
+      const relativeStartX = dragInstance.relativeStartPosition?.x;
+      const containWidth = dragInstance.containSize?.width;
+      if (![currentX, relativeStartX, containWidth].every(Number.isFinite)) return xPosition;
+
+      const minDelta = roundToGrid(-relativeStartX, snapX, 'ceil');
+      const maxDelta = roundToGrid(containWidth, snapX, 'floor');
+      const targetDelta = xPosition - currentX;
+      const clampedDelta = Math.max(minDelta, Math.min(maxDelta, targetDelta));
+      return currentX + clampedDelta;
+    };
+    const shoveHandleToX = (dragInstance, element, _containmentSelector, xPosition, gradientVar) => {
+      const appliedX = clampShoveXWithDraggabillyContainment(dragInstance, xPosition);
+      const currentY = Number.isFinite(dragInstance?.position?.y) ? dragInstance.position.y : undefined;
+      dragInstance.setPosition(appliedX, currentY);
+      setHandleLeft(element, appliedX);
+      setHandleLabelFromX(element, appliedX);
+      setGradientTransitionFromX(gradientVar, appliedX, element);
+      return appliedX;
+    };
+    const constrainDraggedHandleDuringCollision = (dragInstance, element, xPosition, gradientVar) => {
+      dragInstance.position.x = xPosition;
+      if (Number.isFinite(dragInstance.startPosition?.x)) {
+        dragInstance.dragPoint.x = xPosition - dragInstance.startPosition.x;
+      }
+      if (typeof dragInstance.positionDrag === 'function') {
+        dragInstance.positionDrag();
+      }
       setHandleLabelFromX(element, xPosition);
-      dragInstance.setPosition(xPosition);
-      setGradientTransitionFromX(gradientVar, xPosition);
+      setGradientTransitionFromX(gradientVar, xPosition, element);
     };
 
     initializeHandle(
@@ -294,13 +360,25 @@ export class Helpers {
       sunsetStart: lockTimeAxis ? initialPositions.sunsetStart : sunsetStartDrag.position.x,
       sunsetEnd: lockTimeAxis ? initialPositions.sunsetEnd : sunsetEndDrag.position.x,
     });
+    const getCurrentCanonicalTimes = () => ({
+      sunriseStart: lockTimeAxis ? canonicalTimeByKey['sunrise-start'] : convertHandlePositionToCanonicalTimeInteger(sunriseStartDrag.position.x, sunriseStartElement),
+      sunriseEnd: lockTimeAxis ? canonicalTimeByKey['sunrise-end'] : convertHandlePositionToCanonicalTimeInteger(sunriseEndDrag.position.x, sunriseEndElement),
+      sunsetStart: lockTimeAxis ? canonicalTimeByKey['sunset-start'] : convertHandlePositionToCanonicalTimeInteger(sunsetStartDrag.position.x, sunsetStartElement),
+      sunsetEnd: lockTimeAxis ? canonicalTimeByKey['sunset-end'] : convertHandlePositionToCanonicalTimeInteger(sunsetEndDrag.position.x, sunsetEndElement),
+    });
     const saveDraggedDarknessConfig = (yPosition, darknessKind) => {
       const newPositions = getCurrentPositions();
+      const newCanonicalTimes = getCurrentCanonicalTimes();
       const darknessValue = Helpers.convertPositionToDarkness(yPosition);
+      const inputs = Helpers.getDarknessBackingInputs(root);
+      if (inputs.sunriseStart) inputs.sunriseStart.value = newCanonicalTimes.sunriseStart;
+      if (inputs.sunriseEnd) inputs.sunriseEnd.value = newCanonicalTimes.sunriseEnd;
+      if (inputs.sunsetStart) inputs.sunsetStart.value = newCanonicalTimes.sunsetStart;
+      if (inputs.sunsetEnd) inputs.sunsetEnd.value = newCanonicalTimes.sunsetEnd;
       if (darknessKind === 'max') {
-        Helpers.saveNewDarknessConfig(newPositions, Math.min(darknessValue, 1), false, root);
-      } else {
-        Helpers.saveNewDarknessConfig(newPositions, false, Math.max(darknessValue, 0), root);
+        if (inputs.maxDarkness) inputs.maxDarkness.value = Math.min(darknessValue, 1);
+      } else if (inputs.minDarkness) {
+        inputs.minDarkness.value = Math.max(darknessValue, 0);
       }
     };
     const bindDragMove = ({
@@ -311,6 +389,7 @@ export class Helpers {
       selfGradientVar,
       neighborDrag,
       neighborElement,
+      neighborContainment,
       neighborGradientVar,
       shouldShove,
       shoveOffset,
@@ -332,78 +411,84 @@ export class Helpers {
         // Shove other handle on collisions.
         if (!lockTimeAxis && shouldShove(this.position.x, neighborDrag.position.x)) {
           const shovedPos = this.position.x + shoveOffset;
-          shoveHandleToX(neighborDrag, neighborElement, shovedPos, neighborGradientVar);
+          const appliedNeighborX = shoveHandleToX(neighborDrag, neighborElement, neighborContainment, shovedPos, neighborGradientVar);
+
+          // If the shoved handle hits its wall, stop the dragged handle immediately too.
+          if (appliedNeighborX !== shovedPos) {
+            const constrainedSelfX = appliedNeighborX - shoveOffset;
+            constrainDraggedHandleDuringCollision(this, selfElement, constrainedSelfX, selfGradientVar);
+          }
         }
       });
     };
+    const bindDragEnd = (dragInstance, darknessKind) => {
+      dragInstance.on('dragEnd', function () {
+        saveDraggedDarknessConfig(this.position.y, darknessKind);
+      });
+    };
 
-    bindDragMove({
-      dragInstance: sunriseStartDrag,
-      selfElement: sunriseStartElement,
-      pairedYElement: sunsetEndElement,
-      darknessCssVar: '--SMLTME-darkness-max',
-      selfGradientVar: '--SMLTME-sunrise-start',
-      neighborDrag: sunriseEndDrag,
-      neighborElement: sunriseEndElement,
-      neighborGradientVar: '--SMLTME-sunrise-end',
-      shouldShove: (selfX, neighborX) => selfX >= neighborX - offsetBetween,
-      shoveOffset: offsetBetween,
-    });
+    const dragMoveBindings = [
+      {
+        dragInstance: sunriseStartDrag,
+        selfElement: sunriseStartElement,
+        pairedYElement: sunsetEndElement,
+        darknessCssVar: '--SMLTME-darkness-max',
+        selfGradientVar: '--SMLTME-sunrise-start',
+        neighborDrag: sunriseEndDrag,
+        neighborElement: sunriseEndElement,
+        neighborContainment: '.sunrise-end-bounds',
+        neighborGradientVar: '--SMLTME-sunrise-end',
+        shouldShove: (selfX, neighborX) => selfX >= neighborX - offsetBetween,
+        shoveOffset: offsetBetween,
+      },
+      {
+        dragInstance: sunriseEndDrag,
+        selfElement: sunriseEndElement,
+        pairedYElement: sunsetStartElement,
+        darknessCssVar: '--SMLTME-darkness-min',
+        selfGradientVar: '--SMLTME-sunrise-end',
+        neighborDrag: sunriseStartDrag,
+        neighborElement: sunriseStartElement,
+        neighborContainment: '.sunrise-start-bounds',
+        neighborGradientVar: '--SMLTME-sunrise-start',
+        shouldShove: (selfX, neighborX) => selfX <= neighborX + offsetBetween,
+        shoveOffset: -offsetBetween,
+      },
+      {
+        dragInstance: sunsetStartDrag,
+        selfElement: sunsetStartElement,
+        pairedYElement: sunriseEndElement,
+        darknessCssVar: '--SMLTME-darkness-min',
+        selfGradientVar: '--SMLTME-sunset-start',
+        neighborDrag: sunsetEndDrag,
+        neighborElement: sunsetEndElement,
+        neighborContainment: '.sunset-end-bounds',
+        neighborGradientVar: '--SMLTME-sunset-end',
+        shouldShove: (selfX, neighborX) => selfX >= neighborX - offsetBetween,
+        shoveOffset: offsetBetween,
+      },
+      {
+        dragInstance: sunsetEndDrag,
+        selfElement: sunsetEndElement,
+        pairedYElement: sunriseStartElement,
+        darknessCssVar: '--SMLTME-darkness-max',
+        selfGradientVar: '--SMLTME-sunset-end',
+        neighborDrag: sunsetStartDrag,
+        neighborElement: sunsetStartElement,
+        neighborContainment: '.sunset-start-bounds',
+        neighborGradientVar: '--SMLTME-sunset-start',
+        shouldShove: (selfX, neighborX) => selfX <= neighborX + offsetBetween,
+        shoveOffset: -offsetBetween,
+      },
+    ];
+    dragMoveBindings.forEach(bindDragMove);
 
-    bindDragMove({
-      dragInstance: sunriseEndDrag,
-      selfElement: sunriseEndElement,
-      pairedYElement: sunsetStartElement,
-      darknessCssVar: '--SMLTME-darkness-min',
-      selfGradientVar: '--SMLTME-sunrise-end',
-      neighborDrag: sunriseStartDrag,
-      neighborElement: sunriseStartElement,
-      neighborGradientVar: '--SMLTME-sunrise-start',
-      shouldShove: (selfX, neighborX) => selfX <= neighborX + offsetBetween,
-      shoveOffset: -offsetBetween,
-    });
-
-    bindDragMove({
-      dragInstance: sunsetStartDrag,
-      selfElement: sunsetStartElement,
-      pairedYElement: sunriseEndElement,
-      darknessCssVar: '--SMLTME-darkness-min',
-      selfGradientVar: '--SMLTME-sunset-start',
-      neighborDrag: sunsetEndDrag,
-      neighborElement: sunsetEndElement,
-      neighborGradientVar: '--SMLTME-sunset-end',
-      shouldShove: (selfX, neighborX) => selfX >= neighborX - offsetBetween,
-      shoveOffset: offsetBetween,
-    });
-
-    bindDragMove({
-      dragInstance: sunsetEndDrag,
-      selfElement: sunsetEndElement,
-      pairedYElement: sunriseStartElement,
-      darknessCssVar: '--SMLTME-darkness-max',
-      selfGradientVar: '--SMLTME-sunset-end',
-      neighborDrag: sunsetStartDrag,
-      neighborElement: sunsetStartElement,
-      neighborGradientVar: '--SMLTME-sunset-start',
-      shouldShove: (selfX, neighborX) => selfX <= neighborX + offsetBetween,
-      shoveOffset: -offsetBetween,
-    });
-
-    sunriseStartDrag.on('dragEnd', function () {
-      saveDraggedDarknessConfig(this.position.y, 'max');
-    });
-
-    sunriseEndDrag.on('dragEnd', function () {
-      saveDraggedDarknessConfig(this.position.y, 'min');
-    });
-
-    sunsetStartDrag.on('dragEnd', function () {
-      saveDraggedDarknessConfig(this.position.y, 'min');
-    });
-
-    sunsetEndDrag.on('dragEnd', function () {
-      saveDraggedDarknessConfig(this.position.y, 'max');
-    });
+    [
+      [sunriseStartDrag, 'max'],
+      [sunriseEndDrag, 'min'],
+      [sunsetStartDrag, 'min'],
+      [sunsetEndDrag, 'max'],
+    ].forEach(([dragInstance, darknessKind]) => bindDragEnd(dragInstance, darknessKind));
   }
 
   static convertTimeIntegerToPercentage(time) {
@@ -485,7 +570,7 @@ export class Helpers {
         return {
           synced: true,
           source: isCoreCalendar ? 'core' : 'system',
-          sourceLabel: isCoreCalendar ? 'Core calendar' : `${systemTitle} calendar`,
+          sourceLabel: isCoreCalendar ? 'Core' : (game.system?.id ?? 'system'),
           sunriseHour: sunrise,
           sunsetHour: sunset,
         };
@@ -497,7 +582,7 @@ export class Helpers {
       return {
         synced: true,
         source: 'core',
-        sourceLabel: 'Core calendar',
+        sourceLabel: 'Core',
         sunriseHour: hoursPerDay / 4,
         sunsetHour: (hoursPerDay * 3) / 4,
       };
