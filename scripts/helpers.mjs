@@ -222,22 +222,52 @@ export class Helpers {
       const syncSuffix = lockTimeAxis ? ` ${Helpers.getSunriseSunsetSyncTooltip(syncState)}` : '';
       element.setAttribute('aria-label', `${label}${syncSuffix}`);
     };
+    const setHandleLabelFromX = (element, xPosition) => {
+      setHandleLabel(element, Helpers.convertPositionToDisplayTime(xPosition));
+    };
+    const initializeHandle = (element, top, left, label) => {
+      setHandleTop(element, top);
+      setHandleLeft(element, left);
+      setHandleLabel(element, label);
+    };
+    const setGradientTransitionFromX = (cssVarName, xPosition) => {
+      const newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(xPosition));
+      document.documentElement.style.setProperty(cssVarName, newTransition);
+    };
+    const shoveHandleToX = (dragInstance, element, xPosition, gradientVar) => {
+      setHandleLeft(element, xPosition);
+      setHandleLabelFromX(element, xPosition);
+      dragInstance.setPosition(xPosition);
+      setGradientTransitionFromX(gradientVar, xPosition);
+    };
 
-    setHandleTop(sunriseStartElement, Helpers.convertDarknessToPostion(maxDarkness));
-    setHandleLeft(sunriseStartElement, initialPositions.sunriseStart);
-    setHandleLabel(sunriseStartElement, initialTimes.sunriseStart);
+    initializeHandle(
+      sunriseStartElement,
+      Helpers.convertDarknessToPostion(maxDarkness),
+      initialPositions.sunriseStart,
+      initialTimes.sunriseStart
+    );
 
-    setHandleTop(sunriseEndElement, Helpers.convertDarknessToPostion(minDarkness) + 1);
-    setHandleLeft(sunriseEndElement, initialPositions.sunriseEnd);
-    setHandleLabel(sunriseEndElement, initialTimes.sunriseEnd);
+    initializeHandle(
+      sunriseEndElement,
+      Helpers.convertDarknessToPostion(minDarkness) + 1,
+      initialPositions.sunriseEnd,
+      initialTimes.sunriseEnd
+    );
 
-    setHandleTop(sunsetStartElement, Helpers.convertDarknessToPostion(minDarkness) + 1);
-    setHandleLeft(sunsetStartElement, initialPositions.sunsetStart);
-    setHandleLabel(sunsetStartElement, initialTimes.sunsetStart);
+    initializeHandle(
+      sunsetStartElement,
+      Helpers.convertDarknessToPostion(minDarkness) + 1,
+      initialPositions.sunsetStart,
+      initialTimes.sunsetStart
+    );
 
-    setHandleTop(sunsetEndElement, Helpers.convertDarknessToPostion(maxDarkness));
-    setHandleLeft(sunsetEndElement, initialPositions.sunsetEnd);
-    setHandleLabel(sunsetEndElement, initialTimes.sunsetEnd);
+    initializeHandle(
+      sunsetEndElement,
+      Helpers.convertDarknessToPostion(maxDarkness),
+      initialPositions.sunsetEnd,
+      initialTimes.sunsetEnd
+    );
 
     [sunriseStartElement, sunriseEndElement, sunsetStartElement, sunsetEndElement].forEach((handle) => {
       handle.classList.toggle('time-synced', lockTimeAxis);
@@ -246,29 +276,17 @@ export class Helpers {
     Helpers.updateGradientStops();
 
     // Create the drag handles.
-    const sunriseStartDrag = new Draggabilly(sunriseStartElement, {
-      containment: '.sunrise-start-bounds',
-      grid: [snapX, snapY],
-      axis: lockTimeAxis ? 'y' : undefined,
-    });
-    const sunriseEndDrag = new Draggabilly(sunriseEndElement, {
-      containment: '.sunrise-end-bounds',
-      grid: [snapX, snapY],
-      axis: lockTimeAxis ? 'y' : undefined,
-    });
-    const sunsetStartDrag = new Draggabilly(sunsetStartElement, {
-      containment: '.sunset-start-bounds',
-      grid: [snapX, snapY],
-      axis: lockTimeAxis ? 'y' : undefined,
-    });
-    const sunsetEndDrag = new Draggabilly(sunsetEndElement, {
-      containment: '.sunset-end-bounds',
-      grid: [snapX, snapY],
-      axis: lockTimeAxis ? 'y' : undefined,
-    });
+    const createHandleDrag = (element, containment) =>
+      new Draggabilly(element, {
+        containment,
+        grid: [snapX, snapY],
+        axis: lockTimeAxis ? 'y' : undefined,
+      });
 
-    let shovedPos = '';
-    let newTransition = '';
+    const sunriseStartDrag = createHandleDrag(sunriseStartElement, '.sunrise-start-bounds');
+    const sunriseEndDrag = createHandleDrag(sunriseEndElement, '.sunrise-end-bounds');
+    const sunsetStartDrag = createHandleDrag(sunsetStartElement, '.sunset-start-bounds');
+    const sunsetEndDrag = createHandleDrag(sunsetEndElement, '.sunset-end-bounds');
 
     const getCurrentPositions = () => ({
       sunriseStart: lockTimeAxis ? initialPositions.sunriseStart : sunriseStartDrag.position.x,
@@ -276,141 +294,115 @@ export class Helpers {
       sunsetStart: lockTimeAxis ? initialPositions.sunsetStart : sunsetStartDrag.position.x,
       sunsetEnd: lockTimeAxis ? initialPositions.sunsetEnd : sunsetEndDrag.position.x,
     });
-
-    sunriseStartDrag.on('dragMove', function () {
-      // Match the paired handle.
-      setHandleTop(sunsetEndElement, this.position.y);
-      // Update the tooltip.
-      let displayTime = Helpers.convertPositionToDisplayTime(this.position.x);
-      setHandleLabel(sunriseStartElement, displayTime);
-
-      // Live update the darkness maximum.
-      document.documentElement.style.setProperty('--SMLTME-darkness-max', Helpers.convertPositionToDarkness(this.position.y));
-
-      // Live update the gradient transition point.
-      if (!lockTimeAxis) {
-        newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(this.position.x));
-        document.documentElement.style.setProperty('--SMLTME-sunrise-start', newTransition);
-      }
-
-      // Shove other handle on collisions.
-      if (!lockTimeAxis && this.position.x >= sunriseEndDrag.position.x - offsetBetween) {
-        shovedPos = this.position.x + offsetBetween;
-        setHandleLeft(sunriseEndElement, shovedPos);
-        setHandleLabel(sunriseEndElement, Helpers.convertPositionToDisplayTime(shovedPos));
-        sunriseEndDrag.setPosition(shovedPos);
-        newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(shovedPos));
-        document.documentElement.style.setProperty('--SMLTME-sunrise-end', newTransition);
-      }
-    });
-
-    sunriseEndDrag.on('dragMove', function () {
-      // Match the paired handle.
-      setHandleTop(sunsetStartElement, this.position.y);
-      // Update the tooltip.
-      let displayTime = Helpers.convertPositionToDisplayTime(this.position.x);
-      setHandleLabel(sunriseEndElement, displayTime);
-
-      // Live update the darkness minimum.
-      document.documentElement.style.setProperty('--SMLTME-darkness-min', Helpers.convertPositionToDarkness(this.position.y));
-
-      // Live update the gradient transition point.
-      if (!lockTimeAxis) {
-        newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(this.position.x));
-        document.documentElement.style.setProperty('--SMLTME-sunrise-end', newTransition);
-      }
-
-      // Shove other handle on collisions.
-      if (!lockTimeAxis && this.position.x <= sunriseStartDrag.position.x + offsetBetween) {
-        shovedPos = this.position.x - offsetBetween;
-        setHandleLeft(sunriseStartElement, shovedPos);
-        setHandleLabel(sunriseStartElement, Helpers.convertPositionToDisplayTime(shovedPos));
-        sunriseStartDrag.setPosition(shovedPos);
-        newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(shovedPos));
-        document.documentElement.style.setProperty('--SMLTME-sunrise-start', newTransition);
-      }
-    });
-
-    sunsetStartDrag.on('dragMove', function () {
-      // Match the paired handle.
-      setHandleTop(sunriseEndElement, this.position.y);
-      // Update the tooltip.
-      let displayTime = Helpers.convertPositionToDisplayTime(this.position.x);
-      setHandleLabel(sunsetStartElement, displayTime);
-
-      // Live update the darkness minimum.
-      document.documentElement.style.setProperty('--SMLTME-darkness-min', Helpers.convertPositionToDarkness(this.position.y));
-
-      // Live update the gradient transition point.
-      if (!lockTimeAxis) {
-        newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(this.position.x));
-        document.documentElement.style.setProperty('--SMLTME-sunset-start', newTransition);
-      }
-
-      // Shove other handle on collisions.
-      if (!lockTimeAxis && this.position.x >= sunsetEndDrag.position.x - offsetBetween) {
-        shovedPos = this.position.x + offsetBetween;
-        setHandleLeft(sunsetEndElement, shovedPos);
-        setHandleLabel(sunsetEndElement, Helpers.convertPositionToDisplayTime(shovedPos));
-        sunsetEndDrag.setPosition(shovedPos);
-        newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(shovedPos));
-        document.documentElement.style.setProperty('--SMLTME-sunset-end', newTransition);
-      }
-    });
-
-    sunsetEndDrag.on('dragMove', function () {
-      // Match the paired handle.
-      setHandleTop(sunriseStartElement, this.position.y);
-      // Update the tooltip.
-      let displayTime = Helpers.convertPositionToDisplayTime(this.position.x);
-      setHandleLabel(sunsetEndElement, displayTime);
-
-      // Live update the darkness maximum.
-      document.documentElement.style.setProperty('--SMLTME-darkness-max', Helpers.convertPositionToDarkness(this.position.y));
-
-      // Live update the gradient transition point.
-      if (!lockTimeAxis) {
-        newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(this.position.x));
-        document.documentElement.style.setProperty('--SMLTME-sunset-end', newTransition);
-      }
-
-      // Shove other handle on collisions.
-      if (!lockTimeAxis && this.position.x <= sunsetStartDrag.position.x + offsetBetween) {
-        shovedPos = this.position.x - offsetBetween;
-        setHandleLeft(sunsetStartElement, shovedPos);
-        setHandleLabel(sunsetStartElement, Helpers.convertPositionToDisplayTime(shovedPos));
-        sunsetStartDrag.setPosition(shovedPos);
-        newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(shovedPos));
-        document.documentElement.style.setProperty('--SMLTME-sunset-start', newTransition);
-      }
-    });
-
-    sunriseStartDrag.on('dragEnd', async function () {
+    const saveDraggedDarknessConfig = (yPosition, darknessKind) => {
       const newPositions = getCurrentPositions();
-      let newMaxDarkness = Helpers.convertPositionToDarkness(this.position.y);
-      if (newMaxDarkness > 1) newMaxDarkness = 1;
-      Helpers.saveNewDarknessConfig(newPositions, newMaxDarkness, false, root);
+      const darknessValue = Helpers.convertPositionToDarkness(yPosition);
+      if (darknessKind === 'max') {
+        Helpers.saveNewDarknessConfig(newPositions, Math.min(darknessValue, 1), false, root);
+      } else {
+        Helpers.saveNewDarknessConfig(newPositions, false, Math.max(darknessValue, 0), root);
+      }
+    };
+    const bindDragMove = ({
+      dragInstance,
+      selfElement,
+      pairedYElement,
+      darknessCssVar,
+      selfGradientVar,
+      neighborDrag,
+      neighborElement,
+      neighborGradientVar,
+      shouldShove,
+      shoveOffset,
+    }) => {
+      dragInstance.on('dragMove', function () {
+        // Match the paired handle.
+        setHandleTop(pairedYElement, this.position.y);
+        // Update the tooltip.
+        setHandleLabelFromX(selfElement, this.position.x);
+
+        // Live update the darkness bound.
+        document.documentElement.style.setProperty(darknessCssVar, Helpers.convertPositionToDarkness(this.position.y));
+
+        // Live update the gradient transition point.
+        if (!lockTimeAxis) {
+          setGradientTransitionFromX(selfGradientVar, this.position.x);
+        }
+
+        // Shove other handle on collisions.
+        if (!lockTimeAxis && shouldShove(this.position.x, neighborDrag.position.x)) {
+          const shovedPos = this.position.x + shoveOffset;
+          shoveHandleToX(neighborDrag, neighborElement, shovedPos, neighborGradientVar);
+        }
+      });
+    };
+
+    bindDragMove({
+      dragInstance: sunriseStartDrag,
+      selfElement: sunriseStartElement,
+      pairedYElement: sunsetEndElement,
+      darknessCssVar: '--SMLTME-darkness-max',
+      selfGradientVar: '--SMLTME-sunrise-start',
+      neighborDrag: sunriseEndDrag,
+      neighborElement: sunriseEndElement,
+      neighborGradientVar: '--SMLTME-sunrise-end',
+      shouldShove: (selfX, neighborX) => selfX >= neighborX - offsetBetween,
+      shoveOffset: offsetBetween,
     });
 
-    sunriseEndDrag.on('dragEnd', async function () {
-      const newPositions = getCurrentPositions();
-      let newMinDarkness = Helpers.convertPositionToDarkness(this.position.y);
-      if (newMinDarkness < 0) newMinDarkness = 0;
-      Helpers.saveNewDarknessConfig(newPositions, false, newMinDarkness, root);
+    bindDragMove({
+      dragInstance: sunriseEndDrag,
+      selfElement: sunriseEndElement,
+      pairedYElement: sunsetStartElement,
+      darknessCssVar: '--SMLTME-darkness-min',
+      selfGradientVar: '--SMLTME-sunrise-end',
+      neighborDrag: sunriseStartDrag,
+      neighborElement: sunriseStartElement,
+      neighborGradientVar: '--SMLTME-sunrise-start',
+      shouldShove: (selfX, neighborX) => selfX <= neighborX + offsetBetween,
+      shoveOffset: -offsetBetween,
     });
 
-    sunsetStartDrag.on('dragEnd', async function () {
-      const newPositions = getCurrentPositions();
-      let newMinDarkness = Helpers.convertPositionToDarkness(this.position.y);
-      if (newMinDarkness < 0) newMinDarkness = 0;
-      Helpers.saveNewDarknessConfig(newPositions, false, newMinDarkness, root);
+    bindDragMove({
+      dragInstance: sunsetStartDrag,
+      selfElement: sunsetStartElement,
+      pairedYElement: sunriseEndElement,
+      darknessCssVar: '--SMLTME-darkness-min',
+      selfGradientVar: '--SMLTME-sunset-start',
+      neighborDrag: sunsetEndDrag,
+      neighborElement: sunsetEndElement,
+      neighborGradientVar: '--SMLTME-sunset-end',
+      shouldShove: (selfX, neighborX) => selfX >= neighborX - offsetBetween,
+      shoveOffset: offsetBetween,
     });
 
-    sunsetEndDrag.on('dragEnd', async function () {
-      const newPositions = getCurrentPositions();
-      let newMaxDarkness = Helpers.convertPositionToDarkness(this.position.y);
-      if (newMaxDarkness > 1) newMaxDarkness = 1;
-      Helpers.saveNewDarknessConfig(newPositions, newMaxDarkness, false, root);
+    bindDragMove({
+      dragInstance: sunsetEndDrag,
+      selfElement: sunsetEndElement,
+      pairedYElement: sunriseStartElement,
+      darknessCssVar: '--SMLTME-darkness-max',
+      selfGradientVar: '--SMLTME-sunset-end',
+      neighborDrag: sunsetStartDrag,
+      neighborElement: sunsetStartElement,
+      neighborGradientVar: '--SMLTME-sunset-start',
+      shouldShove: (selfX, neighborX) => selfX <= neighborX + offsetBetween,
+      shoveOffset: -offsetBetween,
+    });
+
+    sunriseStartDrag.on('dragEnd', function () {
+      saveDraggedDarknessConfig(this.position.y, 'max');
+    });
+
+    sunriseEndDrag.on('dragEnd', function () {
+      saveDraggedDarknessConfig(this.position.y, 'min');
+    });
+
+    sunsetStartDrag.on('dragEnd', function () {
+      saveDraggedDarknessConfig(this.position.y, 'min');
+    });
+
+    sunsetEndDrag.on('dragEnd', function () {
+      saveDraggedDarknessConfig(this.position.y, 'max');
     });
   }
 
