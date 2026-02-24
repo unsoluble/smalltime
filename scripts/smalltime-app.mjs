@@ -2,6 +2,32 @@ import { Helpers, ST_Config } from './helpers.mjs';
 
 const DATE_FORMAT_OPTION_COUNT = 64;
 const DATE_FORMAT_CHOICES = Object.fromEntries(Array.from({ length: DATE_FORMAT_OPTION_COUNT }, (_, index) => [index, String(index)]));
+const SCENE_CONFIG_INSERTION_ANCHOR_SELECTORS = [
+  '[name="environment.darknessLock"]',
+  '[name="darknessLock"]',
+  '[name="environment.darknessLevel"]',
+  '[name="darkness"]',
+  '[name="environment.globalLight.enabled"]',
+  '[name="globalLight"]',
+];
+const SCENE_CONFIG_ENVIRONMENT_TAB_SELECTORS = ['[data-tab="environment"]', '[data-application-part="environment"]'];
+
+const getRenderedAppRoot = (app) => app?.form ?? app?.element ?? app?.element?.[0] ?? null;
+
+const findSceneConfigInsertionAnchor = (root) =>
+  SCENE_CONFIG_INSERTION_ANCHOR_SELECTORS.map((selector) => root.querySelector(selector)?.closest('.form-group')).find(Boolean) ||
+  (() => {
+    const environmentTab =
+      SCENE_CONFIG_ENVIRONMENT_TAB_SELECTORS.map((selector) => root.querySelector(selector)).find(Boolean) ?? null;
+    if (!environmentTab) return null;
+    const groups = environmentTab.querySelectorAll('.form-group');
+    return groups.length ? groups[groups.length - 1] : null;
+  })() ||
+  root.querySelector('.tab.active .form-group:last-of-type') ||
+  root.querySelector('.form-group:last-of-type');
+
+const findSettingsDarknessConfigInsertionAnchor = (insertionElement, sunsetEndGroup) =>
+  insertionElement?.parentElement?.nextElementSibling || sunsetEndGroup?.querySelector(':scope > p.notes, :scope > p.hint') || null;
 
 Hooks.on('init', () => {
   game.keybindings.register('smalltime', 'toggle-hotkey', {
@@ -445,7 +471,7 @@ Hooks.on('renderSmallTimeApp', () => {
 
 // Handle our changes to the Scene Config screen.
 Hooks.on('renderSceneConfig', async (obj) => {
-  const root = obj.form ?? obj.element?.[0];
+  const root = getRenderedAppRoot(obj);
   if (!root) return;
 
   // Set defaults here (duplicate of what we did on canvasReady, in case the
@@ -562,24 +588,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
   // Inject the SmallTime controls into the config window for the current scene,
   // but only if they haven't already been inserted.
   if (!root.querySelector('.st-scene-config')) {
-    const anchorSelectors = [
-      '[name="environment.darknessLock"]',
-      '[name="darknessLock"]',
-      '[name="environment.darknessLevel"]',
-      '[name="darkness"]',
-      '[name="environment.globalLight.enabled"]',
-      '[name="globalLight"]',
-    ];
-    const anchorGroup =
-      anchorSelectors.map((selector) => root.querySelector(selector)?.closest('.form-group')).find((group) => !!group) ||
-      (() => {
-        const environmentTab = root.querySelector('[data-tab="environment"]') || root.querySelector('[data-application-part="environment"]');
-        if (!environmentTab) return null;
-        const groups = environmentTab.querySelectorAll('.form-group');
-        return groups.length ? groups[groups.length - 1] : null;
-      })() ||
-      root.querySelector('.tab.active .form-group:last-of-type') ||
-      root.querySelector('.form-group:last-of-type');
+    const anchorGroup = findSceneConfigInsertionAnchor(root);
 
     if (anchorGroup) anchorGroup.insertAdjacentElement('afterend', injection);
     else console.warn("SmallTime: Couldn't find a place to insert scene config settings.");
@@ -591,7 +600,7 @@ Hooks.on('renderSceneConfig', async (obj) => {
 Hooks.on('renderSettingsConfig', async (obj) => {
   if (!game.user.isGM) return;
 
-  const root = obj.form ?? obj.element?.[0];
+  const root = getRenderedAppRoot(obj);
   if (!root) return;
 
   const findSettingInput = (name) => root.querySelector(`[name="${name}"]`);
@@ -822,7 +831,7 @@ Hooks.on('renderSettingsConfig', async (obj) => {
   if (!root.querySelector('#smalltime-darkness-config')) {
     const injection = buildDarknessConfigElement();
     const sunsetEndGroup = findSettingGroup('smalltime.sunset-end');
-    const insertionAnchor = insertionElement?.parentElement?.nextElementSibling || sunsetEndGroup?.querySelector(':scope > p.notes, :scope > p.hint');
+    const insertionAnchor = findSettingsDarknessConfigInsertionAnchor(insertionElement, sunsetEndGroup);
 
     if (insertionAnchor && insertionAnchor.parentElement) {
       insertionAnchor.insertAdjacentElement('afterend', injection);
@@ -1150,7 +1159,7 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
         document.documentElement.style.setProperty('--SMLTME-phaseURL', `url('../images/moon-phases/${ST_Config.MoonPhases[newPhase]}.webp')`);
 
         // Set and broadcast the change.
-        if (game.user.isGM) {
+        if (game.ready && game.user.isGM) {
           await game.settings.set('smalltime', 'moon-phase', newPhase);
         } else {
           SmallTimeApp.emitSocket('changeSetting', {
@@ -1398,7 +1407,7 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
         }
       } else if (game.user.isGM) {
         // Render Darkness change locally only here.
-        canvas.environment.initialize({ environment: { darknessLevel: darknessValue } });
+        Helpers.refreshCanvasEnvironmentDarkness(darknessValue);
       }
     }
   }
@@ -1516,7 +1525,7 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
     if (dateDisplayElement) dateDisplayElement.textContent = displayDate;
 
     // Save this string so we can display it on initial load-in.
-    if (game.user.isGM) await game.settings.set('smalltime', 'current-date', displayDate);
+    if (game.ready && game.user.isGM) await game.settings.set('smalltime', 'current-date', displayDate);
   }
 }
 

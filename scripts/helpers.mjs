@@ -88,7 +88,7 @@ export class Helpers {
       'sunset-end': Helpers.normalizeSmallTimeMinute(sunsetCenter + halfSpread),
     };
 
-    if (game.user.isGM) {
+    if (game.ready && game.user.isGM) {
       for (const [key, value] of Object.entries(nextValues)) {
         if (game.settings.get('smalltime', key) !== value) {
           await game.settings.set('smalltime', key, value);
@@ -105,7 +105,7 @@ export class Helpers {
     if (module.api?.isClockRunning instanceof Function) {
       return !!module.api.isClockRunning();
     }
-    return !!globalThis.CALENDARIA?.TimeClock?.running;
+    return !!(globalThis.CALENDARIA?.managers?.TimeClock?.running ?? globalThis.CALENDARIA?.TimeClock?.running);
   }
 
   static async toggleCalendariaRealtime() {
@@ -117,7 +117,7 @@ export class Helpers {
       return true;
     }
 
-    const timeClock = globalThis.CALENDARIA?.TimeClock;
+    const timeClock = globalThis.CALENDARIA?.managers?.TimeClock ?? globalThis.CALENDARIA?.TimeClock;
     if (timeClock?.toggle instanceof Function) {
       await timeClock.toggle();
       return true;
@@ -733,9 +733,7 @@ export class Helpers {
       if (ST_Config.activeDarknessColor !== ST_Config.coreDarknessColor) {
         ST_Config.activeDarknessColor = ST_Config.coreDarknessColor;
         CONFIG.Canvas.darknessColor = ST_Config.coreDarknessColor;
-        if (canvas?.environment?.initialize) {
-          canvas.environment.initialize({ environment: { darknessLevel: canvas.environment.darknessLevel } });
-        }
+        Helpers.refreshCanvasEnvironmentDarkness(canvas.environment.darknessLevel);
       }
       return;
     }
@@ -759,10 +757,16 @@ export class Helpers {
     if (nextDarknessColor === ST_Config.activeDarknessColor) return;
     ST_Config.activeDarknessColor = nextDarknessColor;
     CONFIG.Canvas.darknessColor = nextDarknessColor;
+    Helpers.refreshCanvasEnvironmentDarkness(canvas.environment.darknessLevel);
+  }
 
-    if (canvas?.environment?.initialize) {
-      canvas.environment.initialize({ environment: { darknessLevel: canvas.environment.darknessLevel } });
+  static refreshCanvasEnvironmentDarkness(darknessLevel = canvas?.environment?.darknessLevel) {
+    if (!canvas?.environment) return false;
+    if (typeof canvas.environment.initialize === 'function') {
+      canvas.environment.initialize({ environment: { darknessLevel } });
+      return true;
     }
+    return false;
   }
 
   // Convert worldTime (seconds elapsed) into an integer time of day.
