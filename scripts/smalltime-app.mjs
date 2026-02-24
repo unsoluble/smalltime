@@ -131,6 +131,7 @@ Hooks.on('init', () => {
     hint: game.i18n.localize('SMLTME.Small_Step_Hint'),
     scope: 'world',
     config: true,
+    requiresReload: true,
     type: Number,
     choices: {
       1: '1',
@@ -148,12 +149,14 @@ Hooks.on('init', () => {
     hint: game.i18n.localize('SMLTME.Large_Step_Hint'),
     scope: 'world',
     config: true,
+    requiresReload: true,
     type: Number,
     choices: {
       20: '20',
       30: '30',
       60: '60',
       120: '120',
+      360: '360',
     },
     default: 60,
   });
@@ -471,6 +474,7 @@ Hooks.on('renderSmallTimeApp', () => {
 
 // Handle our changes to the Scene Config screen.
 Hooks.on('renderSceneConfig', async (obj) => {
+  if (!obj.isEditable) return;
   const root = getRenderedAppRoot(obj);
   if (!root) return;
 
