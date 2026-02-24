@@ -7,18 +7,20 @@ _A small module for displaying and controlling the current time of day._
 - Drag the sun/moon or click the forward/back buttons to change the time.
 - Shift-click the buttons to double the amount. Alt for half.
 - Bottom of the window is a repositioning drag handle.
-- Button steps and various other things are changeable in Module Settings.
-- Shift-click the moon to cycle the moon's phase. If you're running Simple Calendar, your phase will be synced from there.
-- Toggle show/hide button is in Journal Notes.
+- Button steps and various other things are changeable in the settings.
+- Shift-click the moon to cycle the moon's phase (if it's not already being synced from a calendar source).
+- Toggle show/hide button is in the Journal Notes tool group.
 - Darkness link toggle and Player visibility controls are in Scene Config.
-- With a calendar-providing module enabled, click the time to display the date.
-- If a module or game system provides a realtime clock, Shift-click the time to toggle it.
+- Date display uses the core Foundry calendar API (and will pick up calendar data automatically from your game system or module calendar).
+- Click the time to hide/show the date.
+- Click the date to open an available calendar UI (Calendaria or PF2e World Clock).
+- Shift-click the time to toggle the realtime clock, if provided and enabled by a module.
 
 Video overview: (somewhat out of date now, but it covers the main bits :) [https://www.youtube.com/watch?v=XShiobMvatE](https://www.youtube.com/watch?v=XShiobMvatE)
 
 ### How to Use
 
-There's a show/hide toggle in the Journal Notes tool layer:
+There's a show/hide toggle in the Journal Notes tool group:
 
 ![Toggle Control](doc/Toggle_Control.png)
 
@@ -35,11 +37,11 @@ For each scene, you can choose how much of the display can be seen by Players, a
 ![Scene_Config](doc/Scene_Config.webp)
 ![Darkness_Link](doc/Darkness_Link.gif)
 
-If you have a calendar-providing module (or game system) enabled, SmallTime will sync with its date. Clicking on the time will toggle the date display; Shift-clicking the time will toggle the realtime clock (if provided by your other modules or game system).
+SmallTime uses Foundry's core calendar API for date display, and can pick up additional date/time/calendar data supplied by game systems or modules. Clicking the time toggles the date tray. Clicking the date opens the most relevant available calendar UI (for example, Calendaria's calendar view, or PF2e's World Clock).
 
 ![About_Time_Integration](doc/About_Time_Integration.gif)
 
-If you have [Simple Calendar](https://foundryvtt.com/packages/foundryvtt-simple-calendar) enabled, make sure its Game World Time Integration setting is on "Mixed". Calendar and time info from there should now sync up, though SmallTime doesn't currently support nonstandard time divisions. You can enable Sunrise/Sunset sync from Simple Calendar in the SmallTime settings screen.
+If a game system or module provides sunrise/sunset values through the core calendar ecosystem, SmallTime can sync to those values (with a setting to disable syncing and use manual rise/set positions instead). While synced, the rise/set controls remain available for darkness shape tuning (vertical movement), but their time positions are locked to the provider.
 
 ### Settings
 
@@ -61,7 +63,12 @@ Full support for:
 - Spanish (thanks @masr!)
 - Korean (thanks @jbblily!)
 - French (thanks @DarKDinDoN!)
-- Portuguese (thanks @Castanho!)
+- Portuguese (Brazil) (thanks @Castanho!)
+- Simplified Chinese
+- Traditional Chinese
+- Italian
+- Polish
+- Czech
 
 I'm happy to accept and implement more translations!
 
