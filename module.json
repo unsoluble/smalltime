@@ -1,35 +1,25 @@
 {
-<<<<<<< HEAD
-=======
   "id": "smalltime",
->>>>>>> v2
   "title": "SmallTime",
-  "id": "smalltime",
   "description": "A small module for displaying and controlling the current time of day.",
-  "compatibility": {
-    "minimum": 13,
-    "verified": 13
-  },
   "version": "1.0.0",
-  "url": "https://github.com/unsoluble/smalltime",
-  "manifest": "https://github.com/unsoluble/smalltime/releases/latest/download/module.json",
-  "download": "https://github.com/unsoluble/smalltime/releases/download/1.0.0/module.zip",
   "readme": "https://github.com/unsoluble/smalltime/blob/main/README.md",
   "bugs": "https://github.com/unsoluble/smalltime/issues",
   "changelog": "https://github.com/unsoluble/smalltime/releases",
+  "url": "https://github.com/unsoluble/smalltime",
+  "manifest": "https://github.com/unsoluble/smalltime/releases/latest/download/module.json",
+  "download": "https://github.com/unsoluble/smalltime/releases/download/1.0.0/module.zip",
+  "socket": true,
   "authors": [
     {
       "name": "unsoluble",
       "discord": "unsoluble#5084"
     }
   ],
-<<<<<<< HEAD
-=======
   "compatibility": {
     "minimum": 13,
     "verified": 14
   },
->>>>>>> v2
   "media": [
     {
       "type": "cover",
@@ -41,7 +31,6 @@
       "thumbnail": "modules/smalltime/images/manifest-cover.webp"
     }
   ],
-  "socket": true,
   "esmodules": ["scripts/smalltime-app.mjs"],
   "scripts": ["scripts/draggabilly.min.js"],
   "styles": ["styles/smalltime.css"],
