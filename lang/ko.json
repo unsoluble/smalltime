@@ -43,5 +43,8 @@
   "SMLTME.Moon_Darkness": "달 위상이 어둠에 영향",
   "SMLTME.Moon_Darkness_Hint": "현재 달 위상에 따라 최대 어둠 레벨을 자동으로 조정합니다.",
   "SMLTME.Toggle_Hotkey": "표시 전환",
-  "SMLTME.Toggle_Hotkey_Hint": "SmallTime 창 표시를 켜거나 끕니다."
+  "SMLTME.Toggle_Hotkey_Hint": "SmallTime 창 표시를 켜거나 끕니다.",
+  "SMLTME.Calendaria_Controls_Scene_Darkness": "Calendaria가 이 장면의 어둠 수준을 제어하고 있습니다.",
+  "SMLTME.Calendaria_Controls_Darkness": "Calendaria가 어둠 수준을 제어하고 있습니다.",
+  "SMLTME.Calendaria_Controls_Moon_Tint": "Calendaria가 달빛 색조를 제어하고 있습니다."
 }

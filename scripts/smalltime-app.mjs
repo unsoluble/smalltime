@@ -492,6 +492,23 @@ Hooks.on('renderSceneConfig', async (obj) => {
     group.append(hint);
     return group;
   };
+  const getCheckboxTooltipHost = (inputElement) => {
+    if (!inputElement) return null;
+    return inputElement.closest('.form-fields') ?? inputElement.parentElement ?? inputElement;
+  };
+  const ensureTooltipAnchor = (labelElement) => {
+    if (!labelElement) return null;
+    let anchor = labelElement.querySelector('.st-tooltip-anchor');
+    if (anchor) return anchor;
+
+    anchor = document.createElement('span');
+    anchor.classList.add('st-tooltip-anchor');
+    while (labelElement.firstChild) {
+      anchor.append(labelElement.firstChild);
+    }
+    labelElement.append(anchor);
+    return anchor;
+  };
 
   const injection = document.createElement('fieldset');
   injection.classList.add('st-scene-config');
@@ -526,7 +543,21 @@ Hooks.on('renderSceneConfig', async (obj) => {
   darknessInput.type = 'checkbox';
   darknessInput.name = 'flags.smalltime.darkness-link';
   darknessInput.checked = darknessChecked;
-  injection.append(buildSceneConfigGroup(controlLabel, darknessInput, controlHint));
+  const darknessFields = document.createElement('div');
+  darknessFields.classList.add('form-fields');
+  darknessFields.append(darknessInput);
+  const darknessGroup = buildSceneConfigGroup(controlLabel, darknessFields, controlHint);
+  injection.append(darknessGroup);
+
+  if (Helpers.isCalendariaDarknessSyncActive(obj.document)) {
+    darknessInput.disabled = true;
+    const tooltipHost = getCheckboxTooltipHost(darknessInput);
+    if (tooltipHost) {
+      tooltipHost.classList.add('st-tooltip-control');
+      tooltipHost.setAttribute('aria-label', game.i18n.localize('SMLTME.Calendaria_Controls_Scene_Darkness'));
+      tooltipHost.setAttribute('data-balloon-pos', 'left');
+    }
+  }
 
   // Inject the SmallTime controls into the config window for the current scene,
   // but only if they haven't already been inserted.
@@ -665,9 +696,62 @@ Hooks.on('renderSettingsConfig', async (obj) => {
     if (settingGroup) settingGroup.style.display = 'none';
   }
 
-  const positionResetLabel = findSettingGroup('smalltime.player-visibility-default')?.querySelector('label');
   let popupDirection = 'right';
   if (game.modules.get('tidy-ui_game-settings')?.active) popupDirection = 'up';
+
+  const viewedScene = canvas.scene ?? game.scenes.viewed ?? game.scenes.active;
+  const externalDarknessSyncActive = Helpers.isExternalDarknessSyncActive(viewedScene);
+  const calendariaMoonTintDeferred = Helpers.shouldDeferMoonTintToCalendaria(viewedScene);
+
+  const disableSettingControl = (name) => {
+    const controls = [...root.querySelectorAll(`[name="${name}"]`)];
+    controls.forEach((control) => {
+      control.disabled = true;
+    });
+    return controls[0] ?? null;
+  };
+  const getCheckboxTooltipHost = (inputElement) => {
+    if (!inputElement) return null;
+    return inputElement.closest('.form-fields') ?? inputElement.parentElement ?? inputElement;
+  };
+
+  if (externalDarknessSyncActive) {
+    disableSettingControl('smalltime.moon-darkness');
+    disableSettingControl('smalltime.phase-impact');
+  }
+
+  if (calendariaMoonTintDeferred) disableSettingControl('smalltime.moon-tint');
+
+  const moonDarknessInput = findSettingInput('smalltime.moon-darkness');
+  const moonTintInput = findSettingInput('smalltime.moon-tint');
+  const moonDarknessHost = getCheckboxTooltipHost(moonDarknessInput);
+  const moonTintHost = getCheckboxTooltipHost(moonTintInput);
+
+  if (moonDarknessHost) {
+    if (externalDarknessSyncActive) {
+      moonDarknessHost.classList.add('st-tooltip-control');
+      moonDarknessHost.setAttribute('aria-label', game.i18n.localize('SMLTME.Calendaria_Controls_Darkness'));
+      moonDarknessHost.setAttribute('data-balloon-pos', 'left');
+    } else if (moonDarknessHost.getAttribute('aria-label') === game.i18n.localize('SMLTME.Calendaria_Controls_Darkness')) {
+      moonDarknessHost.removeAttribute('aria-label');
+      moonDarknessHost.removeAttribute('data-balloon-pos');
+      moonDarknessHost.classList.remove('st-tooltip-control');
+    }
+  }
+
+  if (moonTintHost) {
+    if (calendariaMoonTintDeferred) {
+      moonTintHost.classList.add('st-tooltip-control');
+      moonTintHost.setAttribute('aria-label', game.i18n.localize('SMLTME.Calendaria_Controls_Moon_Tint'));
+      moonTintHost.setAttribute('data-balloon-pos', 'left');
+    } else if (moonTintHost.getAttribute('aria-label') === game.i18n.localize('SMLTME.Calendaria_Controls_Moon_Tint')) {
+      moonTintHost.removeAttribute('aria-label');
+      moonTintHost.removeAttribute('data-balloon-pos');
+      moonTintHost.classList.remove('st-tooltip-control');
+    }
+  }
+
+  const positionResetLabel = findSettingGroup('smalltime.player-visibility-default')?.querySelector('label');
   const positionResetAnchor = ensureTooltipAnchor(positionResetLabel);
   if (positionResetAnchor) {
     positionResetAnchor.setAttribute('aria-label', game.i18n.localize('SMLTME.Position_Reset'));

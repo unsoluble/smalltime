@@ -42,5 +42,8 @@
   "SMLTME.Moon_Darkness": "Moon Phase Affects Darkness",
   "SMLTME.Moon_Darkness_Hint": "Automatically adapt the maximum Darkness level based on the current phase of the moon.",
   "SMLTME.Toggle_Hotkey": "Visibility Toggle",
-  "SMLTME.Toggle_Hotkey_Hint": "Toggles the SmallTime window on or off."
+  "SMLTME.Toggle_Hotkey_Hint": "Toggles the SmallTime window on or off.",
+  "SMLTME.Calendaria_Controls_Scene_Darkness": "Calendaria is controlling this scene's Darkness level.",
+  "SMLTME.Calendaria_Controls_Darkness": "Calendaria is controlling the Darkness level.",
+  "SMLTME.Calendaria_Controls_Moon_Tint": "Calendaria is controlling moon tinting."
 }

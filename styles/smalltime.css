@@ -104,7 +104,7 @@
   position: relative;
   top: 1px;
   left: -2px;
-  /* text-shadow: 0px 2px 2px rgba(0, 0, 0, 0.15); */
+  
 }
 
 #smalltime-darkness-config {
@@ -140,7 +140,7 @@
   opacity: 0.9;
 }
 
-/* Constraint boxes for the sun/moon drag handles */
+
 .sunrise-start-bounds,
 .sunrise-end-bounds,
 .sunset-start-bounds,
@@ -152,22 +152,22 @@
   z-index: 0;
 }
 .sunrise-start-bounds {
-  /* border: 1px solid red; */
+  
   left: 8px;
   width: 230px;
 }
 .sunrise-end-bounds {
-  /* border: 1px solid green; */
+  
   left: 28px;
   width: 230px;
 }
 .sunset-start-bounds {
-  /* border: 1px solid blue; */
+  
   left: 242px;
   width: 250px;
 }
 .sunset-end-bounds {
-  /* border: 1px solid purple; */
+  
   left: 262px;
   width: 250px;
 }
@@ -592,21 +592,29 @@
   }
 }
 
-/* Darkness config tooltip styles. */
+
 
 div.st-tooltip-anchor[aria-label][data-balloon-pos],
+div.st-tooltip-control[aria-label][data-balloon-pos],
 #smalltime-darkness-config .handle[aria-label][data-balloon-pos] {
   overflow: visible;
 }
-:is(.st-tooltip-anchor, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos] {
+:is(.st-tooltip-anchor, .st-tooltip-control, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos] {
   position: relative;
 }
 
 .st-tooltip-anchor {
   display: inline-block;
 }
-/* Main bubble */
-:is(.st-tooltip-anchor, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos]:after {
+
+
+.form-fields.st-tooltip-control {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+
+:is(.st-tooltip-anchor, .st-tooltip-control, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos]:after {
   opacity: 0;
   pointer-events: none;
   transition: all 0.1s ease-out 0.1s;
@@ -623,8 +631,8 @@ div.st-tooltip-anchor[aria-label][data-balloon-pos],
   z-index: 10;
   box-shadow: 0 2px 6px 0 rgba(0, 0, 0, 0.4);
 }
-/* Triangle */
-:is(.st-tooltip-anchor, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos]:before {
+
+:is(.st-tooltip-anchor, .st-tooltip-control, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos]:before {
   width: 0;
   height: 0;
   border: 5px solid transparent;
@@ -636,56 +644,72 @@ div.st-tooltip-anchor[aria-label][data-balloon-pos],
   position: absolute;
   z-index: 10;
 }
-:is(.st-tooltip-anchor, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos]:hover:before,
-:is(.st-tooltip-anchor, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos]:hover:after {
+:is(.st-tooltip-anchor, .st-tooltip-control, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos]:hover:before,
+:is(.st-tooltip-anchor, .st-tooltip-control, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos]:hover:after {
   opacity: 1;
   pointer-events: none;
 }
-/* Position after appearing, bubble */
-:is(.st-tooltip-anchor, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos='up']:hover:after {
+
+:is(.st-tooltip-anchor, .st-tooltip-control, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos='up']:hover:after {
   transform: translate(-55%, 0);
 }
-/* Position after appearing, triangle */
-:is(.st-tooltip-anchor, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos='up']:hover:before {
+
+:is(.st-tooltip-anchor, .st-tooltip-control, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos='up']:hover:before {
   transform: translate(-85%, 0);
 }
-:is(.st-tooltip-anchor, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos^='up']:before,
-:is(.st-tooltip-anchor, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos^='up']:after {
+:is(.st-tooltip-anchor, .st-tooltip-control, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos^='up']:before,
+:is(.st-tooltip-anchor, .st-tooltip-control, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos^='up']:after {
   bottom: 100%;
   transform-origin: top;
 }
-:is(.st-tooltip-anchor, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos^='up']:after {
+:is(.st-tooltip-anchor, .st-tooltip-control, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos^='up']:after {
   margin-bottom: 10px;
 }
-/* Position before appearing, bubble */
-:is(.st-tooltip-anchor, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos='up']:after {
+
+:is(.st-tooltip-anchor, .st-tooltip-control, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos='up']:after {
   left: 50%;
   transform: translate(-55%, 4px);
 }
-/* Position before appearing, triangle */
-:is(.st-tooltip-anchor, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos='up']:before {
+
+:is(.st-tooltip-anchor, .st-tooltip-control, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos='up']:before {
   left: 50%;
   transform: translate(-85%, 4px);
 }
 
-:is(.st-tooltip-anchor, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos*='-right']:after {
+:is(.st-tooltip-anchor, .st-tooltip-control, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos*='-right']:after {
   right: 0;
 }
-:is(.st-tooltip-anchor, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos*='-right']:before {
+:is(.st-tooltip-anchor, .st-tooltip-control, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos*='-right']:before {
   right: 5px;
 }
-:is(.st-tooltip-anchor, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos='right']:after,
-:is(.st-tooltip-anchor, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos='right']:before {
+:is(.st-tooltip-anchor, .st-tooltip-control, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos='right']:after,
+:is(.st-tooltip-anchor, .st-tooltip-control, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos='right']:before {
   left: 100%;
   top: 50%;
   transform: translate(0, -55%);
 }
-:is(.st-tooltip-anchor, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos='right']:after {
+:is(.st-tooltip-anchor, .st-tooltip-control, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos='right']:after {
   margin-left: 10px;
   padding: 0 7px 0 7px;
   font-size: 0.9em;
 }
-:is(.st-tooltip-anchor, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos='right']:before {
+:is(.st-tooltip-anchor, .st-tooltip-control, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos='right']:before {
   border: 5px solid transparent;
   border-right-color: #444;
+}
+
+:is(.st-tooltip-anchor, .st-tooltip-control, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos='left']:after,
+:is(.st-tooltip-anchor, .st-tooltip-control, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos='left']:before {
+  right: 100%;
+  top: 50%;
+  transform: translate(0, -55%);
+}
+:is(.st-tooltip-anchor, .st-tooltip-control, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos='left']:after {
+  margin-right: 10px;
+  padding: 0 7px 0 7px;
+  font-size: 0.9em;
+}
+:is(.st-tooltip-anchor, .st-tooltip-control, #smalltime-darkness-config .handle)[aria-label][data-balloon-pos][data-balloon-pos='left']:before {
+  border: 5px solid transparent;
+  border-left-color: #444;
 }

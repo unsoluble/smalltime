@@ -43,5 +43,8 @@
   "SMLTME.Moon_Darkness": "La phase lunaire affecte l’obscurité",
   "SMLTME.Moon_Darkness_Hint": "Adapte automatiquement le niveau maximal d’obscurité selon la phase actuelle de la lune.",
   "SMLTME.Toggle_Hotkey": "Basculer la visibilité",
-  "SMLTME.Toggle_Hotkey_Hint": "Affiche ou masque la fenêtre SmallTime."
+  "SMLTME.Toggle_Hotkey_Hint": "Affiche ou masque la fenêtre SmallTime.",
+  "SMLTME.Calendaria_Controls_Scene_Darkness": "Calendaria controle le niveau d'obscurite de cette scene.",
+  "SMLTME.Calendaria_Controls_Darkness": "Calendaria controle le niveau d'obscurite.",
+  "SMLTME.Calendaria_Controls_Moon_Tint": "Calendaria controle la teinte lunaire."
 }

@@ -42,5 +42,8 @@
   "SMLTME.Moon_Darkness_Hint": "Po zaškrtnutí bude automaticky přizpůsobovat maximální úroveň tmy na základě aktuální fáze měsíce.",
   "SMLTME.Toggle_Hotkey": "Přepínač viditelnosti",
   "SMLTME.Toggle_Hotkey_Hint": "Přepne viditelnost okna SmallTime.",
-  "SMLTME.Sun_Sync_Lock_Tooltip": "(Synchronizováno z {source})"
+  "SMLTME.Sun_Sync_Lock_Tooltip": "(Synchronizováno z {source})",
+  "SMLTME.Calendaria_Controls_Scene_Darkness": "Calendaria ridi uroven tmy v teto scene.",
+  "SMLTME.Calendaria_Controls_Darkness": "Calendaria ridi uroven tmy.",
+  "SMLTME.Calendaria_Controls_Moon_Tint": "Calendaria ridi zabarveni mesice."
 }

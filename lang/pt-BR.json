@@ -43,5 +43,8 @@
   "SMLTME.Moon_Darkness": "Fase da lua afeta a escuridão",
   "SMLTME.Moon_Darkness_Hint": "Adapta automaticamente o nível máximo de escuridão com base na fase atual da lua.",
   "SMLTME.Toggle_Hotkey": "Alternar visibilidade",
-  "SMLTME.Toggle_Hotkey_Hint": "Alterna a janela do SmallTime entre visível e oculta."
+  "SMLTME.Toggle_Hotkey_Hint": "Alterna a janela do SmallTime entre visível e oculta.",
+  "SMLTME.Calendaria_Controls_Scene_Darkness": "Calendaria esta controlando o nivel de Escuridao desta cena.",
+  "SMLTME.Calendaria_Controls_Darkness": "Calendaria esta controlando o nivel de Escuridao.",
+  "SMLTME.Calendaria_Controls_Moon_Tint": "Calendaria esta controlando a coloracao lunar."
 }

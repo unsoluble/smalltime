@@ -42,5 +42,8 @@
   "SMLTME.Moon_Tint": "使用月亮颜色为黑暗着色",
   "SMLTME.Moon_Tint_Hint": "当 SmallTime 控制场景黑暗等级时，将使用提供月亮数据的模块所配置的当前月相颜色进行着色。",
   "SMLTME.Phase_Impact": "月相影响强度",
-  "SMLTME.Phase_Impact_Hint": "调整月相对当前黑暗等级亮度影响的强度（需要刷新）。"
+  "SMLTME.Phase_Impact_Hint": "调整月相对当前黑暗等级亮度影响的强度（需要刷新）。",
+  "SMLTME.Calendaria_Controls_Scene_Darkness": "Calendaria 正在控制此场景的黑暗等级。",
+  "SMLTME.Calendaria_Controls_Darkness": "Calendaria 正在控制黑暗等级。",
+  "SMLTME.Calendaria_Controls_Moon_Tint": "Calendaria 正在控制月光着色。"
 }

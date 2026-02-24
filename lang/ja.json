@@ -44,5 +44,8 @@
   "SMLTME.Moon_Darkness": "月相が暗さに影響",
   "SMLTME.Moon_Darkness_Hint": "現在の月相に応じて最大暗さレベルを自動調整します。",
   "SMLTME.Toggle_Hotkey": "表示切替",
-  "SMLTME.Toggle_Hotkey_Hint": "SmallTime ウィンドウの表示/非表示を切り替えます。"
+  "SMLTME.Toggle_Hotkey_Hint": "SmallTime ウィンドウの表示/非表示を切り替えます。",
+  "SMLTME.Calendaria_Controls_Scene_Darkness": "Calendaria がこのシーンの暗度レベルを制御しています。",
+  "SMLTME.Calendaria_Controls_Darkness": "Calendaria が暗度レベルを制御しています。",
+  "SMLTME.Calendaria_Controls_Moon_Tint": "Calendaria が月光の色味を制御しています。"
 }

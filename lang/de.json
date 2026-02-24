@@ -43,5 +43,8 @@
   "SMLTME.Moon_Darkness": "Mondphase beeinflusst Dunkelheit",
   "SMLTME.Moon_Darkness_Hint": "Passt die maximale Dunkelheitsstufe automatisch anhand der aktuellen Mondphase an.",
   "SMLTME.Toggle_Hotkey": "Sichtbarkeits-Umschalter",
-  "SMLTME.Toggle_Hotkey_Hint": "Schaltet das SmallTime-Fenster ein oder aus."
+  "SMLTME.Toggle_Hotkey_Hint": "Schaltet das SmallTime-Fenster ein oder aus.",
+  "SMLTME.Calendaria_Controls_Scene_Darkness": "Calendaria steuert die Dunkelheitsstufe dieser Szene.",
+  "SMLTME.Calendaria_Controls_Darkness": "Calendaria steuert die Dunkelheitsstufe.",
+  "SMLTME.Calendaria_Controls_Moon_Tint": "Calendaria steuert die Mondfaerbung."
 }
