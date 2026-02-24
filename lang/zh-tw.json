@@ -39,5 +39,13 @@
   "SMLTME.Moon_Darkness": "月相影響暗度",
   "SMLTME.Moon_Darkness_Hint": "根據當前月相自動調整最大暗度。",
   "SMLTME.Toggle_Hotkey": "可見開關",
-  "SMLTME.Toggle_Hotkey_Hint": "打開或關閉 SmallTime 視窗。"
+  "SMLTME.Toggle_Hotkey_Hint": "打開或關閉 SmallTime 視窗。",
+  "SMLTME.Sun_Sync_Lock_Tooltip": "(Synced from {source})",
+  "SMLTME.Moon_Tint": "Tint Darkness with Moon Color",
+  "SMLTME.Moon_Tint_Hint": "Scenes in which SmallTime is controlling the Darkness level will be tinted with the color of the current moon phases, as configured by your moon-providing module.",
+  "SMLTME.Phase_Impact": "Phase Impact",
+  "SMLTME.Phase_Impact_Hint": "Scales the amount of brightness impact the moon phase has on the current Darkness level (requires a refresh).",
+  "SMLTME.Calendaria_Controls_Scene_Darkness": "Calendaria is controlling this scene's Darkness level.",
+  "SMLTME.Calendaria_Controls_Darkness": "Calendaria is controlling the Darkness level.",
+  "SMLTME.Calendaria_Controls_Moon_Tint": "Calendaria is controlling moon tinting."
 }

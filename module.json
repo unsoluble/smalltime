@@ -1,4 +1,8 @@
 {
+<<<<<<< HEAD
+=======
+  "id": "smalltime",
+>>>>>>> v2
   "title": "SmallTime",
   "id": "smalltime",
   "description": "A small module for displaying and controlling the current time of day.",
@@ -19,6 +23,13 @@
       "discord": "unsoluble#5084"
     }
   ],
+<<<<<<< HEAD
+=======
+  "compatibility": {
+    "minimum": 13,
+    "verified": 14
+  },
+>>>>>>> v2
   "media": [
     {
       "type": "cover",

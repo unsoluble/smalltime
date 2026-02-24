@@ -10,8 +10,6 @@
   "SMLTME.Small_Step_Hint": "Počet minut, o kolik se úpraví čas tlačítkem < a >. Když podržíš Shift, tak o dvojnásobek. Když Alt, tak o polovinu.",
   "SMLTME.Large_Step": "Velký krok",
   "SMLTME.Large_Step_Hint": "Počet minut, o kolik se úpraví čas tlačítkem << a >>. Když podržíš Shift, tak o dvojnásobek. Když Alt, tak o polovinu.",
-  "SMLTME.Resting_Opacity": "Neaktivní průhlednost",
-  "SMLTME.Resting_Opacity_Hint": "Průhlednost okna SmallTime, když se s ním neinteraguje.",
   "SMLTME.Darkness_Default": "Nastavovat výchozí nastavení ovlivnění tmy?",
   "SMLTME.Darkness_Default_Hint": "Po zaškrtnutí nastaví výchozí nastavení pro ovládání tmy v nastavení nových scén.",
   "SMLTME.Darkness_Control": "Ovládat tmu?",
@@ -43,5 +41,9 @@
   "SMLTME.Moon_Darkness": "Mají fáze měsíce ovlivňovat tmu?",
   "SMLTME.Moon_Darkness_Hint": "Po zaškrtnutí bude automaticky přizpůsobovat maximální úroveň tmy na základě aktuální fáze měsíce.",
   "SMLTME.Toggle_Hotkey": "Přepínač viditelnosti",
-  "SMLTME.Toggle_Hotkey_Hint": "Přepne viditelnost okna SmallTime."
+  "SMLTME.Toggle_Hotkey_Hint": "Přepne viditelnost okna SmallTime.",
+  "SMLTME.Sun_Sync_Lock_Tooltip": "(Synchronizováno z {source})",
+  "SMLTME.Calendaria_Controls_Scene_Darkness": "Calendaria ridi uroven tmy v teto scene.",
+  "SMLTME.Calendaria_Controls_Darkness": "Calendaria ridi uroven tmy.",
+  "SMLTME.Calendaria_Controls_Moon_Tint": "Calendaria ridi zabarveni mesice."
 }

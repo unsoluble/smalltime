@@ -13,67 +13,128 @@ ST_Config.PhaseValues = {
   7: 0.25,
 };
 
-// Saving the default core Darkness color for reference.
+// Saving the default core Darkness colour for reference.
 ST_Config.coreDarknessColor = 2368584;
+ST_Config.activeDarknessColor = ST_Config.coreDarknessColor;
 
 // Default offset from the Player List window when pinned,
-// an Epoch offset for game systems that don't start at midnight,
-// plus custom offsets for game systems that draw extra borders
-// around their windows. Also default values for sunrise/set.
+// and default values for sunrise/set.
 ST_Config.PinOffset = 83;
-ST_Config.EpochOffset = 0;
-ST_Config.WFRP4eOffset = 30;
-ST_Config.DasSchwarzeAugeOffset = 16;
-ST_Config.TaskbarOffset = 50;
 
 ST_Config.SunriseStartDefault = 180;
 ST_Config.SunriseEndDefault = 420;
 ST_Config.SunsetStartDefault = 1050;
 ST_Config.SunsetEndDefault = 1320;
-ST_Config.DawnDuskSpread = 120;
+ST_Config.DawnDuskSpread = 240;
 
 ST_Config.MaxDarknessDefault = 1;
 ST_Config.MinDarknessDefault = 0;
 
 export class Helpers {
-  static updateSunriseSunsetTimes(data) {
-    if (game.settings.get('smalltime', 'sun-sync') && game.modules.get('foundryvtt-simple-calendar')?.active) {
-      // Use defaults if no seasons have been set up.
-      if (SimpleCalendar.api.getAllSeasons().length == 0) {
-        game.settings.set('smalltime', 'sunrise-start', ST_Config.SunriseStartDefault);
-        game.settings.set('smalltime', 'sunrise-end', ST_Config.SunriseEndDefault);
-        game.settings.set('smalltime', 'sunset-start', ST_Config.SunsetStartDefault);
-        game.settings.set('smalltime', 'sunset-end', ST_Config.SunsetEndDefault);
-      } else {
-        if (typeof data !== 'undefined') {
-          const riseEnd = SimpleCalendar.api.timestampToDate(data.date.sunrise).hour * 60 + SimpleCalendar.api.timestampToDate(data.date.sunrise).minute;
-          const riseStart = riseEnd - ST_Config.DawnDuskSpread;
-          const setStart = SimpleCalendar.api.timestampToDate(data.date.sunset).hour * 60 + SimpleCalendar.api.timestampToDate(data.date.sunset).minute;
-          const setEnd = setStart + ST_Config.DawnDuskSpread;
-          game.settings.set('smalltime', 'sunrise-start', riseStart);
-          game.settings.set('smalltime', 'sunrise-end', riseEnd);
-          game.settings.set('smalltime', 'sunset-start', setStart);
-          game.settings.set('smalltime', 'sunset-end', setEnd);
+  static #cachedSystemDateFormats = null;
+  static #cachedSystemDateFormatsKey = '';
+  static #sunriseSunsetProviderState = null;
+
+  static getDarknessBackingFieldNames() {
+    return [
+      'smalltime.max-darkness',
+      'smalltime.min-darkness',
+      'smalltime.sunrise-start',
+      'smalltime.sunrise-end',
+      'smalltime.sunset-start',
+      'smalltime.sunset-end',
+    ];
+  }
+
+  static getDarknessBackingInputs(root = document) {
+    return {
+      maxDarkness: root.querySelector('input[name="smalltime.max-darkness"]'),
+      minDarkness: root.querySelector('input[name="smalltime.min-darkness"]'),
+      sunriseStart: root.querySelector('input[name="smalltime.sunrise-start"]'),
+      sunriseEnd: root.querySelector('input[name="smalltime.sunrise-end"]'),
+      sunsetStart: root.querySelector('input[name="smalltime.sunset-start"]'),
+      sunsetEnd: root.querySelector('input[name="smalltime.sunset-end"]'),
+    };
+  }
+
+  static syncDarknessBackingInputs(positions, max, min, root = document) {
+    const inputs = Helpers.getDarknessBackingInputs(root);
+
+    if (positions) {
+      if (inputs.sunriseStart) inputs.sunriseStart.value = Helpers.convertPositionToTimeInteger(positions.sunriseStart);
+      if (inputs.sunriseEnd) inputs.sunriseEnd.value = Helpers.convertPositionToTimeInteger(positions.sunriseEnd);
+      if (inputs.sunsetStart) inputs.sunsetStart.value = Helpers.convertPositionToTimeInteger(positions.sunsetStart);
+      if (inputs.sunsetEnd) inputs.sunsetEnd.value = Helpers.convertPositionToTimeInteger(positions.sunsetEnd);
+    }
+
+    // Set the max or min Darkness, depending on which was passed.
+    if (min === false && inputs.maxDarkness) inputs.maxDarkness.value = max;
+    if (max === false && inputs.minDarkness) inputs.minDarkness.value = min;
+  }
+
+  static async updateSunriseSunsetTimes() {
+    const provider = Helpers.getSunriseSunsetProvider();
+    Helpers.#sunriseSunsetProviderState = provider;
+    if (!provider.synced) return provider;
+
+    const halfSpread = Math.round(ST_Config.DawnDuskSpread / 2);
+    const sunriseCenter = Helpers.convertCalendarHourToSmallTimeMinute(provider.sunriseHour);
+    const sunsetCenter = Helpers.convertCalendarHourToSmallTimeMinute(provider.sunsetHour);
+
+    const nextValues = {
+      'sunrise-start': Helpers.normalizeSmallTimeMinute(sunriseCenter - halfSpread),
+      'sunrise-end': Helpers.normalizeSmallTimeMinute(sunriseCenter + halfSpread),
+      'sunset-start': Helpers.normalizeSmallTimeMinute(sunsetCenter - halfSpread),
+      'sunset-end': Helpers.normalizeSmallTimeMinute(sunsetCenter + halfSpread),
+    };
+
+    if (game.ready && game.user.isGM) {
+      for (const [key, value] of Object.entries(nextValues)) {
+        if (game.settings.get('smalltime', key) !== value) {
+          await game.settings.set('smalltime', key, value);
         }
       }
     }
+
+    return { ...provider, values: nextValues };
   }
 
-  static configureReleaseSpecificStuff() {
-    ST_Config.GlobalThresholdPath = game.release.generation < 12 ? 'globalLightThreshold' : 'environment.globalLight.darkness.max';
+  static isCalendariaRealtimeRunning() {
+    const module = game.modules?.get('calendaria');
+    if (!module?.active) return false;
+    if (module.api?.isClockRunning instanceof Function) {
+      return !!module.api.isClockRunning();
+    }
+    return !!(globalThis.CALENDARIA?.managers?.TimeClock?.running ?? globalThis.CALENDARIA?.TimeClock?.running);
   }
 
-  static handleRealtimeState() {
-    if (game.modules.get('foundryvtt-simple-calendar')?.active) {
-      // Need to insert a small delay here, to wait for Simple Calendar to finish
-      // setting its clockStatus.
-      setTimeout(function () {
-        if (game.paused || !SimpleCalendar.api.clockStatus().started) {
-          $('.timeSeparator').removeClass('blink');
-        } else if (!game.paused && SimpleCalendar.api.clockStatus().started) {
-          $('.timeSeparator').addClass('blink');
-        }
-      }, 500);
+  static async toggleCalendariaRealtime() {
+    const module = game.modules?.get('calendaria');
+    if (!module?.active) return false;
+
+    if (module.api?.toggleClock instanceof Function) {
+      await module.api.toggleClock();
+      return true;
+    }
+
+    const timeClock = globalThis.CALENDARIA?.managers?.TimeClock ?? globalThis.CALENDARIA?.TimeClock;
+    if (timeClock?.toggle instanceof Function) {
+      await timeClock.toggle();
+      return true;
+    }
+
+    return false;
+  }
+
+  static handleRealtimeState(running = undefined) {
+    const isRunning = typeof running === 'boolean' ? running : Helpers.isCalendariaRealtimeRunning();
+    const separators = document.querySelectorAll('#smalltime-app .timeSeparator');
+    separators.forEach((separator) => separator.classList.toggle('blink', isRunning));
+
+    const timeDisplay = document.querySelector('#smalltime-app #timeDisplay');
+    if (timeDisplay) {
+      timeDisplay.removeAttribute('aria-label');
+      timeDisplay.removeAttribute('data-balloon-pos');
     }
   }
 
@@ -95,274 +156,330 @@ export class Helpers {
     // Set the initial gradient transition points.
     document.documentElement.style.setProperty(
       '--SMLTME-sunrise-start',
-      Helpers.convertTimeIntegerToPercentage(game.settings.get('smalltime', 'sunrise-start'))
+      Helpers.convertTimeIntegerToPercentage(game.settings.get('smalltime', 'sunrise-start')),
     );
     document.documentElement.style.setProperty(
       '--SMLTME-sunrise-middle-1',
-      Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(sunriseMiddle1))
+      Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(sunriseMiddle1)),
     );
     document.documentElement.style.setProperty(
       '--SMLTME-sunrise-middle-2',
-      Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(sunriseMiddle2))
+      Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(sunriseMiddle2)),
     );
     document.documentElement.style.setProperty('--SMLTME-sunrise-end', Helpers.convertTimeIntegerToPercentage(game.settings.get('smalltime', 'sunrise-end')));
     document.documentElement.style.setProperty('--SMLTME-sunset-start', Helpers.convertTimeIntegerToPercentage(game.settings.get('smalltime', 'sunset-start')));
     document.documentElement.style.setProperty(
       '--SMLTME-sunset-middle-1',
-      Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(sunsetMiddle1))
+      Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(sunsetMiddle1)),
     );
     document.documentElement.style.setProperty(
       '--SMLTME-sunset-middle-2',
-      Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(sunsetMiddle2))
+      Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(sunsetMiddle2)),
     );
     document.documentElement.style.setProperty('--SMLTME-sunset-end', Helpers.convertTimeIntegerToPercentage(game.settings.get('smalltime', 'sunset-end')));
   }
 
-  static async saveNewDarknessConfig(positions, max, min) {
-    // Set the hidden inputs for these settings to the new values,
-    // so that the form-saving workflow takes care of saving them.
-    $('input[name="smalltime.sunrise-start"]').val(Helpers.convertPositionToTimeInteger(positions.sunriseStart));
-    $('input[name="smalltime.sunrise-end"]').val(Helpers.convertPositionToTimeInteger(positions.sunriseEnd));
-    $('input[name="smalltime.sunset-start"]').val(Helpers.convertPositionToTimeInteger(positions.sunsetStart));
-    $('input[name="smalltime.sunset-end"]').val(Helpers.convertPositionToTimeInteger(positions.sunsetEnd));
-
-    // Set the max or min Darkness, depending on which was passed.
-    if (min === false) $('input[name="smalltime.max-darkness"]').val(max);
-    if (max === false) $('input[name="smalltime.min-darkness"]').val(min);
+  static async saveNewDarknessConfig(positions, max, min, root = document) {
+    Helpers.syncDarknessBackingInputs(positions, max, min, root);
   }
 
-  static setupDragHandles() {
-    // If sunrise/sunset are being synced from Simple Calendar, we'll lock
-    // the drag handles on the X axis.
-    const sunSync = game.settings.get('smalltime', 'sun-sync') && game.modules.get('foundryvtt-simple-calendar')?.active;
-
+  static setupDragHandles(root = document) {
     // Build the sun/moon drag handles for the darkness config UI.
     const maxDarkness = game.settings.get('smalltime', 'max-darkness');
     const minDarkness = game.settings.get('smalltime', 'min-darkness');
+    const syncState = Helpers.getSunriseSunsetSyncState();
+    const lockTimeAxis = !!syncState?.synced;
+    const snapX = 10;
+    const snapY = 4;
+    const offsetBetween = 20;
+    const tooltipOffsetXByHandleClass = {
+      'sunrise-start': snapX,
+      'sunrise-end': snapX * 3,
+      'sunset-start': snapX * 5,
+      'sunset-end': snapX * 7,
+    };
+    const handleKeys = ['sunrise-start', 'sunrise-end', 'sunset-start', 'sunset-end'];
+    const toCamel = (value) => value.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+    const roundToGrid = (value, gridSize, method = 'round') => {
+      if (!gridSize) return value;
+      return Math[method](value / gridSize) * gridSize;
+    };
+    const getHandleKey = (element) => handleKeys.find((cls) => element.classList.contains(cls)) ?? null;
+    const getHandleTooltipOffsetX = (elementOrKey) => {
+      const key = typeof elementOrKey === 'string' ? elementOrKey : getHandleKey(elementOrKey);
+      return key ? (tooltipOffsetXByHandleClass[key] ?? 0) : 0;
+    };
+    const canonicalTimeByKey = Object.fromEntries(handleKeys.map((key) => [key, game.settings.get('smalltime', key)]));
+    const initialCanonicalPositions = Object.fromEntries(
+      handleKeys.map((key) => [toCamel(key), Helpers.convertTimeIntegerToPosition(canonicalTimeByKey[key])]),
+    );
+    const convertCanonicalTimeIntegerToHandlePosition = (timeInteger, handleKey) => {
+      return Helpers.convertTimeIntegerToPosition(timeInteger) - getHandleTooltipOffsetX(handleKey);
+    };
+    const convertHandlePositionToCanonicalTimeInteger = (position, element) => {
+      return Helpers.convertPositionToTimeInteger(position + getHandleTooltipOffsetX(element));
+    };
+    const formatTimeIntegerForTooltip = (timeInteger) => Helpers.convertDisplayObjToString(SmallTimeApp.convertTimeIntegerToDisplay(timeInteger));
 
     document.documentElement.style.setProperty('--SMLTME-darkness-max', maxDarkness);
     document.documentElement.style.setProperty('--SMLTME-darkness-min', minDarkness);
 
     const initialPositions = {
-      sunriseStart: Helpers.convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunrise-start')),
-      sunriseEnd: Helpers.convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunrise-end')),
-      sunsetStart: Helpers.convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunset-start')),
-      sunsetEnd: Helpers.convertTimeIntegerToPosition(game.settings.get('smalltime', 'sunset-end')),
+      sunriseStart: convertCanonicalTimeIntegerToHandlePosition(canonicalTimeByKey['sunrise-start'], 'sunrise-start'),
+      sunriseEnd: convertCanonicalTimeIntegerToHandlePosition(canonicalTimeByKey['sunrise-end'], 'sunrise-end'),
+      sunsetStart: convertCanonicalTimeIntegerToHandlePosition(canonicalTimeByKey['sunset-start'], 'sunset-start'),
+      sunsetEnd: convertCanonicalTimeIntegerToHandlePosition(canonicalTimeByKey['sunset-end'], 'sunset-end'),
     };
 
     const initialTimes = {
-      sunriseStart: Helpers.convertPositionToDisplayTime(initialPositions.sunriseStart),
-      sunriseEnd: Helpers.convertPositionToDisplayTime(initialPositions.sunriseEnd),
-      sunsetStart: Helpers.convertPositionToDisplayTime(initialPositions.sunsetStart),
-      sunsetEnd: Helpers.convertPositionToDisplayTime(initialPositions.sunsetEnd),
+      sunriseStart: formatTimeIntegerForTooltip(canonicalTimeByKey['sunrise-start']),
+      sunriseEnd: formatTimeIntegerForTooltip(canonicalTimeByKey['sunrise-end']),
+      sunsetStart: formatTimeIntegerForTooltip(canonicalTimeByKey['sunset-start']),
+      sunsetEnd: formatTimeIntegerForTooltip(canonicalTimeByKey['sunset-end']),
     };
 
-    // If syncing, append a note to the tooltips.
-    const syncString = ' (Simple Calendar)';
-    if (sunSync) {
-      Object.keys(initialTimes).forEach((key) => (initialTimes[key] += syncString));
-    }
+    const sunriseStartElement = root.querySelector('.sunrise-start');
+    const sunriseEndElement = root.querySelector('.sunrise-end');
+    const sunsetStartElement = root.querySelector('.sunset-start');
+    const sunsetEndElement = root.querySelector('.sunset-end');
 
-    const snapX = 10;
-    const snapY = 4;
+    if (!sunriseStartElement || !sunriseEndElement || !sunsetStartElement || !sunsetEndElement) return;
 
-    const offsetBetween = 20;
+    const setHandleTop = (element, top) => {
+      element.style.top = `${top}px`;
+    };
+    const setHandleLeft = (element, left) => {
+      element.style.left = `${left}px`;
+    };
+    const setHandleLabel = (element, label) => {
+      const syncSuffix = lockTimeAxis ? ` ${Helpers.getSunriseSunsetSyncTooltip(syncState)}` : '';
+      element.setAttribute('aria-label', `${label}${syncSuffix}`);
+    };
+    const setHandleLabelFromX = (element, xPosition) => {
+      if (lockTimeAxis) {
+        const handleKey = getHandleKey(element);
+        if (handleKey && Number.isFinite(canonicalTimeByKey[handleKey])) {
+          setHandleLabel(element, formatTimeIntegerForTooltip(canonicalTimeByKey[handleKey]));
+          return;
+        }
+      }
+      setHandleLabel(element, formatTimeIntegerForTooltip(convertHandlePositionToCanonicalTimeInteger(xPosition, element)));
+    };
+    const initializeHandle = (element, top, left, label) => {
+      setHandleTop(element, top);
+      setHandleLeft(element, left);
+      setHandleLabel(element, label);
+    };
+    const setGradientTransitionFromX = (cssVarName, xPosition, element) => {
+      const canonicalTime = convertHandlePositionToCanonicalTimeInteger(xPosition, element);
+      const newTransition = Helpers.convertTimeIntegerToPercentage(canonicalTime);
+      document.documentElement.style.setProperty(cssVarName, newTransition);
+    };
+    const clampShoveXWithDraggabillyContainment = (dragInstance, xPosition) => {
+      if (!dragInstance?.options?.containment) return xPosition;
+      if (typeof dragInstance._getPosition !== 'function' || typeof dragInstance.measureContainment !== 'function') return xPosition;
 
-    $('.sunrise-start').css('top', Helpers.convertDarknessToPostion(maxDarkness));
-    $('.sunrise-start').css('left', initialPositions.sunriseStart);
-    $('.sunrise-start').attr('aria-label', initialTimes.sunriseStart);
+      dragInstance._getPosition();
+      dragInstance.measureContainment();
 
-    $('.sunrise-end').css('top', Helpers.convertDarknessToPostion(minDarkness) + 1);
-    $('.sunrise-end').css('left', initialPositions.sunriseEnd);
-    $('.sunrise-end').attr('aria-label', initialTimes.sunriseEnd);
+      const currentX = dragInstance.position?.x;
+      const relativeStartX = dragInstance.relativeStartPosition?.x;
+      const containWidth = dragInstance.containSize?.width;
+      if (![currentX, relativeStartX, containWidth].every(Number.isFinite)) return xPosition;
 
-    $('.sunset-start').css('top', Helpers.convertDarknessToPostion(minDarkness) + 1);
-    $('.sunset-start').css('left', initialPositions.sunsetStart);
-    $('.sunset-start').attr('aria-label', initialTimes.sunsetStart);
+      const minDelta = roundToGrid(-relativeStartX, snapX, 'ceil');
+      const maxDelta = roundToGrid(containWidth, snapX, 'floor');
+      const targetDelta = xPosition - currentX;
+      const clampedDelta = Math.max(minDelta, Math.min(maxDelta, targetDelta));
+      return currentX + clampedDelta;
+    };
+    const shoveHandleToX = (dragInstance, element, _containmentSelector, xPosition, gradientVar) => {
+      const appliedX = clampShoveXWithDraggabillyContainment(dragInstance, xPosition);
+      const currentY = Number.isFinite(dragInstance?.position?.y) ? dragInstance.position.y : undefined;
+      dragInstance.setPosition(appliedX, currentY);
+      setHandleLeft(element, appliedX);
+      setHandleLabelFromX(element, appliedX);
+      setGradientTransitionFromX(gradientVar, appliedX, element);
+      return appliedX;
+    };
+    const constrainDraggedHandleDuringCollision = (dragInstance, element, xPosition, gradientVar) => {
+      dragInstance.position.x = xPosition;
+      if (Number.isFinite(dragInstance.startPosition?.x)) {
+        dragInstance.dragPoint.x = xPosition - dragInstance.startPosition.x;
+      }
+      if (typeof dragInstance.positionDrag === 'function') {
+        dragInstance.positionDrag();
+      }
+      setHandleLabelFromX(element, xPosition);
+      setGradientTransitionFromX(gradientVar, xPosition, element);
+    };
 
-    $('.sunset-end').css('top', Helpers.convertDarknessToPostion(maxDarkness));
-    $('.sunset-end').css('left', initialPositions.sunsetEnd);
-    $('.sunset-end').attr('aria-label', initialTimes.sunsetEnd);
+    initializeHandle(sunriseStartElement, Helpers.convertDarknessToPostion(maxDarkness), initialPositions.sunriseStart, initialTimes.sunriseStart);
+
+    initializeHandle(sunriseEndElement, Helpers.convertDarknessToPostion(minDarkness) + 1, initialPositions.sunriseEnd, initialTimes.sunriseEnd);
+
+    initializeHandle(sunsetStartElement, Helpers.convertDarknessToPostion(minDarkness) + 1, initialPositions.sunsetStart, initialTimes.sunsetStart);
+
+    initializeHandle(sunsetEndElement, Helpers.convertDarknessToPostion(maxDarkness), initialPositions.sunsetEnd, initialTimes.sunsetEnd);
+
+    [sunriseStartElement, sunriseEndElement, sunsetStartElement, sunsetEndElement].forEach((handle) => {
+      handle.classList.toggle('time-synced', lockTimeAxis);
+    });
 
     Helpers.updateGradientStops();
 
     // Create the drag handles.
-    const sunriseStartDrag = new Draggabilly('.sunrise-start', {
-      containment: '.sunrise-start-bounds',
-      grid: [snapX, snapY],
-      // Lock off the X axis if we're syncing the sunrise/sunset times.
-      axis: sunSync ? 'y' : null,
+    const createHandleDrag = (element, containment) =>
+      new Draggabilly(element, {
+        containment,
+        grid: [snapX, snapY],
+        axis: lockTimeAxis ? 'y' : undefined,
+      });
+
+    const sunriseStartDrag = createHandleDrag(sunriseStartElement, '.sunrise-start-bounds');
+    const sunriseEndDrag = createHandleDrag(sunriseEndElement, '.sunrise-end-bounds');
+    const sunsetStartDrag = createHandleDrag(sunsetStartElement, '.sunset-start-bounds');
+    const sunsetEndDrag = createHandleDrag(sunsetEndElement, '.sunset-end-bounds');
+
+    const getCurrentPositions = () => ({
+      sunriseStart: lockTimeAxis ? initialPositions.sunriseStart : sunriseStartDrag.position.x,
+      sunriseEnd: lockTimeAxis ? initialPositions.sunriseEnd : sunriseEndDrag.position.x,
+      sunsetStart: lockTimeAxis ? initialPositions.sunsetStart : sunsetStartDrag.position.x,
+      sunsetEnd: lockTimeAxis ? initialPositions.sunsetEnd : sunsetEndDrag.position.x,
     });
-    const sunriseEndDrag = new Draggabilly('.sunrise-end', {
-      containment: '.sunrise-end-bounds',
-      grid: [snapX, snapY],
-      axis: sunSync ? 'y' : null,
+    const getCurrentCanonicalTimes = () => ({
+      sunriseStart: lockTimeAxis
+        ? canonicalTimeByKey['sunrise-start']
+        : convertHandlePositionToCanonicalTimeInteger(sunriseStartDrag.position.x, sunriseStartElement),
+      sunriseEnd: lockTimeAxis ? canonicalTimeByKey['sunrise-end'] : convertHandlePositionToCanonicalTimeInteger(sunriseEndDrag.position.x, sunriseEndElement),
+      sunsetStart: lockTimeAxis
+        ? canonicalTimeByKey['sunset-start']
+        : convertHandlePositionToCanonicalTimeInteger(sunsetStartDrag.position.x, sunsetStartElement),
+      sunsetEnd: lockTimeAxis ? canonicalTimeByKey['sunset-end'] : convertHandlePositionToCanonicalTimeInteger(sunsetEndDrag.position.x, sunsetEndElement),
     });
-    const sunsetStartDrag = new Draggabilly('.sunset-start', {
-      containment: '.sunset-start-bounds',
-      grid: [snapX, snapY],
-      axis: sunSync ? 'y' : null,
-    });
-    const sunsetEndDrag = new Draggabilly('.sunset-end', {
-      containment: '.sunset-end-bounds',
-      grid: [snapX, snapY],
-      axis: sunSync ? 'y' : null,
-    });
-
-    let shovedPos = '';
-    let newTransition = '';
-
-    sunriseStartDrag.on('dragMove', function () {
-      // Match the paired handle.
-      $('.sunset-end').css('top', this.position.y + 'px');
-      // Update the tooltip. Append sync note if syncing.
-      let displayTime = Helpers.convertPositionToDisplayTime(this.position.x);
-      sunSync ? (displayTime += syncString) : null;
-      $('.sunrise-start').attr('aria-label', displayTime);
-
-      // Live update the darkness maximum.
-      document.documentElement.style.setProperty('--SMLTME-darkness-max', Helpers.convertPositionToDarkness(this.position.y));
-
-      // Live update the gradient transition point.
-      newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(this.position.x));
-      document.documentElement.style.setProperty('--SMLTME-sunrise-start', newTransition);
-
-      // Shove other handle on collisions.
-      if (this.position.x >= sunriseEndDrag.position.x - offsetBetween) {
-        shovedPos = this.position.x + offsetBetween;
-        $('.sunrise-end').css('left', shovedPos);
-        $('.sunrise-end').attr('aria-label', Helpers.convertPositionToDisplayTime(shovedPos));
-        sunriseEndDrag.setPosition(shovedPos);
-        newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(shovedPos));
-        document.documentElement.style.setProperty('--SMLTME-sunrise-end', newTransition);
+    const saveDraggedDarknessConfig = (yPosition, darknessKind) => {
+      const newPositions = getCurrentPositions();
+      const newCanonicalTimes = getCurrentCanonicalTimes();
+      const darknessValue = Helpers.convertPositionToDarkness(yPosition);
+      const inputs = Helpers.getDarknessBackingInputs(root);
+      if (inputs.sunriseStart) inputs.sunriseStart.value = newCanonicalTimes.sunriseStart;
+      if (inputs.sunriseEnd) inputs.sunriseEnd.value = newCanonicalTimes.sunriseEnd;
+      if (inputs.sunsetStart) inputs.sunsetStart.value = newCanonicalTimes.sunsetStart;
+      if (inputs.sunsetEnd) inputs.sunsetEnd.value = newCanonicalTimes.sunsetEnd;
+      if (darknessKind === 'max') {
+        if (inputs.maxDarkness) inputs.maxDarkness.value = Math.min(darknessValue, 1);
+      } else if (inputs.minDarkness) {
+        inputs.minDarkness.value = Math.max(darknessValue, 0);
       }
-    });
+    };
+    const bindDragMove = ({
+      dragInstance,
+      selfElement,
+      pairedYElement,
+      darknessCssVar,
+      selfGradientVar,
+      neighborDrag,
+      neighborElement,
+      neighborContainment,
+      neighborGradientVar,
+      shouldShove,
+      shoveOffset,
+    }) => {
+      dragInstance.on('dragMove', function () {
+        // Match the paired handle.
+        setHandleTop(pairedYElement, this.position.y);
+        // Update the tooltip.
+        setHandleLabelFromX(selfElement, this.position.x);
 
-    sunriseEndDrag.on('dragMove', function () {
-      // Match the paired handle.
-      $('.sunset-start').css('top', this.position.y + 'px');
-      // Update the tooltip. Append sync note if syncing.
-      let displayTime = Helpers.convertPositionToDisplayTime(this.position.x);
-      sunSync ? (displayTime += syncString) : null;
-      $('.sunrise-end').attr('aria-label', displayTime);
+        // Live update the darkness bound.
+        document.documentElement.style.setProperty(darknessCssVar, Helpers.convertPositionToDarkness(this.position.y));
 
-      // Live update the darkness minimum.
-      document.documentElement.style.setProperty('--SMLTME-darkness-min', Helpers.convertPositionToDarkness(this.position.y));
+        // Live update the gradient transition point.
+        if (!lockTimeAxis) {
+          setGradientTransitionFromX(selfGradientVar, this.position.x, selfElement);
+        }
 
-      // Live update the gradient transition point.
-      newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(this.position.x));
-      document.documentElement.style.setProperty('--SMLTME-sunrise-end', newTransition);
+        // Shove other handle on collisions.
+        if (!lockTimeAxis && shouldShove(this.position.x, neighborDrag.position.x)) {
+          const shovedPos = this.position.x + shoveOffset;
+          const appliedNeighborX = shoveHandleToX(neighborDrag, neighborElement, neighborContainment, shovedPos, neighborGradientVar);
 
-      // Shove other handle on collisions.
-      if (this.position.x <= sunriseStartDrag.position.x + offsetBetween) {
-        shovedPos = this.position.x - offsetBetween;
-        $('.sunrise-start').css('left', shovedPos);
-        $('.sunrise-start').attr('aria-label', Helpers.convertPositionToDisplayTime(shovedPos));
-        sunriseStartDrag.setPosition(shovedPos);
-        newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(shovedPos));
-        document.documentElement.style.setProperty('--SMLTME-sunrise-start', newTransition);
-      }
-    });
+          // If the shoved handle hits its wall, stop the dragged handle immediately too.
+          if (appliedNeighborX !== shovedPos) {
+            const constrainedSelfX = appliedNeighborX - shoveOffset;
+            constrainDraggedHandleDuringCollision(this, selfElement, constrainedSelfX, selfGradientVar);
+          }
+        }
+      });
+    };
+    const bindDragEnd = (dragInstance, darknessKind) => {
+      dragInstance.on('dragEnd', function () {
+        saveDraggedDarknessConfig(this.position.y, darknessKind);
+      });
+    };
 
-    sunsetStartDrag.on('dragMove', function () {
-      // Match the paired handle.
-      $('.sunrise-end').css('top', this.position.y + 'px');
-      // Update the tooltip. Append sync note if syncing.
-      let displayTime = Helpers.convertPositionToDisplayTime(this.position.x);
-      sunSync ? (displayTime += syncString) : null;
-      $('.sunset-start').attr('aria-label', displayTime);
+    const dragMoveBindings = [
+      {
+        dragInstance: sunriseStartDrag,
+        selfElement: sunriseStartElement,
+        pairedYElement: sunsetEndElement,
+        darknessCssVar: '--SMLTME-darkness-max',
+        selfGradientVar: '--SMLTME-sunrise-start',
+        neighborDrag: sunriseEndDrag,
+        neighborElement: sunriseEndElement,
+        neighborContainment: '.sunrise-end-bounds',
+        neighborGradientVar: '--SMLTME-sunrise-end',
+        shouldShove: (selfX, neighborX) => selfX >= neighborX - offsetBetween,
+        shoveOffset: offsetBetween,
+      },
+      {
+        dragInstance: sunriseEndDrag,
+        selfElement: sunriseEndElement,
+        pairedYElement: sunsetStartElement,
+        darknessCssVar: '--SMLTME-darkness-min',
+        selfGradientVar: '--SMLTME-sunrise-end',
+        neighborDrag: sunriseStartDrag,
+        neighborElement: sunriseStartElement,
+        neighborContainment: '.sunrise-start-bounds',
+        neighborGradientVar: '--SMLTME-sunrise-start',
+        shouldShove: (selfX, neighborX) => selfX <= neighborX + offsetBetween,
+        shoveOffset: -offsetBetween,
+      },
+      {
+        dragInstance: sunsetStartDrag,
+        selfElement: sunsetStartElement,
+        pairedYElement: sunriseEndElement,
+        darknessCssVar: '--SMLTME-darkness-min',
+        selfGradientVar: '--SMLTME-sunset-start',
+        neighborDrag: sunsetEndDrag,
+        neighborElement: sunsetEndElement,
+        neighborContainment: '.sunset-end-bounds',
+        neighborGradientVar: '--SMLTME-sunset-end',
+        shouldShove: (selfX, neighborX) => selfX >= neighborX - offsetBetween,
+        shoveOffset: offsetBetween,
+      },
+      {
+        dragInstance: sunsetEndDrag,
+        selfElement: sunsetEndElement,
+        pairedYElement: sunriseStartElement,
+        darknessCssVar: '--SMLTME-darkness-max',
+        selfGradientVar: '--SMLTME-sunset-end',
+        neighborDrag: sunsetStartDrag,
+        neighborElement: sunsetStartElement,
+        neighborContainment: '.sunset-start-bounds',
+        neighborGradientVar: '--SMLTME-sunset-start',
+        shouldShove: (selfX, neighborX) => selfX <= neighborX + offsetBetween,
+        shoveOffset: -offsetBetween,
+      },
+    ];
+    dragMoveBindings.forEach(bindDragMove);
 
-      // Live update the darkness minimum.
-      document.documentElement.style.setProperty('--SMLTME-darkness-min', Helpers.convertPositionToDarkness(this.position.y));
-
-      // Live update the gradient transition point.
-      newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(this.position.x));
-      document.documentElement.style.setProperty('--SMLTME-sunset-start', newTransition);
-
-      // Shove other handle on collisions.
-      if (this.position.x >= sunsetEndDrag.position.x - offsetBetween) {
-        shovedPos = this.position.x + offsetBetween;
-        $('.sunset-end').css('left', shovedPos);
-        $('.sunset-end').attr('aria-label', Helpers.convertPositionToDisplayTime(shovedPos));
-        sunsetEndDrag.setPosition(shovedPos);
-        newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(shovedPos));
-        document.documentElement.style.setProperty('--SMLTME-sunset-end', newTransition);
-      }
-    });
-
-    sunsetEndDrag.on('dragMove', function () {
-      // Match the paired handle.
-      $('.sunrise-start').css('top', this.position.y + 'px');
-      // Update the tooltip. Append sync note if syncing.
-      let displayTime = Helpers.convertPositionToDisplayTime(this.position.x);
-      sunSync ? (displayTime += syncString) : null;
-      $('.sunset-end').attr('aria-label', displayTime);
-
-      // Live update the darkness maximum.
-      document.documentElement.style.setProperty('--SMLTME-darkness-max', Helpers.convertPositionToDarkness(this.position.y));
-
-      // Live update the gradient transition point.
-      newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(this.position.x));
-      document.documentElement.style.setProperty('--SMLTME-sunset-end', newTransition);
-
-      // Shove other handle on collisions.
-      if (this.position.x <= sunsetStartDrag.position.x + offsetBetween) {
-        shovedPos = this.position.x - offsetBetween;
-        $('.sunset-start').css('left', shovedPos);
-        $('.sunset-start').attr('aria-label', Helpers.convertPositionToDisplayTime(shovedPos));
-        sunsetStartDrag.setPosition(shovedPos);
-        newTransition = Helpers.convertTimeIntegerToPercentage(Helpers.convertPositionToTimeInteger(shovedPos));
-        document.documentElement.style.setProperty('--SMLTME-sunset-start', newTransition);
-      }
-    });
-
-    sunriseStartDrag.on('dragEnd', async function () {
-      const newPositions = {
-        sunriseStart: sunriseStartDrag.position.x,
-        sunriseEnd: sunriseEndDrag.position.x,
-        sunsetStart: sunsetStartDrag.position.x,
-        sunsetEnd: sunsetEndDrag.position.x,
-      };
-      let newMaxDarkness = Helpers.convertPositionToDarkness(this.position.y);
-      if (newMaxDarkness > 1) newMaxDarkness = 1;
-      Helpers.saveNewDarknessConfig(newPositions, newMaxDarkness, false);
-    });
-
-    sunriseEndDrag.on('dragEnd', async function () {
-      const newPositions = {
-        sunriseStart: sunriseStartDrag.position.x,
-        sunriseEnd: sunriseEndDrag.position.x,
-        sunsetStart: sunsetStartDrag.position.x,
-        sunsetEnd: sunsetEndDrag.position.x,
-      };
-      let newMinDarkness = Helpers.convertPositionToDarkness(this.position.y);
-      if (newMinDarkness < 0) newMinDarkness = 0;
-      Helpers.saveNewDarknessConfig(newPositions, false, newMinDarkness);
-    });
-
-    sunsetStartDrag.on('dragEnd', async function () {
-      const newPositions = {
-        sunriseStart: sunriseStartDrag.position.x,
-        sunriseEnd: sunriseEndDrag.position.x,
-        sunsetStart: sunsetStartDrag.position.x,
-        sunsetEnd: sunsetEndDrag.position.x,
-      };
-      let newMinDarkness = Helpers.convertPositionToDarkness(this.position.y);
-      if (newMinDarkness < 0) newMinDarkness = 0;
-      Helpers.saveNewDarknessConfig(newPositions, false, newMinDarkness);
-    });
-
-    sunsetEndDrag.on('dragEnd', async function () {
-      const newPositions = {
-        sunriseStart: sunriseStartDrag.position.x,
-        sunriseEnd: sunriseEndDrag.position.x,
-        sunsetStart: sunsetStartDrag.position.x,
-        sunsetEnd: sunsetEndDrag.position.x,
-      };
-      let newMaxDarkness = Helpers.convertPositionToDarkness(this.position.y);
-      if (newMaxDarkness > 1) newMaxDarkness = 1;
-      Helpers.saveNewDarknessConfig(newPositions, newMaxDarkness, false);
-    });
+    [
+      [sunriseStartDrag, 'max'],
+      [sunriseEndDrag, 'min'],
+      [sunsetStartDrag, 'min'],
+      [sunsetEndDrag, 'max'],
+    ].forEach(([dragInstance, darknessKind]) => bindDragEnd(dragInstance, darknessKind));
   }
 
   static convertTimeIntegerToPercentage(time) {
@@ -392,90 +509,315 @@ export class Helpers {
     return displayTimeObj.hours + ':' + displayTimeObj.minutes;
   }
 
+  static normalizeSmallTimeMinute(minute) {
+    const normalized = ((Math.round(minute) % 1440) + 1440) % 1440;
+    return normalized;
+  }
+
+  static convertCalendarHourToSmallTimeMinute(hourValue) {
+    const calendar = game.time?.calendar;
+    const hoursPerDay = Number(calendar?.days?.hoursPerDay) || 24;
+    const normalizedHour = (((Number(hourValue) || 0) % hoursPerDay) + hoursPerDay) % hoursPerDay;
+    const dayProgress = normalizedHour / hoursPerDay;
+    return Helpers.normalizeSmallTimeMinute(Math.round(dayProgress * 1440));
+  }
+
+  static #numberOrNull(value) {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : null;
+  }
+
+  static getSunriseSunsetProvider() {
+    const calendar = game.time?.calendar;
+    const moduleId = 'calendaria';
+    const moduleTitle = game.modules?.get(moduleId)?.title ?? 'Calendaria';
+    const systemTitle = game.system?.title ?? game.system?.id ?? 'System';
+    const syncEnabled = game.settings?.get?.('smalltime', 'sun-sync') !== false;
+
+    if (!syncEnabled) {
+      return { synced: false, source: 'manual', sourceLabel: 'manual' };
+    }
+
+    const calendariaApi = Helpers.getCalendariaApi();
+    const moduleSunrise = Helpers.#numberOrNull(calendariaApi?.getSunrise?.());
+    const moduleSunset = Helpers.#numberOrNull(calendariaApi?.getSunset?.());
+    if (moduleSunrise !== null && moduleSunset !== null) {
+      return {
+        synced: true,
+        source: 'module',
+        sourceLabel: moduleTitle,
+        sunriseHour: moduleSunrise,
+        sunsetHour: moduleSunset,
+      };
+    }
+
+    const hasCalendarSunMethods = typeof calendar?.sunrise === 'function' && typeof calendar?.sunset === 'function';
+    if (hasCalendarSunMethods) {
+      const components = typeof calendar.timeToComponents === 'function' ? calendar.timeToComponents(game.time.worldTime) : undefined;
+      const sunrise = Helpers.#numberOrNull(calendar.sunrise(components));
+      const sunset = Helpers.#numberOrNull(calendar.sunset(components));
+      if (sunrise !== null && sunset !== null) {
+        const isCoreCalendar = calendar.constructor?.name === 'CalendarData';
+        return {
+          synced: true,
+          source: isCoreCalendar ? 'core' : 'system',
+          sourceLabel: isCoreCalendar ? 'Core' : (game.system?.id ?? 'system'),
+          sunriseHour: sunrise,
+          sunsetHour: sunset,
+        };
+      }
+    }
+
+    const hoursPerDay = Helpers.#numberOrNull(calendar?.days?.hoursPerDay);
+    if (hoursPerDay !== null && hoursPerDay > 0) {
+      return {
+        synced: true,
+        source: 'core',
+        sourceLabel: 'Core',
+        sunriseHour: hoursPerDay / 4,
+        sunsetHour: (hoursPerDay * 3) / 4,
+      };
+    }
+
+    return { synced: false, source: 'manual', sourceLabel: 'manual' };
+  }
+
+  static getSunriseSunsetSyncState() {
+    return Helpers.#sunriseSunsetProviderState ?? Helpers.getSunriseSunsetProvider();
+  }
+
+  static getSunriseSunsetSyncTooltip(syncState = Helpers.getSunriseSunsetSyncState()) {
+    if (!syncState?.synced) return '';
+    if (game.i18n?.has('SMLTME.Sun_Sync_Lock_Tooltip')) {
+      return game.i18n.format('SMLTME.Sun_Sync_Lock_Tooltip', { source: syncState.sourceLabel });
+    }
+    return `Time synced from ${syncState.sourceLabel}; drag vertically to adjust darkness only.`;
+  }
+
   static convertDisplayObjToString(displayObj) {
     return displayObj.hours + ':' + displayObj.minutes;
   }
 
+  static getPF2eWorldClockSecondsOfDay() {
+    if (game.system?.id !== 'pf2e') return null;
+
+    const worldTime = game.pf2e?.worldClock?.worldTime;
+    if (!worldTime) return null;
+
+    const hour = typeof worldTime.hour === 'number' ? worldTime.hour : null;
+    const minute = typeof worldTime.minute === 'number' ? worldTime.minute : null;
+    const second = typeof worldTime.second === 'number' ? worldTime.second : 0;
+    if (hour === null || minute === null) return null;
+
+    return hour * 3600 + minute * 60 + second;
+  }
+
+  static getWorldTimeSecondsOfDay() {
+    const pf2eSeconds = Helpers.getPF2eWorldClockSecondsOfDay();
+    if (pf2eSeconds !== null) return pf2eSeconds;
+
+    const currentWorldTime = game.time.worldTime;
+    const normalized = ((currentWorldTime % 86400) + 86400) % 86400;
+    return Math.trunc(normalized);
+  }
+
+  static getProvidedMoonPhaseIndex() {
+    const calendariaApi = Helpers.getCalendariaApi();
+    const moonPhase = calendariaApi?.getMoonPhase?.(0);
+    if (!moonPhase) return null;
+
+    if (Number.isInteger(moonPhase.phaseIndex)) {
+      const normalized = ((moonPhase.phaseIndex % ST_Config.MoonPhases.length) + ST_Config.MoonPhases.length) % ST_Config.MoonPhases.length;
+      return normalized;
+    }
+
+    if (typeof moonPhase.position === 'number' && Number.isFinite(moonPhase.position)) {
+      const normalizedPosition = ((moonPhase.position % 1) + 1) % 1;
+      return Math.min(ST_Config.MoonPhases.length - 1, Math.floor(normalizedPosition * ST_Config.MoonPhases.length));
+    }
+
+    return null;
+  }
+
+  static getCurrentMoonPhaseIndex() {
+    const providedPhase = Helpers.getProvidedMoonPhaseIndex();
+    if (providedPhase !== null) return providedPhase;
+    return game.settings.get('smalltime', 'moon-phase');
+  }
+
+  static normalizeHexColor(color) {
+    if (typeof color !== 'string') return null;
+    const trimmed = color.trim();
+    const withHash = trimmed.startsWith('#') ? trimmed : `#${trimmed}`;
+    return /^#[0-9a-fA-F]{6}$/.test(withHash) ? withHash.toLowerCase() : null;
+  }
+
+  static mixHexColors(baseHex, tintHex, amount) {
+    const base = Helpers.normalizeHexColor(baseHex);
+    const tint = Helpers.normalizeHexColor(tintHex);
+    if (!base || !tint) return baseHex;
+
+    const clampedAmount = Math.min(Math.max(Number(amount) || 0, 0), 1);
+    const parse = (hex, offset) => parseInt(hex.slice(offset, offset + 2), 16);
+    const lerp = (a, b, t) => Math.round(a + (b - a) * t);
+
+    const r = lerp(parse(base, 1), parse(tint, 1), clampedAmount);
+    const g = lerp(parse(base, 3), parse(tint, 3), clampedAmount);
+    const b = lerp(parse(base, 5), parse(tint, 5), clampedAmount);
+    return `#${[r, g, b].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
+  }
+
+  static getProviderMoonColor() {
+    const calendariaApi = Helpers.getCalendariaApi();
+    const calendar = calendariaApi?.getActiveCalendar?.();
+    const firstMoon = calendar?.moonsArray?.[0] ?? Object.values(calendar?.moons ?? {})[0];
+    return Helpers.normalizeHexColor(firstMoon?.color ?? null);
+  }
+
+  static getMoonIlluminationFromPosition(position) {
+    if (typeof position !== 'number' || !Number.isFinite(position)) return 0;
+    const normalized = ((position % 1) + 1) % 1;
+    // New moon ~= 0.0, full moon ~= 0.5
+    return (1 - Math.cos(normalized * Math.PI * 2)) / 2;
+  }
+
+  static getCalendariaMoonTintData() {
+    const calendariaApi = Helpers.getCalendariaApi();
+    if (!calendariaApi) return null;
+
+    const calendar = calendariaApi.getActiveCalendar?.();
+    const moons = calendar?.moonsArray ?? Object.values(calendar?.moons ?? {});
+    if (!moons?.length) return null;
+
+    let weightedR = 0;
+    let weightedG = 0;
+    let weightedB = 0;
+    let totalWeight = 0;
+
+    for (let index = 0; index < moons.length; index++) {
+      const moonColor = Helpers.normalizeHexColor(moons[index]?.color ?? null);
+      if (!moonColor) continue;
+
+      const phaseData = calendariaApi.getMoonPhase?.(index);
+      const illumination = Helpers.getMoonIlluminationFromPosition(phaseData?.position);
+      if (illumination <= 0) continue;
+
+      const r = parseInt(moonColor.slice(1, 3), 16);
+      const g = parseInt(moonColor.slice(3, 5), 16);
+      const b = parseInt(moonColor.slice(5, 7), 16);
+
+      weightedR += r * illumination;
+      weightedG += g * illumination;
+      weightedB += b * illumination;
+      totalWeight += illumination;
+    }
+
+    if (totalWeight <= 0) return null;
+
+    const blendedHex = `#${[weightedR / totalWeight, weightedG / totalWeight, weightedB / totalWeight]
+      .map((value) => Math.round(value).toString(16).padStart(2, '0'))
+      .join('')}`;
+
+    const averageIllumination = totalWeight / moons.length;
+    return {
+      color: blendedHex,
+      illumination: Math.min(Math.max(averageIllumination, 0), 1),
+    };
+  }
+
+  static async applyMoonTint(currentPhase, timeNow) {
+    const scene = canvas.scene ?? game.scenes.viewed;
+    if (!scene) return;
+
+    if (Helpers.shouldDeferMoonTintToCalendaria(scene)) {
+      if (ST_Config.activeDarknessColor !== ST_Config.coreDarknessColor) {
+        ST_Config.activeDarknessColor = ST_Config.coreDarknessColor;
+        CONFIG.Canvas.darknessColor = ST_Config.coreDarknessColor;
+        Helpers.refreshCanvasEnvironmentDarkness(canvas.environment.darknessLevel);
+      }
+      return;
+    }
+
+    const isNight = !(timeNow >= game.settings.get('smalltime', 'sunrise-end') && timeNow < game.settings.get('smalltime', 'sunset-start'));
+    const hasMoonTintSetting = game.settings.get('smalltime', 'moon-tint');
+    const hasDarknessLink = !!scene.getFlag('smalltime', 'darkness-link');
+    const calendariaMoonTint = Helpers.getCalendariaMoonTintData();
+    const moonColor = calendariaMoonTint?.color ?? Helpers.getProviderMoonColor();
+
+    let nextDarknessColor = ST_Config.coreDarknessColor;
+    if (hasMoonTintSetting && hasDarknessLink && isNight && moonColor) {
+      const baseHex = `#${ST_Config.coreDarknessColor.toString(16).padStart(6, '0')}`;
+      const phaseWeight = calendariaMoonTint?.illumination ?? ST_Config.PhaseValues[currentPhase] ?? 0;
+      const impactWeight = Math.min(Math.max(game.settings.get('smalltime', 'phase-impact') ?? 0, 0), 1);
+      const tintAmount = Math.min(0.6, phaseWeight * impactWeight);
+      const mixedHex = Helpers.mixHexColors(baseHex, moonColor, tintAmount);
+      nextDarknessColor = parseInt(mixedHex.slice(1), 16);
+    }
+
+    if (nextDarknessColor === ST_Config.activeDarknessColor) return;
+    ST_Config.activeDarknessColor = nextDarknessColor;
+    CONFIG.Canvas.darknessColor = nextDarknessColor;
+    Helpers.refreshCanvasEnvironmentDarkness(canvas.environment.darknessLevel);
+  }
+
+  static refreshCanvasEnvironmentDarkness(darknessLevel = canvas?.environment?.darknessLevel) {
+    if (!canvas?.environment) return false;
+    if (typeof canvas.environment.initialize === 'function') {
+      canvas.environment.initialize({ environment: { darknessLevel } });
+      return true;
+    }
+    return false;
+  }
+
   // Convert worldTime (seconds elapsed) into an integer time of day.
   static getWorldTimeAsDayTime() {
-    const currentWorldTime = game.time.worldTime + ST_Config.EpochOffset;
-    const dayTime = Math.abs(Math.trunc((currentWorldTime % 86400) / 60));
-    if (currentWorldTime < 0) {
-      return 1440 - dayTime;
-    } else return dayTime;
+    const secondsOfDay = Helpers.getWorldTimeSecondsOfDay();
+    return Math.trunc(secondsOfDay / 60);
   }
 
   // Advance/retreat the elapsed worldTime based on changes made.
   static async setWorldTime(newTime) {
-    const currentWorldTime = game.time.worldTime + ST_Config.EpochOffset;
-    const dayTime = Helpers.getWorldTimeAsDayTime(currentWorldTime);
+    const dayTime = Helpers.getWorldTimeAsDayTime();
     const delta = newTime - dayTime;
     game.time.advance(delta * 60);
-  }
-
-  static getCalendarProviders() {
-    let calendarProviders = new Object();
-
-    if (game.modules.get('foundryvtt-simple-calendar')?.active) {
-      Object.assign(calendarProviders, { sc: 'Simple Calendar' });
-    }
-    if (game.modules.get('calendar-weather')?.active) {
-      Object.assign(calendarProviders, { cw: 'Calendar/Weather' });
-    }
-    if (game.system.id === 'pf2e') {
-      Object.assign(calendarProviders, { pf2e: 'PF2E ' });
-    }
-
-    return calendarProviders;
-  }
-
-  // If the calendar provider is set to a module that isn't currently enabled,
-  // fall back to using PF2E's calendar, if in PF2E.
-  static setCalendarFallback() {
-    const providerSetting = game.settings.get('smalltime', 'calendar-provider');
-
-    if (!game.user.isGM) return;
-
-    // If the provider is set to a module or system that isn't available, use the
-    // first available provider by default.
-    if (
-      (providerSetting === 'sc' && !game.modules.get('foundryvtt-simple-calendar')?.active) ||
-      (providerSetting === 'cw' && !game.modules.get('calendar-weather')?.active) ||
-      (providerSetting === 'pf2e' && !(game.system.id === 'pf2e'))
-    ) {
-      game.settings.set('smalltime', 'calendar-provider', Helpers.getCalendarProviders()[0]);
-    }
   }
 
   // Helper function for time-changing socket updates.
   static handleTimeChange(timeInteger) {
     SmallTimeApp.timeTransition(timeInteger);
-    $('#hourString').html(SmallTimeApp.convertTimeIntegerToDisplay(timeInteger).hours);
-    $('#minuteString').html(SmallTimeApp.convertTimeIntegerToDisplay(timeInteger).minutes);
+    const hourStringElement = document.getElementById('hourString');
+    const minuteStringElement = document.getElementById('minuteString');
+    if (hourStringElement) hourStringElement.textContent = SmallTimeApp.convertTimeIntegerToDisplay(timeInteger).hours;
+    if (minuteStringElement) minuteStringElement.textContent = SmallTimeApp.convertTimeIntegerToDisplay(timeInteger).minutes;
 
     // Calculate and show the current seconds if required.
     if (game.settings.get('smalltime', 'time-format') == 24 && game.settings.get('smalltime', 'show-seconds') == true) {
-      const currentWorldTime = game.time.worldTime + ST_Config.EpochOffset;
-      let seconds;
-      if (currentWorldTime < 0) {
-        seconds = 60 - Math.abs(Math.trunc(((currentWorldTime % 86400) % 3600) % 60));
-      } else {
-        seconds = Math.abs(Math.trunc(((currentWorldTime % 86400) % 3600) % 60));
-      }
+      let seconds = Helpers.getWorldTimeSecondsOfDay() % 60;
       if (seconds < 10) seconds = '0' + seconds;
       if (seconds == 60) seconds = '00';
-      $('#secondString').html(seconds);
-      $('#secondsSpan').css('display', 'inline');
+      const secondStringElement = document.getElementById('secondString');
+      const secondsSpanElement = document.getElementById('secondsSpan');
+      if (secondStringElement) secondStringElement.textContent = seconds;
+      if (secondsSpanElement) secondsSpanElement.style.display = 'inline';
     } else {
-      $('#secondsSpan').css('display', 'none');
+      const secondsSpanElement = document.getElementById('secondsSpan');
+      if (secondsSpanElement) secondsSpanElement.style.display = 'none';
     }
 
-    $('#timeSlider').val(timeInteger);
+    const timeSliderElement = document.getElementById('timeSlider');
+    if (timeSliderElement) timeSliderElement.value = String(timeInteger);
     Helpers.handleRealtimeState();
     SmallTimeApp.updateDate();
   }
 
-  static getDate(provider, variant) {
+  static getDate(variant) {
+    const numericVariant = Number(variant);
+    const customVariant = Number.isFinite(numericVariant) ? numericVariant - 12 : -1;
+    if (customVariant >= 0) {
+      const customDate = Helpers.getSystemDateByVariant(customVariant) ?? Helpers.getAdditionalSystemDateByVariant(customVariant);
+      if (customDate) return customDate;
+    }
+
     let day;
     let monthName;
     let month;
@@ -486,40 +828,33 @@ export class Helpers {
     let ordinalSuffix;
     let displayDate = [];
 
-    if (game.modules.get('foundryvtt-simple-calendar')?.active && provider === 'sc') {
-      let SCobject = SimpleCalendar.api.timestampToDate(game.time.worldTime).display;
-      day = SimpleCalendar.api.timestampToDate(game.time.worldTime).showWeekdayHeadings ? SCobject.weekday : undefined;
-      monthName = SCobject.monthName;
-      month = SCobject.month;
-      date = SCobject.day;
-      ordinalSuffix = SCobject.daySuffix;
-      year = SCobject.year;
-      yearPrefix = SCobject.yearPrefix || undefined;
-      yearPostfix = SCobject.yearPostfix || undefined;
-    }
-
-    if (game.system.id === 'pf2e' && provider === 'pf2e') {
-      let PFobject = game.pf2e.worldClock;
-      day = PFobject.weekday;
-      monthName = PFobject.month;
-      month = PFobject.worldTime.c.month;
-      date = PFobject.worldTime.c.day;
-      year = PFobject.year;
-      ordinalSuffix = PFobject.ordinalSuffix || undefined;
-      yearPostfix = PFobject.era;
-    }
-
-    // Support for C/W and AT calendars will be dropped soon, but
-    // leaving these in for now.
-
-    if (game.modules.get('calendar-weather')?.active && provider === 'cw') {
-      let CWobject = game.settings.get('calendar-weather', 'dateTime');
-      day = CWobject.daysOfTheWeek[CWobject.numDayOfTheWeek];
-      monthName = CWobject.months[CWobject.currentMonth].name;
-      // CW .currentMonth and .day are zero-indexed, so add one to get the display date.
-      month = CWobject.currentMonth + 1;
-      date = CWobject.day + 1;
-      year = CWobject.year;
+    const pf2eDateParts = Helpers.getPF2eDateParts();
+    if (pf2eDateParts) {
+      day = pf2eDateParts.day;
+      monthName = pf2eDateParts.monthName;
+      month = pf2eDateParts.month;
+      date = pf2eDateParts.date;
+      year = pf2eDateParts.year;
+      ordinalSuffix = '';
+      yearPrefix = undefined;
+      yearPostfix = pf2eDateParts.era;
+    } else {
+      const calendar = game.time?.calendar;
+      if (calendar) {
+        const components = calendar.timeToComponents(game.time.worldTime);
+        const weekdayData = calendar.days?.values?.[components.dayOfWeek];
+        const monthData = calendar.months?.values?.[components.month];
+        day = weekdayData ? game.i18n.localize(weekdayData.name) : undefined;
+        monthName = monthData ? game.i18n.localize(monthData.name) : undefined;
+        month = monthData?.ordinal ?? components.month + 1;
+        date = components.dayOfMonth + 1;
+        year = components.year + (calendar.years?.yearZero ?? 0);
+        ordinalSuffix = '';
+        yearPrefix = undefined;
+        yearPostfix = undefined;
+      } else {
+        year = '';
+      }
     }
 
     // Thursday, August 12th, 2021 C.E.
@@ -529,7 +864,7 @@ export class Helpers {
         Helpers.stringAfter(date + (ordinalSuffix ? ordinalSuffix : ''), ', ') +
         Helpers.stringAfter(yearPrefix) +
         year +
-        Helpers.stringBefore(yearPostfix)
+        Helpers.stringBefore(yearPostfix),
     );
 
     // Thursday, August 12th
@@ -540,7 +875,7 @@ export class Helpers {
 
     // August 12th, 2021
     displayDate.push(
-      Helpers.stringAfter(monthName) + Helpers.stringAfter(date + (ordinalSuffix ? ordinalSuffix : ''), ', ') + Helpers.stringAfter(yearPrefix) + year
+      Helpers.stringAfter(monthName) + Helpers.stringAfter(date + (ordinalSuffix ? ordinalSuffix : ''), ', ') + Helpers.stringAfter(yearPrefix) + year,
     );
 
     // August 12th
@@ -553,7 +888,7 @@ export class Helpers {
         Helpers.stringAfter(monthName, ', ') +
         Helpers.stringAfter(yearPrefix) +
         year +
-        Helpers.stringBefore(yearPostfix)
+        Helpers.stringBefore(yearPostfix),
     );
 
     // Thursday, 12 August
@@ -574,7 +909,345 @@ export class Helpers {
     // 2021 / 8 / 12
     displayDate.push(Helpers.stringAfter(year, ' / ') + Helpers.stringAfter(month, ' / ') + date);
 
-    return displayDate[variant];
+    return displayDate[numericVariant] ?? displayDate[0];
+  }
+
+  static getPF2eDateParts() {
+    if (game.system?.id !== 'pf2e') return null;
+
+    const worldClock = game.pf2e?.worldClock;
+    const worldTime = worldClock?.worldTime;
+    if (!worldClock || !worldTime) return null;
+
+    const monthNumber = typeof worldTime.month === 'number' ? worldTime.month : undefined;
+    const dayOfMonth = typeof worldTime.day === 'number' ? worldTime.day : undefined;
+    const displayYear = typeof worldClock.year === 'number' ? worldClock.year : undefined;
+    if (monthNumber === undefined || dayOfMonth === undefined || displayYear === undefined) return null;
+
+    return {
+      day: typeof worldClock.weekday === 'string' ? worldClock.weekday : undefined,
+      monthName: typeof worldClock.month === 'string' ? worldClock.month : undefined,
+      month: monthNumber,
+      date: dayOfMonth,
+      year: displayYear,
+      era: typeof worldClock.era === 'string' ? worldClock.era : undefined,
+    };
+  }
+
+  static getDateFormatOptions() {
+    const options = [];
+    for (let i = 0; i <= 11; i++) {
+      options.push({
+        value: i,
+        label: Helpers.getDate(i),
+        source: 'smalltime',
+      });
+    }
+
+    const systemDateFormats = Helpers.getSystemDateFormatters();
+    systemDateFormats.forEach((format, index) => {
+      const preview = Helpers.getSystemDateByVariant(index) ?? Helpers.getDate(0);
+      options.push({
+        value: 12 + index,
+        label: `${preview} (${game.i18n.localize(format.label)})`,
+        source: 'system',
+      });
+    });
+
+    const extraSystemFormats = Helpers.getAdditionalSystemDateFormats();
+    extraSystemFormats.forEach((format, index) => {
+      const preview = Helpers.getAdditionalSystemDateByVariant(systemDateFormats.length + index) ?? Helpers.getDate(0);
+      options.push({
+        value: 12 + systemDateFormats.length + index,
+        label: `${preview} (${format.label})`,
+        source: format.source ?? 'system',
+      });
+    });
+
+    return options;
+  }
+
+  static getSystemDateByVariant(variant) {
+    const calendar = game.time?.calendar;
+    if (!calendar) return null;
+    const format = Helpers.getSystemDateFormatters()[variant];
+    if (!format?.formatter) return null;
+
+    try {
+      const components = calendar.timeToComponents(game.time.worldTime);
+      return calendar.format(components, format.formatter);
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  static getAdditionalSystemDateFormats() {
+    const formats = [];
+
+    const calendariaApi = Helpers.getCalendariaApi();
+    if (calendariaApi) {
+      const calendariaDatePresets = [
+        ['approxDate', 'CALENDARIA.Format.Preset.ApproxDate'],
+        ['dateShort', 'CALENDARIA.Format.Preset.DateShort'],
+        ['dateMedium', 'CALENDARIA.Format.Preset.DateMedium'],
+        ['dateLong', 'CALENDARIA.Format.Preset.DateLong'],
+        ['dateFull', 'CALENDARIA.Format.Preset.DateFull'],
+        ['dateUS', 'CALENDARIA.Format.Preset.DateUS'],
+        ['dateUSFull', 'CALENDARIA.Format.Preset.DateUSFull'],
+        ['dateISO', 'CALENDARIA.Format.Preset.DateISO'],
+        ['dateNumericUS', 'CALENDARIA.Format.Preset.DateNumericUS'],
+        ['dateNumericEU', 'CALENDARIA.Format.Preset.DateNumericEU'],
+        ['ordinal', 'CALENDARIA.Format.Preset.Ordinal'],
+        ['ordinalLong', 'CALENDARIA.Format.Preset.OrdinalLong'],
+        ['ordinalEra', 'CALENDARIA.Format.Preset.OrdinalEra'],
+        ['ordinalFull', 'CALENDARIA.Format.Preset.OrdinalFull'],
+        ['seasonDate', 'CALENDARIA.Format.Preset.SeasonDate'],
+        ['weekHeader', 'CALENDARIA.Format.Preset.WeekHeader'],
+        ['yearOnly', 'CALENDARIA.Format.Preset.YearOnly'],
+        ['yearEra', 'CALENDARIA.Format.Preset.YearEra'],
+      ];
+
+      for (const [preset, key] of calendariaDatePresets) {
+        formats.push({
+          id: `calendaria:${preset}`,
+          label: game.i18n.has(key) ? game.i18n.localize(key) : preset,
+          source: 'module',
+        });
+      }
+    }
+
+    if (game.system?.id === 'pf2e' && game.pf2e?.worldClock) {
+      const localizedWorldClockLabel = game.i18n.has('PF2E.WorldClock.Title')
+        ? game.i18n.localize('PF2E.WorldClock.Title')
+        : game.i18n.localize('PF2E.SETTINGS.WorldClock.Name');
+      formats.push({
+        id: 'pf2e-world-clock',
+        label: localizedWorldClockLabel,
+        source: 'system',
+      });
+    }
+
+    return formats;
+  }
+
+  static getAdditionalSystemDateByVariant(variant) {
+    const systemDateFormatterCount = Helpers.getSystemDateFormatters().length;
+    const offset = variant - systemDateFormatterCount;
+    if (offset < 0) return null;
+
+    const format = Helpers.getAdditionalSystemDateFormats()[offset];
+    if (!format) return null;
+
+    if (format.id.startsWith('calendaria:')) {
+      const calendariaApi = Helpers.getCalendariaApi();
+      if (!calendariaApi?.formatDate) return null;
+      const preset = format.id.slice('calendaria:'.length);
+      try {
+        return calendariaApi.formatDate(null, preset);
+      } catch (_error) {
+        return null;
+      }
+    }
+
+    if (format.id === 'pf2e-world-clock') {
+      return Helpers.getPF2eWorldClockFormattedDate();
+    }
+
+    return null;
+  }
+
+  static getCalendariaApi() {
+    const module = game.modules?.get('calendaria');
+    if (!module?.active) return null;
+    return globalThis.CALENDARIA?.api ?? null;
+  }
+
+  static isCalendariaDarknessSyncActive(scene = canvas.scene ?? game.scenes.viewed) {
+    const module = game.modules?.get('calendaria');
+    if (!module?.active || !scene) return false;
+
+    const sceneFlag = scene.getFlag?.('calendaria', 'darknessSync');
+    if (sceneFlag === true || sceneFlag === 'enabled') return true;
+    if (sceneFlag === false || sceneFlag === 'disabled') return false;
+
+    return !!game.settings.get('calendaria', 'darknessSync');
+  }
+
+  static isCalendariaAmbienceSyncActive() {
+    const module = game.modules?.get('calendaria');
+    if (!module?.active) return false;
+    return !!game.settings.get('calendaria', 'ambienceSync');
+  }
+
+  static isCalendariaMoonIlluminationActive() {
+    const module = game.modules?.get('calendaria');
+    if (!module?.active) return false;
+    return !!game.settings.get('calendaria', 'darknessMoonSync');
+  }
+
+  static isCalendariaColorShiftSyncActive() {
+    const module = game.modules?.get('calendaria');
+    if (!module?.active) return false;
+    return !!game.settings.get('calendaria', 'colorShiftSync');
+  }
+
+  static getCalendariaDefaultBrightnessMultiplier() {
+    const module = game.modules?.get('calendaria');
+    if (!module?.active) return null;
+    const value = Number(game.settings.get('calendaria', 'defaultBrightnessMultiplier'));
+    return Number.isFinite(value) ? value : null;
+  }
+
+  static shouldDeferMoonTintToCalendaria(scene = canvas.scene ?? game.scenes.viewed) {
+    if (!Helpers.isCalendariaDarknessSyncActive(scene)) return false;
+    if (!Helpers.isCalendariaAmbienceSyncActive()) return false;
+    return Helpers.isCalendariaColorShiftSyncActive() || Helpers.isCalendariaMoonIlluminationActive();
+  }
+
+  static isPF2eDarknessSyncActive(scene = canvas.scene ?? game.scenes.viewed) {
+    if (game.system?.id !== 'pf2e' || !scene) return false;
+
+    const sceneSetting = scene.getFlag?.('pf2e', 'syncDarkness');
+    if (sceneSetting === true || sceneSetting === 'enabled') return true;
+    if (sceneSetting === false || sceneSetting === 'disabled') return false;
+
+    const pf2eWorldClock = game.settings.get('pf2e', 'worldClock');
+    if (pf2eWorldClock && typeof pf2eWorldClock.syncDarkness === 'boolean') {
+      return pf2eWorldClock.syncDarkness;
+    }
+
+    return !!game.pf2e?.settings?.worldClock?.syncDarkness;
+  }
+
+  static isExternalDarknessSyncActive(scene = canvas.scene ?? game.scenes.viewed) {
+    return Helpers.isCalendariaDarknessSyncActive(scene) || Helpers.isPF2eDarknessSyncActive(scene);
+  }
+
+  static async openBestCalendarView() {
+    const calendariaApi = Helpers.getCalendariaApi();
+    if (calendariaApi?.openBigCal instanceof Function) {
+      await calendariaApi.openBigCal();
+      return true;
+    }
+
+    const dnd5eCalendarApp = game.dnd5e?.ui?.calendar;
+    if (dnd5eCalendarApp?.render instanceof Function) {
+      dnd5eCalendarApp.render(true);
+      return true;
+    }
+
+    const systemCalendarApp = game.system?.ui?.calendar;
+    if (systemCalendarApp?.render instanceof Function) {
+      systemCalendarApp.render(true);
+      return true;
+    }
+    if (systemCalendarApp?.toggle instanceof Function) {
+      systemCalendarApp.toggle();
+      return true;
+    }
+
+    if (game.system?.id === 'pf2e') {
+      const worldClock = game.pf2e?.worldClock;
+      if (worldClock?.render instanceof Function) {
+        worldClock.render(true);
+        return true;
+      }
+
+      const worldClockApp = foundry?.applications?.instances?.get?.('world-clock');
+      if (worldClockApp?.render instanceof Function) {
+        worldClockApp.render(true);
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  static getPF2eOrdinalDay(dayNumber) {
+    const day = Number(dayNumber);
+    if (!Number.isFinite(day)) return String(dayNumber ?? '');
+
+    try {
+      const ordinalCategory = new Intl.PluralRules(game.i18n.lang, { type: 'ordinal' }).select(day);
+      const suffixKey = `PF2E.OrdinalSuffixes.${ordinalCategory}`;
+      if (game.i18n.has(suffixKey) && game.i18n.has('PF2E.OrdinalNumber')) {
+        const suffix = game.i18n.localize(suffixKey);
+        return game.i18n.format('PF2E.OrdinalNumber', { value: day, suffix });
+      }
+    } catch (_error) {
+      // Fall through to plain number output below.
+    }
+
+    return String(day);
+  }
+
+  static getPF2eWorldClockFormattedDate() {
+    if (game.system?.id !== 'pf2e') return null;
+
+    const worldClock = game.pf2e?.worldClock;
+    const worldTime = worldClock?.worldTime;
+    if (!worldClock || !worldTime) return null;
+
+    if (worldClock.dateTheme === 'CE' && typeof worldTime.toLocaleString === 'function') {
+      const luxonDateTime = globalThis.DateTime;
+      if (luxonDateTime?.DATE_HUGE) {
+        return worldTime.toLocaleString(luxonDateTime.DATE_HUGE);
+      }
+    }
+
+    const templateKey = CONFIG?.PF2E?.worldClock?.Date;
+    const day = Helpers.getPF2eOrdinalDay(worldTime.day);
+    const month = typeof worldClock.month === 'string' ? worldClock.month : '';
+    const weekday = typeof worldClock.weekday === 'string' ? worldClock.weekday : '';
+    const year = typeof worldClock.year === 'number' ? worldClock.year : worldTime.year;
+    const era = typeof worldClock.era === 'string' ? worldClock.era : '';
+
+    if (templateKey) {
+      return game.i18n.format(templateKey, { era, year, month, day, weekday });
+    }
+
+    return `${weekday}, ${day} of ${month}, ${year}${era ? ` ${era}` : ''}`.trim();
+  }
+
+  static getSystemDateFormatters() {
+    const calendar = game.time?.calendar;
+    const cacheKey = `${game.system?.id ?? ''}::${calendar?.constructor?.name ?? ''}`;
+    if (Helpers.#cachedSystemDateFormats && Helpers.#cachedSystemDateFormatsKey === cacheKey) {
+      return Helpers.#cachedSystemDateFormats;
+    }
+
+    const systemConfig = Helpers.getSystemCalendarConfig();
+    const formatters = Array.isArray(systemConfig?.formatters) ? systemConfig.formatters : [];
+    const dateFormatters = formatters.filter((entry) => {
+      if (!entry?.formatter || !entry?.label) return false;
+
+      const group = String(entry.group ?? '').toLowerCase();
+      const value = String(entry.value ?? '').toLowerCase();
+      const formatter = String(entry.formatter ?? '').toLowerCase();
+      return group.includes('date') || value.includes('date') || value.includes('day') || formatter.includes('date') || formatter.includes('day');
+    });
+
+    Helpers.#cachedSystemDateFormats = dateFormatters;
+    Helpers.#cachedSystemDateFormatsKey = cacheKey;
+    return dateFormatters;
+  }
+
+  static getSystemCalendarConfig() {
+    const systemId = String(game.system?.id ?? '');
+    if (!systemId) return null;
+
+    const normalizedSystemId = systemId.replace(/[^a-z0-9]/gi, '').toUpperCase();
+    for (const [key, configValue] of Object.entries(CONFIG)) {
+      const normalizedKey = key.replace(/[^a-z0-9]/gi, '').toUpperCase();
+      if (normalizedKey !== normalizedSystemId) continue;
+      if (configValue?.calendar) return configValue.calendar;
+    }
+
+    for (const configValue of Object.values(CONFIG)) {
+      if (configValue?.calendar?.formatters) return configValue.calendar;
+    }
+
+    return null;
   }
 
   static stringAfter(stringText, afterString = ' ') {
@@ -632,29 +1305,29 @@ export class Helpers {
         let n = d.length,
           x = {};
         if (n > 9) {
-          ([r, g, b, a] = d = d.split(',')), (n = d.length);
+          (([r, g, b, a] = d = d.split(',')), (n = d.length));
           if (n < 3 || n > 4) return null;
-          (x.r = i(r[3] == 'a' ? r.slice(5) : r.slice(4))), (x.g = i(g)), (x.b = i(b)), (x.a = a ? parseFloat(a) : -1);
+          ((x.r = i(r[3] == 'a' ? r.slice(5) : r.slice(4))), (x.g = i(g)), (x.b = i(b)), (x.a = a ? parseFloat(a) : -1));
         } else {
           if (n == 8 || n == 6 || n < 4) return null;
           if (n < 6) d = '#' + d[1] + d[1] + d[2] + d[2] + d[3] + d[3] + (n > 4 ? d[4] + d[4] : '');
           d = i(d.slice(1), 16);
-          if (n == 9 || n == 5) (x.r = (d >> 24) & 255), (x.g = (d >> 16) & 255), (x.b = (d >> 8) & 255), (x.a = m((d & 255) / 0.255) / 1000);
-          else (x.r = d >> 16), (x.g = (d >> 8) & 255), (x.b = d & 255), (x.a = -1);
+          if (n == 9 || n == 5) ((x.r = (d >> 24) & 255), (x.g = (d >> 16) & 255), (x.b = (d >> 8) & 255), (x.a = m((d & 255) / 0.255) / 1000));
+          else ((x.r = d >> 16), (x.g = (d >> 8) & 255), (x.b = d & 255), (x.a = -1));
         }
         return x;
       };
-    (h = c0.length > 9),
+    ((h = c0.length > 9),
       (h = a ? (c1.length > 9 ? true : c1 == 'c' ? !h : false) : h),
       (f = this.pSBCr(c0)),
       (P = p < 0),
       (t = c1 && c1 != 'c' ? this.pSBCr(c1) : P ? { r: 0, g: 0, b: 0, a: -1 } : { r: 255, g: 255, b: 255, a: -1 }),
       (p = P ? p * -1 : p),
-      (P = 1 - p);
+      (P = 1 - p));
     if (!f || !t) return null;
-    if (l) (r = m(P * f.r + p * t.r)), (g = m(P * f.g + p * t.g)), (b = m(P * f.b + p * t.b));
-    else (r = m((P * f.r ** 2 + p * t.r ** 2) ** 0.5)), (g = m((P * f.g ** 2 + p * t.g ** 2) ** 0.5)), (b = m((P * f.b ** 2 + p * t.b ** 2) ** 0.5));
-    (a = f.a), (t = t.a), (f = a >= 0 || t >= 0), (a = f ? (a < 0 ? t : t < 0 ? a : a * P + t * p) : 0);
+    if (l) ((r = m(P * f.r + p * t.r)), (g = m(P * f.g + p * t.g)), (b = m(P * f.b + p * t.b)));
+    else ((r = m((P * f.r ** 2 + p * t.r ** 2) ** 0.5)), (g = m((P * f.g ** 2 + p * t.g ** 2) ** 0.5)), (b = m((P * f.b ** 2 + p * t.b ** 2) ** 0.5)));
+    ((a = f.a), (t = t.a), (f = a >= 0 || t >= 0), (a = f ? (a < 0 ? t : t < 0 ? a : a * P + t * p) : 0));
     if (h) return 'rgb' + (f ? 'a(' : '(') + r + ',' + g + ',' + b + (f ? ',' + m(a * 1000) / 1000 : '') + ')';
     else return '#' + (4294967296 + r * 16777216 + g * 65536 + b * 256 + (f ? m(a * 255) : 0)).toString(16).slice(1, f ? undefined : -2);
   }
@@ -717,43 +1390,6 @@ export class Helpers {
     let newHex = rgb2hex(newRgbIntensityFloat);
 
     return newHex;
-  }
-
-  // Overriding the Global Illumination Threshold value for the scene if requested.
-  // Values span from 0.0 to 1.0 to mimic brightness levels of the various phases.
-  static async adjustMoonlight(phases) {
-    // Only perform this adjustment if the setting is enabled.
-    if (!game.scenes.viewed.getFlag('smalltime', 'moonlight') || !phases.length) return;
-    let newThreshold = 0;
-    phases.forEach((phase) => {
-      switch (phase) {
-        case 0: // new
-          newThreshold += 0;
-          break;
-        case 1: // waxing crescent
-        case 7: // waning crescent
-          newThreshold += 0.25;
-          break;
-        case 2: // first quarter
-        case 6: // last quarter
-          newThreshold += 0.5;
-          break;
-        case 3: // waxing gibbous
-        case 5: // waning gibbous
-          newThreshold += 0.75;
-          break;
-        case 4: // full
-          newThreshold += 1;
-          break;
-      }
-    });
-
-    newThreshold = Math.round((newThreshold / phases.length) * 100) / 100;
-    const currentThreshold = `game.scenes.viewed.${ST_Config.GlobalThresholdPath}`;
-    if (newThreshold === currentThreshold) {
-      return true;
-    }
-    await canvas.scene.update({ [ST_Config.GlobalThresholdPath]: newThreshold });
   }
 
   // Sun & moon icons by Freepik on flaticon.com
