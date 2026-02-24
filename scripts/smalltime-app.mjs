@@ -1107,8 +1107,14 @@ class SmallTimeApp extends foundry.applications.api.HandlebarsApplicationMixin(f
 
     // Toggle the date display div.
     timeDisplayEl?.addEventListener('click', async (ev) => {
-      // Realtime toggle integration intentionally disabled for now.
-      if (ev.shiftKey) return;
+      if (ev.shiftKey) {
+        if (game.modules.get('smalltime').controlAuth) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          await Helpers.toggleCalendariaRealtime();
+        }
+        return;
+      }
 
       const isShowing = appElement.classList.contains('show-date');
       if (!isShowing) {

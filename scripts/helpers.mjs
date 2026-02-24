@@ -102,12 +102,20 @@ export class Helpers {
   static isCalendariaRealtimeRunning() {
     const module = game.modules?.get('calendaria');
     if (!module?.active) return false;
+    if (module.api?.isClockRunning instanceof Function) {
+      return !!module.api.isClockRunning();
+    }
     return !!globalThis.CALENDARIA?.TimeClock?.running;
   }
 
   static async toggleCalendariaRealtime() {
     const module = game.modules?.get('calendaria');
     if (!module?.active) return false;
+
+    if (module.api?.toggleClock instanceof Function) {
+      await module.api.toggleClock();
+      return true;
+    }
 
     const timeClock = globalThis.CALENDARIA?.TimeClock;
     if (timeClock?.toggle instanceof Function) {
@@ -203,7 +211,7 @@ export class Helpers {
     };
     const canonicalTimeByKey = Object.fromEntries(handleKeys.map((key) => [key, game.settings.get('smalltime', key)]));
     const initialCanonicalPositions = Object.fromEntries(
-      handleKeys.map((key) => [toCamel(key), Helpers.convertTimeIntegerToPosition(canonicalTimeByKey[key])])
+      handleKeys.map((key) => [toCamel(key), Helpers.convertTimeIntegerToPosition(canonicalTimeByKey[key])]),
     );
     const convertCanonicalTimeIntegerToHandlePosition = (timeInteger, handleKey) => {
       return Helpers.convertTimeIntegerToPosition(timeInteger) - getHandleTooltipOffsetX(handleKey);
@@ -211,8 +219,7 @@ export class Helpers {
     const convertHandlePositionToCanonicalTimeInteger = (position, element) => {
       return Helpers.convertPositionToTimeInteger(position + getHandleTooltipOffsetX(element));
     };
-    const formatTimeIntegerForTooltip = (timeInteger) =>
-      Helpers.convertDisplayObjToString(SmallTimeApp.convertTimeIntegerToDisplay(timeInteger));
+    const formatTimeIntegerForTooltip = (timeInteger) => Helpers.convertDisplayObjToString(SmallTimeApp.convertTimeIntegerToDisplay(timeInteger));
 
     document.documentElement.style.setProperty('--SMLTME-darkness-max', maxDarkness);
     document.documentElement.style.setProperty('--SMLTME-darkness-min', minDarkness);
@@ -307,33 +314,13 @@ export class Helpers {
       setGradientTransitionFromX(gradientVar, xPosition, element);
     };
 
-    initializeHandle(
-      sunriseStartElement,
-      Helpers.convertDarknessToPostion(maxDarkness),
-      initialPositions.sunriseStart,
-      initialTimes.sunriseStart
-    );
+    initializeHandle(sunriseStartElement, Helpers.convertDarknessToPostion(maxDarkness), initialPositions.sunriseStart, initialTimes.sunriseStart);
 
-    initializeHandle(
-      sunriseEndElement,
-      Helpers.convertDarknessToPostion(minDarkness) + 1,
-      initialPositions.sunriseEnd,
-      initialTimes.sunriseEnd
-    );
+    initializeHandle(sunriseEndElement, Helpers.convertDarknessToPostion(minDarkness) + 1, initialPositions.sunriseEnd, initialTimes.sunriseEnd);
 
-    initializeHandle(
-      sunsetStartElement,
-      Helpers.convertDarknessToPostion(minDarkness) + 1,
-      initialPositions.sunsetStart,
-      initialTimes.sunsetStart
-    );
+    initializeHandle(sunsetStartElement, Helpers.convertDarknessToPostion(minDarkness) + 1, initialPositions.sunsetStart, initialTimes.sunsetStart);
 
-    initializeHandle(
-      sunsetEndElement,
-      Helpers.convertDarknessToPostion(maxDarkness),
-      initialPositions.sunsetEnd,
-      initialTimes.sunsetEnd
-    );
+    initializeHandle(sunsetEndElement, Helpers.convertDarknessToPostion(maxDarkness), initialPositions.sunsetEnd, initialTimes.sunsetEnd);
 
     [sunriseStartElement, sunriseEndElement, sunsetStartElement, sunsetEndElement].forEach((handle) => {
       handle.classList.toggle('time-synced', lockTimeAxis);
@@ -361,9 +348,13 @@ export class Helpers {
       sunsetEnd: lockTimeAxis ? initialPositions.sunsetEnd : sunsetEndDrag.position.x,
     });
     const getCurrentCanonicalTimes = () => ({
-      sunriseStart: lockTimeAxis ? canonicalTimeByKey['sunrise-start'] : convertHandlePositionToCanonicalTimeInteger(sunriseStartDrag.position.x, sunriseStartElement),
+      sunriseStart: lockTimeAxis
+        ? canonicalTimeByKey['sunrise-start']
+        : convertHandlePositionToCanonicalTimeInteger(sunriseStartDrag.position.x, sunriseStartElement),
       sunriseEnd: lockTimeAxis ? canonicalTimeByKey['sunrise-end'] : convertHandlePositionToCanonicalTimeInteger(sunriseEndDrag.position.x, sunriseEndElement),
-      sunsetStart: lockTimeAxis ? canonicalTimeByKey['sunset-start'] : convertHandlePositionToCanonicalTimeInteger(sunsetStartDrag.position.x, sunsetStartElement),
+      sunsetStart: lockTimeAxis
+        ? canonicalTimeByKey['sunset-start']
+        : convertHandlePositionToCanonicalTimeInteger(sunsetStartDrag.position.x, sunsetStartElement),
       sunsetEnd: lockTimeAxis ? canonicalTimeByKey['sunset-end'] : convertHandlePositionToCanonicalTimeInteger(sunsetEndDrag.position.x, sunsetEndElement),
     });
     const saveDraggedDarknessConfig = (yPosition, darknessKind) => {
@@ -405,7 +396,7 @@ export class Helpers {
 
         // Live update the gradient transition point.
         if (!lockTimeAxis) {
-          setGradientTransitionFromX(selfGradientVar, this.position.x);
+          setGradientTransitionFromX(selfGradientVar, this.position.x, selfElement);
         }
 
         // Shove other handle on collisions.
@@ -738,6 +729,17 @@ export class Helpers {
     const scene = canvas.scene ?? game.scenes.viewed;
     if (!scene) return;
 
+    if (Helpers.shouldDeferMoonTintToCalendaria(scene)) {
+      if (ST_Config.activeDarknessColor !== ST_Config.coreDarknessColor) {
+        ST_Config.activeDarknessColor = ST_Config.coreDarknessColor;
+        CONFIG.Canvas.darknessColor = ST_Config.coreDarknessColor;
+        if (canvas?.environment?.initialize) {
+          canvas.environment.initialize({ environment: { darknessLevel: canvas.environment.darknessLevel } });
+        }
+      }
+      return;
+    }
+
     const isNight = !(timeNow >= game.settings.get('smalltime', 'sunrise-end') && timeNow < game.settings.get('smalltime', 'sunset-start'));
     const hasMoonTintSetting = game.settings.get('smalltime', 'moon-tint');
     const hasDarknessLink = !!scene.getFlag('smalltime', 'darkness-link');
@@ -1065,6 +1067,37 @@ export class Helpers {
     if (sceneFlag === false || sceneFlag === 'disabled') return false;
 
     return !!game.settings.get('calendaria', 'darknessSync');
+  }
+
+  static isCalendariaAmbienceSyncActive() {
+    const module = game.modules?.get('calendaria');
+    if (!module?.active) return false;
+    return !!game.settings.get('calendaria', 'ambienceSync');
+  }
+
+  static isCalendariaMoonIlluminationActive() {
+    const module = game.modules?.get('calendaria');
+    if (!module?.active) return false;
+    return !!game.settings.get('calendaria', 'darknessMoonSync');
+  }
+
+  static isCalendariaColorShiftSyncActive() {
+    const module = game.modules?.get('calendaria');
+    if (!module?.active) return false;
+    return !!game.settings.get('calendaria', 'colorShiftSync');
+  }
+
+  static getCalendariaDefaultBrightnessMultiplier() {
+    const module = game.modules?.get('calendaria');
+    if (!module?.active) return null;
+    const value = Number(game.settings.get('calendaria', 'defaultBrightnessMultiplier'));
+    return Number.isFinite(value) ? value : null;
+  }
+
+  static shouldDeferMoonTintToCalendaria(scene = canvas.scene ?? game.scenes.viewed) {
+    if (!Helpers.isCalendariaDarknessSyncActive(scene)) return false;
+    if (!Helpers.isCalendariaAmbienceSyncActive()) return false;
+    return Helpers.isCalendariaColorShiftSyncActive() || Helpers.isCalendariaMoonIlluminationActive();
   }
 
   static isPF2eDarknessSyncActive(scene = canvas.scene ?? game.scenes.viewed) {
