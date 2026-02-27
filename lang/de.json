@@ -31,7 +31,7 @@
   "SMLTME.Darkness_Reset": "Umschalttaste+Klick für Standardeinstellungen",
   "SMLTME.Position_Reset": "Shift-click zum Zurücksetzen der Fensterposition",
   "SMLTME.Sun_Sync": "Sonnenauf-/untergang synchronisieren",
-  "SMLTME.Sun_Sync_Hint": "Zeiten für Sonnenauf-/untergang aus Simple Calendar laden.",
+  "SMLTME.Sun_Sync_Hint": "Zeiten für Sonnenauf- und -untergang vom verfügbaren Kalenderanbieter laden. Deaktivieren, um manuell zu bearbeiten.",
   "SMLTME.Sun_Sync_Lock_Tooltip": "(Synchronisiert von {source})",
   "SMLTME.Threshold_Override_Tooltip": "SmallTime passt dies basierend auf der Mondphase an",
   "SMLTME.Moonlight_Adjust": "Mondlicht-Anpassung",

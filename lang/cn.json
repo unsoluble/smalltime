@@ -30,7 +30,7 @@
   "SMLTME.Darkness_Reset": "Shift-点击 以将时间重置为默认",
   "SMLTME.Position_Reset": "Shift-点击 以重置 Smalltime 位置",
   "SMLTME.Sun_Sync": "日出/日落同步",
-  "SMLTME.Sun_Sync_Hint": "从 Simple Calendar 模组中获取 日落/日出 时间。",
+  "SMLTME.Sun_Sync_Hint": "从可用的日历提供方获取日出和日落时间。禁用后可手动编辑。",
   "SMLTME.Threshold_Override_Tooltip": "SmallTime 通过月相来调整此项",
   "SMLTME.Moonlight_Adjust": "月光调整",
   "SMLTME.Moonlight_Adjust_Hint": "根据当前的月相调整全局照明阈值。",

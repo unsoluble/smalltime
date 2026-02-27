@@ -31,7 +31,7 @@
   "SMLTME.Darkness_Reset": "Shift-click para restablecer a horas por defecto",
   "SMLTME.Position_Reset": "Shift-click para restablecer la posición de la ventana de SmallTime",
   "SMLTME.Sun_Sync": "Sincronizar Amanecer/Anochecer",
-  "SMLTME.Sun_Sync_Hint": "Adquirir amanecer y anochecer de Simple Calendar.",
+  "SMLTME.Sun_Sync_Hint": "Obtener horas de amanecer y atardecer del proveedor de calendario disponible. Desactiva para editar manualmente.",
   "SMLTME.Sun_Sync_Lock_Tooltip": "(Sincronizado desde {source})",
   "SMLTME.Threshold_Override_Tooltip": "SmallTime ajusta esto según la fase lunar",
   "SMLTME.Moonlight_Adjust": "Ajuste de luz lunar",
