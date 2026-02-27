@@ -64,11 +64,11 @@ Full support for:
 - Korean (thanks @jbblily!)
 - French (thanks @DarKDinDoN!)
 - Portuguese (Brazil) (thanks @Castanho!)
-- Simplified Chinese
-- Traditional Chinese
-- Italian
-- Polish
-- Czech
+- Chinese (thanks @LiyuNodream!)
+- Chinese/Taiwan (thanks @zeteticl!)
+- Italian (thanks @bertolinimarco!)
+- Polish (thanks @Lioheart!)
+- Czech (thanks... someone who DM'd it to me and I've forgotten, sorry!)
 
 I'm happy to accept and implement more translations!
 
