@@ -1130,6 +1130,20 @@ export class Helpers {
       return true;
     }
 
+    const calendariaBigCalApp = globalThis.CALENDARIA?.apps?.BigCal;
+    if (calendariaBigCalApp?.show instanceof Function) {
+      await calendariaBigCalApp.show();
+      return true;
+    }
+    if (calendariaBigCalApp?.render instanceof Function) {
+      calendariaBigCalApp.render(true);
+      return true;
+    }
+    if (calendariaBigCalApp?.toggle instanceof Function) {
+      calendariaBigCalApp.toggle();
+      return true;
+    }
+
     const dnd5eCalendarApp = game.dnd5e?.ui?.calendar;
     if (dnd5eCalendarApp?.render instanceof Function) {
       dnd5eCalendarApp.render(true);
