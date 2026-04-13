@@ -75,7 +75,10 @@ export class Helpers {
   static async updateSunriseSunsetTimes() {
     const provider = Helpers.getSunriseSunsetProvider();
     Helpers.#sunriseSunsetProviderState = provider;
-    if (!provider.synced) return provider;
+    if (!provider.synced) {
+      Helpers.updateGradientStops();
+      return provider;
+    }
 
     const halfSpread = Math.round(ST_Config.DawnDuskSpread / 2);
     const sunriseCenter = Helpers.convertCalendarHourToSmallTimeMinute(provider.sunriseHour);
@@ -95,6 +98,8 @@ export class Helpers {
         }
       }
     }
+
+    Helpers.updateGradientStops();
 
     return { ...provider, values: nextValues };
   }
