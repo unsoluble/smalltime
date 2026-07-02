@@ -46,8 +46,8 @@
   display: none;
 }
 
-#smalltime-app.window-app:after {
-  content: none;
+#smalltime-app::after {
+  content: none !important;
 }
 
 #smalltime-app .window-content {
